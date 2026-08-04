@@ -12,9 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedBairrosRouteImport } from './routes/_authenticated/bairros'
 import { Route as AuthenticatedCaptarRouteImport } from './routes/_authenticated/captar'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedRuasRouteImport } from './routes/_authenticated/ruas'
+import { Route as AuthenticatedSegmentosRouteImport } from './routes/_authenticated/segmentos'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
+import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -30,6 +34,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedBairrosRoute = AuthenticatedBairrosRouteImport.update({
+  id: '/bairros',
+  path: '/bairros',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCaptarRoute = AuthenticatedCaptarRouteImport.update({
   id: '/captar',
   path: '/captar',
@@ -40,24 +49,47 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRuasRoute = AuthenticatedRuasRouteImport.update({
+  id: '/ruas',
+  path: '/ruas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSegmentosRoute = AuthenticatedSegmentosRouteImport.update({
+  id: '/segmentos',
+  path: '/segmentos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedLeadsIndexRoute = AuthenticatedLeadsIndexRouteImport.update({
   id: '/leads/',
   path: '/leads/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLeadsIdRoute = AuthenticatedLeadsIdRouteImport.update({
+  id: '/leads/$id',
+  path: '/leads/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bairros': typeof AuthenticatedBairrosRoute
   '/captar': typeof AuthenticatedCaptarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/ruas': typeof AuthenticatedRuasRoute
+  '/segmentos': typeof AuthenticatedSegmentosRoute
+  '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/bairros': typeof AuthenticatedBairrosRoute
   '/captar': typeof AuthenticatedCaptarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/ruas': typeof AuthenticatedRuasRoute
+  '/segmentos': typeof AuthenticatedSegmentosRoute
+  '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
 }
 export interface FileRoutesById {
@@ -65,22 +97,48 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/bairros': typeof AuthenticatedBairrosRoute
   '/_authenticated/captar': typeof AuthenticatedCaptarRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/ruas': typeof AuthenticatedRuasRoute
+  '/_authenticated/segmentos': typeof AuthenticatedSegmentosRoute
+  '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/captar' | '/dashboard' | '/leads/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/bairros'
+    | '/captar'
+    | '/dashboard'
+    | '/ruas'
+    | '/segmentos'
+    | '/leads/$id'
+    | '/leads/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/captar' | '/dashboard' | '/leads'
+  to:
+    | '/'
+    | '/auth'
+    | '/bairros'
+    | '/captar'
+    | '/dashboard'
+    | '/ruas'
+    | '/segmentos'
+    | '/leads/$id'
+    | '/leads'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/bairros'
     | '/_authenticated/captar'
     | '/_authenticated/dashboard'
+    | '/_authenticated/ruas'
+    | '/_authenticated/segmentos'
+    | '/_authenticated/leads/$id'
     | '/_authenticated/leads/'
   fileRoutesById: FileRoutesById
 }
@@ -113,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/bairros': {
+      id: '/_authenticated/bairros'
+      path: '/bairros'
+      fullPath: '/bairros'
+      preLoaderRoute: typeof AuthenticatedBairrosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/captar': {
       id: '/_authenticated/captar'
       path: '/captar'
@@ -127,6 +192,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ruas': {
+      id: '/_authenticated/ruas'
+      path: '/ruas'
+      fullPath: '/ruas'
+      preLoaderRoute: typeof AuthenticatedRuasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/segmentos': {
+      id: '/_authenticated/segmentos'
+      path: '/segmentos'
+      fullPath: '/segmentos'
+      preLoaderRoute: typeof AuthenticatedSegmentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/leads/': {
       id: '/_authenticated/leads/'
       path: '/leads'
@@ -134,18 +213,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeadsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/leads/$id': {
+      id: '/_authenticated/leads/$id'
+      path: '/leads/$id'
+      fullPath: '/leads/$id'
+      preLoaderRoute: typeof AuthenticatedLeadsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBairrosRoute: typeof AuthenticatedBairrosRoute
   AuthenticatedCaptarRoute: typeof AuthenticatedCaptarRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedRuasRoute: typeof AuthenticatedRuasRoute
+  AuthenticatedSegmentosRoute: typeof AuthenticatedSegmentosRoute
+  AuthenticatedLeadsIdRoute: typeof AuthenticatedLeadsIdRoute
   AuthenticatedLeadsIndexRoute: typeof AuthenticatedLeadsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBairrosRoute: AuthenticatedBairrosRoute,
   AuthenticatedCaptarRoute: AuthenticatedCaptarRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedRuasRoute: AuthenticatedRuasRoute,
+  AuthenticatedSegmentosRoute: AuthenticatedSegmentosRoute,
+  AuthenticatedLeadsIdRoute: AuthenticatedLeadsIdRoute,
   AuthenticatedLeadsIndexRoute: AuthenticatedLeadsIndexRoute,
 }
 
