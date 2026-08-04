@@ -14,16 +14,506 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      lead_custom_values: {
+        Row: {
+          field_id: string
+          id: string
+          lead_id: string
+          value: Json | null
+        }
+        Insert: {
+          field_id: string
+          id?: string
+          lead_id: string
+          value?: Json | null
+        }
+        Update: {
+          field_id?: string
+          id?: string
+          lead_id?: string
+          value?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_custom_values_field_id_fkey"
+            columns: ["field_id"]
+            isOneToOne: false
+            referencedRelation: "segment_fields"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_custom_values_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_history: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_type: string
+          id: string
+          lead_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_type: string
+          id?: string
+          lead_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          lead_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_history_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_products: {
+        Row: {
+          lead_id: string
+          product_id: string
+        }
+        Insert: {
+          lead_id: string
+          product_id: string
+        }
+        Update: {
+          lead_id?: string
+          product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_products_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_status_history: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          new_status: Database["public"]["Enums"]["lead_status"]
+          old_status: Database["public"]["Enums"]["lead_status"] | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          new_status: Database["public"]["Enums"]["lead_status"]
+          old_status?: Database["public"]["Enums"]["lead_status"] | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          new_status?: Database["public"]["Enums"]["lead_status"]
+          old_status?: Database["public"]["Enums"]["lead_status"] | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_status_history_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          city: string | null
+          company_name: string
+          contact_name: string | null
+          created_at: string
+          created_by: string
+          deleted_at: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          neighborhood_id: string | null
+          neighborhood_name: string | null
+          notes: string | null
+          number: string | null
+          phone: string | null
+          segment_id: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          street_id: string | null
+          street_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          company_name: string
+          contact_name?: string | null
+          created_at?: string
+          created_by: string
+          deleted_at?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          neighborhood_id?: string | null
+          neighborhood_name?: string | null
+          notes?: string | null
+          number?: string | null
+          phone?: string | null
+          segment_id?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          street_id?: string | null
+          street_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          company_name?: string
+          contact_name?: string | null
+          created_at?: string
+          created_by?: string
+          deleted_at?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          neighborhood_id?: string | null
+          neighborhood_name?: string | null
+          notes?: string | null
+          number?: string | null
+          phone?: string | null
+          segment_id?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          street_id?: string | null
+          street_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_neighborhood_id_fkey"
+            columns: ["neighborhood_id"]
+            isOneToOne: false
+            referencedRelation: "neighborhoods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_street_id_fkey"
+            columns: ["street_id"]
+            isOneToOne: false
+            referencedRelation: "streets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      neighborhoods: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          name: string
+          state: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string
+          created_at?: string
+          id?: string
+          name: string
+          state?: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          name?: string
+          state?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      products_services: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          active: boolean
+          can_view_all_leads: boolean
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          can_view_all_leads?: boolean
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          can_view_all_leads?: boolean
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      segment_fields: {
+        Row: {
+          created_at: string
+          field_key: string
+          field_type: string
+          id: string
+          label: string
+          options: Json
+          required: boolean
+          segment_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          field_key: string
+          field_type?: string
+          id?: string
+          label: string
+          options?: Json
+          required?: boolean
+          segment_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          field_key?: string
+          field_type?: string
+          id?: string
+          label?: string
+          options?: Json
+          required?: boolean
+          segment_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "segment_fields_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      segment_products: {
+        Row: {
+          product_id: string
+          segment_id: string
+        }
+        Insert: {
+          product_id: string
+          segment_id: string
+        }
+        Update: {
+          product_id?: string
+          segment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "segment_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "segment_products_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      segments: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      streets: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          name: string
+          neighborhood_id: string | null
+          state: string
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          city?: string
+          created_at?: string
+          id?: string
+          name: string
+          neighborhood_id?: string | null
+          state?: string
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          name?: string
+          neighborhood_id?: string | null
+          state?: string
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streets_neighborhood_id_fkey"
+            columns: ["neighborhood_id"]
+            isOneToOne: false
+            referencedRelation: "neighborhoods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_access_lead: { Args: { _lead_id: string }; Returns: boolean }
+      can_view_all_leads: { Args: { _user_id: string }; Returns: boolean }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "captador"
+      lead_status:
+        | "novo"
+        | "em_contato"
+        | "contatado"
+        | "interessado"
+        | "proposta_enviada"
+        | "negociacao"
+        | "convertido"
+        | "perdido"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +640,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "captador"],
+      lead_status: [
+        "novo",
+        "em_contato",
+        "contatado",
+        "interessado",
+        "proposta_enviada",
+        "negociacao",
+        "convertido",
+        "perdido",
+      ],
+    },
   },
 } as const
