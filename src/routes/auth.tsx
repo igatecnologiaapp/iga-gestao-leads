@@ -39,7 +39,10 @@ function AuthPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) return toast.error("Não foi possível entrar: " + error.message);
+    if (error) {
+      toast.error("Não foi possível entrar: " + error.message);
+      return;
+    }
     navigate({ to: "/dashboard", replace: true });
   }
 
@@ -55,7 +58,10 @@ function AuthPage() {
       },
     });
     setLoading(false);
-    if (error) return toast.error("Não foi possível cadastrar: " + error.message);
+    if (error) {
+      toast.error("Não foi possível cadastrar: " + error.message);
+      return;
+    }
     if (data.session) navigate({ to: "/dashboard", replace: true });
     else toast.success("Conta criada! Confirme seu e-mail para acessar.");
   }
@@ -64,10 +70,14 @@ function AuthPage() {
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
     });
-    if (result.error) return toast.error("Falha no login com Google.");
+    if (result.error) {
+      toast.error("Falha no login com Google.");
+      return;
+    }
     if (result.redirected) return;
     navigate({ to: "/dashboard", replace: true });
   }
+
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-10">
