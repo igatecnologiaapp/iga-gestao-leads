@@ -12,7 +12,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-export type ComboOption = { value: string; label: string; hint?: string };
+export type ComboOption = { value: string; label: string; hint?: string | undefined };
 
 type Props = {
   options: ComboOption[];
