@@ -250,12 +250,17 @@ function CaptarLead() {
                 value={segmentId}
                 onChange={(v) => {
                   setSegmentId(v);
-                  setProductIds([]);
+                  // Mantém apenas as soluções compatíveis com o novo segmento
+                  const allowed = new Set(
+                    segmentProducts.filter((sp) => sp.segment_id === v).map((sp) => sp.product_id),
+                  );
+                  setProductIds((prev) => prev.filter((id) => allowed.has(id)));
                   setCustom({});
                 }}
                 placeholder="Selecione o segmento"
               />
             </div>
+
           </div>
         </section>
 

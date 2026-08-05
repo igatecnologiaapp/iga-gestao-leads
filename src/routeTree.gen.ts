@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedBairrosRouteImport } from './routes/_authenticated/bairros'
 import { Route as AuthenticatedCaptarRouteImport } from './routes/_authenticated/captar'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedRuasRouteImport } from './routes/_authenticated/ruas'
 import { Route as AuthenticatedSegmentosRouteImport } from './routes/_authenticated/segmentos'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
@@ -49,6 +50,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
+  id: '/produtos',
+  path: '/produtos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRuasRoute = AuthenticatedRuasRouteImport.update({
   id: '/ruas',
   path: '/ruas',
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/bairros': typeof AuthenticatedBairrosRoute
   '/captar': typeof AuthenticatedCaptarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/produtos': typeof AuthenticatedProdutosRoute
   '/ruas': typeof AuthenticatedRuasRoute
   '/segmentos': typeof AuthenticatedSegmentosRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/bairros': typeof AuthenticatedBairrosRoute
   '/captar': typeof AuthenticatedCaptarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/produtos': typeof AuthenticatedProdutosRoute
   '/ruas': typeof AuthenticatedRuasRoute
   '/segmentos': typeof AuthenticatedSegmentosRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/_authenticated/bairros': typeof AuthenticatedBairrosRoute
   '/_authenticated/captar': typeof AuthenticatedCaptarRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
   '/_authenticated/ruas': typeof AuthenticatedRuasRoute
   '/_authenticated/segmentos': typeof AuthenticatedSegmentosRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
     | '/bairros'
     | '/captar'
     | '/dashboard'
+    | '/produtos'
     | '/ruas'
     | '/segmentos'
     | '/leads/$id'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
     | '/bairros'
     | '/captar'
     | '/dashboard'
+    | '/produtos'
     | '/ruas'
     | '/segmentos'
     | '/leads/$id'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '/_authenticated/bairros'
     | '/_authenticated/captar'
     | '/_authenticated/dashboard'
+    | '/_authenticated/produtos'
     | '/_authenticated/ruas'
     | '/_authenticated/segmentos'
     | '/_authenticated/leads/$id'
@@ -192,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/produtos': {
+      id: '/_authenticated/produtos'
+      path: '/produtos'
+      fullPath: '/produtos'
+      preLoaderRoute: typeof AuthenticatedProdutosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ruas': {
       id: '/_authenticated/ruas'
       path: '/ruas'
@@ -227,6 +246,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBairrosRoute: typeof AuthenticatedBairrosRoute
   AuthenticatedCaptarRoute: typeof AuthenticatedCaptarRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
   AuthenticatedRuasRoute: typeof AuthenticatedRuasRoute
   AuthenticatedSegmentosRoute: typeof AuthenticatedSegmentosRoute
   AuthenticatedLeadsIdRoute: typeof AuthenticatedLeadsIdRoute
@@ -237,6 +257,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBairrosRoute: AuthenticatedBairrosRoute,
   AuthenticatedCaptarRoute: AuthenticatedCaptarRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
   AuthenticatedRuasRoute: AuthenticatedRuasRoute,
   AuthenticatedSegmentosRoute: AuthenticatedSegmentosRoute,
   AuthenticatedLeadsIdRoute: AuthenticatedLeadsIdRoute,

@@ -3,15 +3,10 @@ import {
   LayoutDashboard,
   PlusCircle,
   Users2,
-  Map,
   Tags,
   Signpost,
   Building2,
   Package,
-  SlidersHorizontal,
-  BarChart3,
-  UserCog,
-  Settings,
   Radar,
 } from "lucide-react";
 import {
@@ -35,7 +30,6 @@ const groups = [
       { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
       { title: "Captar Lead", url: "/captar", icon: PlusCircle },
       { title: "Leads", url: "/leads", icon: Users2 },
-      { title: "Mapa de Leads", url: "/mapa", icon: Map },
     ],
   },
   {
@@ -43,21 +37,13 @@ const groups = [
     adminOnly: true,
     items: [
       { title: "Segmentos", url: "/segmentos", icon: Tags },
+      { title: "Produtos / Serviços", url: "/produtos", icon: Package },
       { title: "Ruas", url: "/ruas", icon: Signpost },
       { title: "Bairros", url: "/bairros", icon: Building2 },
-      { title: "Produtos / Serviços", url: "/produtos", icon: Package },
-      { title: "Config. de Segmentos", url: "/campos", icon: SlidersHorizontal },
-    ],
-  },
-  {
-    label: "Gestão",
-    items: [
-      { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
-      { title: "Usuários", url: "/usuarios", icon: UserCog, adminOnly: true },
-      { title: "Configurações", url: "/configuracoes", icon: Settings },
     ],
   },
 ] as const;
+
 
 export function AppSidebar() {
   const { state, isMobile, setOpenMobile } = useSidebar();

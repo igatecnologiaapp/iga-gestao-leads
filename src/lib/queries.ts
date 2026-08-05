@@ -108,7 +108,19 @@ export function useAllSegmentFields() {
   });
 }
 
+export function useAllLeadProducts() {
+  return useQuery({
+    queryKey: ["lead_products", "all"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("lead_products").select("lead_id, product_id");
+      if (error) throw error;
+      return data as { lead_id: string; product_id: string }[];
+    },
+  });
+}
+
 export function toOptions(value: unknown): string[] {
   if (Array.isArray(value)) return value.map(String);
   return [];
 }
+
