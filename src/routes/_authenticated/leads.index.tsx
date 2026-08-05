@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -22,7 +23,8 @@ import {
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LEAD_STATUSES, formatDate } from "@/lib/leads";
-import { useSegments } from "@/lib/queries";
+import { useAllLeadProducts, useProducts, useSegments } from "@/lib/queries";
+
 
 export const Route = createFileRoute("/_authenticated/leads/")({
   head: () => ({
