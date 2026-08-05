@@ -55,7 +55,17 @@ function LeadsList() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("todos");
   const [segment, setSegment] = useState("todos");
+  const [neighborhood, setNeighborhood] = useState("todos");
+  const [street, setStreet] = useState("todos");
+  const [product, setProduct] = useState("todos");
+  const [owner, setOwner] = useState("todos");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [moreFilters, setMoreFilters] = useState(false);
+
   const { data: segments = [] } = useSegments();
+  const { data: products = [] } = useProducts();
+  const { data: leadProducts = [] } = useAllLeadProducts();
 
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ["leads", "list"],
@@ -87,11 +97,30 @@ function LeadsList() {
     return p?.full_name || p?.email || "-";
   };
 
+  const neighborhoodOptions = useMemo(
+    () => Array.from(new Set(leads.map((l) => l.neighborhood_name).filter(Boolean) as string[])).sort(),
+    [leads],
+  );
+  const streetOptions = useMemo(
+    () => Array.from(new Set(leads.map((l) => l.street_name).filter(Boolean) as string[])).sort(),
+    [leads],
+  );
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return leads.filter((l) => {
       if (status !== "todos" && l.status !== status) return false;
       if (segment !== "todos" && l.segment_id !== segment) return false;
+      if (neighborhood !== "todos" && l.neighborhood_name !== neighborhood) return false;
+      if (street !== "todos" && l.street_name !== street) return false;
+      if (owner !== "todos" && l.created_by !== owner) return false;
+      if (
+        product !== "todos" &&
+        !leadProducts.some((lp) => lp.lead_id === l.id && lp.product_id === product)
+      )
+        return false;
+      if (from && l.created_at < from) return false;
+      if (to && l.created_at > `${to}T23:59:59`) return false;
       if (!q) return true;
       return [
         l.company_name,
@@ -105,7 +134,21 @@ function LeadsList() {
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q));
     });
-  }, [leads, search, status, segment, segments, profiles]);
+  }, [
+    leads,
+    search,
+    status,
+    segment,
+    neighborhood,
+    street,
+    product,
+    owner,
+    from,
+    to,
+    leadProducts,
+    segments,
+    profiles,
+  ]);
 
   async function changeStatus(id: string, value: string) {
     const { error } = await supabase
@@ -118,6 +161,18 @@ function LeadsList() {
     }
     toast.success("Status atualizado.");
     void queryClient.invalidateQueries({ queryKey: ["leads"] });
+  }
+
+  function clearFilters() {
+    setSearch("");
+    setStatus("todos");
+    setSegment("todos");
+    setNeighborhood("todos");
+    setStreet("todos");
+    setProduct("todos");
+    setOwner("todos");
+    setFrom("");
+    setTo("");
   }
 
   return (
@@ -158,6 +213,65 @@ function LeadsList() {
           </SelectContent>
         </Select>
       </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" className="h-10" onClick={() => setMoreFilters((v) => !v)}>
+          <SlidersHorizontal className="h-4 w-4" /> {moreFilters ? "Menos filtros" : "Mais filtros"}
+        </Button>
+        <Button variant="ghost" className="h-10" onClick={clearFilters}>
+          Limpar filtros
+        </Button>
+      </div>
+
+      {moreFilters && (
+        <div className="grid gap-2 rounded-2xl border bg-card p-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Select value={neighborhood} onValueChange={setNeighborhood}>
+            <SelectTrigger className="h-11"><SelectValue placeholder="Bairro" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os bairros</SelectItem>
+              {neighborhoodOptions.map((n) => (
+                <SelectItem key={n} value={n}>{n}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={street} onValueChange={setStreet}>
+            <SelectTrigger className="h-11"><SelectValue placeholder="Rua" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas as ruas</SelectItem>
+              {streetOptions.map((s) => (
+                <SelectItem key={s} value={s}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={product} onValueChange={setProduct}>
+            <SelectTrigger className="h-11"><SelectValue placeholder="Solução" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas as soluções</SelectItem>
+              {products.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={owner} onValueChange={setOwner}>
+            <SelectTrigger className="h-11"><SelectValue placeholder="Responsável" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos os responsáveis</SelectItem>
+              {profiles.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.full_name || p.email || p.id}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor="from">De</label>
+            <Input id="from" type="date" className="h-11" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor="to">Até</label>
+            <Input id="to" type="date" className="h-11" value={to} onChange={(e) => setTo(e.target.value)} />
+          </div>
+        </div>
+      )}
+
 
       {/* Mobile: cards */}
       <div className="space-y-3 lg:hidden">
