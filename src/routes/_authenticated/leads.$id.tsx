@@ -172,7 +172,7 @@ function LeadDetail() {
           <Info label="Cidade / UF" value={[lead.city, lead.state].filter(Boolean).join(" / ") || "-"} />
         </dl>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-[220px_auto]">
+        <div className="mt-5 grid gap-3 sm:grid-cols-[220px_auto_auto]">
           <Select value={lead.status} onValueChange={(v) => updateLead({ status: v }, "Status atualizado.")}>
             <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -181,6 +181,9 @@ function LeadDetail() {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" className="h-11" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-4 w-4" /> Editar lead
+          </Button>
           {lead.phone ? (
             <Button asChild variant="outline" className="h-11">
               <a href={`tel:${lead.phone.replace(/\D/g, "")}`}>
@@ -190,6 +193,7 @@ function LeadDetail() {
           ) : null}
         </div>
       </div>
+
 
       {selectedProducts.length > 0 && (
         <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)]">
