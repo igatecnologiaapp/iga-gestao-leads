@@ -1,11 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { ArrowLeft, Phone, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Pencil, Phone, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -13,10 +23,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/Combobox";
+import { DynamicField } from "@/components/DynamicField";
 import { StatusBadge } from "@/components/StatusBadge";
-import { LEAD_STATUSES, formatDateTime } from "@/lib/leads";
-import { useAllSegmentFields, useProducts, useSegments } from "@/lib/queries";
+import { LEAD_STATUSES, formatDateTime, maskPhone } from "@/lib/leads";
+import {
+  useAllSegmentFields,
+  useNeighborhoods,
+  useProducts,
+  useSegmentProducts,
+  useSegments,
+  useStreets,
+  toOptions,
+} from "@/lib/queries";
 import { useAuth } from "@/hooks/useAuth";
+
 
 export const Route = createFileRoute("/_authenticated/leads/$id")({
   head: () => ({
