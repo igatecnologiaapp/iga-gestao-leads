@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Combobox } from "@/components/Combobox";
+import { DynamicField } from "@/components/DynamicField";
 import {
   useNeighborhoods,
   useProducts,
