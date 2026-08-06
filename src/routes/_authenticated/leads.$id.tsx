@@ -60,6 +60,8 @@ function LeadDetail() {
   const { data: products = [] } = useProducts();
   const { data: allFields = [] } = useAllSegmentFields();
   const [notes, setNotes] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+
 
   const { data: lead } = useQuery({
     queryKey: ["lead", id],
