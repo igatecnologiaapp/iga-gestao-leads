@@ -1,11 +1,21 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { ArrowLeft, Phone, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Pencil, Phone, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -13,10 +23,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/Combobox";
+import { DynamicField } from "@/components/DynamicField";
 import { StatusBadge } from "@/components/StatusBadge";
-import { LEAD_STATUSES, formatDateTime } from "@/lib/leads";
-import { useAllSegmentFields, useProducts, useSegments } from "@/lib/queries";
+import { LEAD_STATUSES, formatDateTime, maskPhone } from "@/lib/leads";
+import {
+  useAllSegmentFields,
+  useNeighborhoods,
+  useProducts,
+  useSegmentProducts,
+  useSegments,
+  useStreets,
+  toOptions,
+} from "@/lib/queries";
 import { useAuth } from "@/hooks/useAuth";
+
 
 export const Route = createFileRoute("/_authenticated/leads/$id")({
   head: () => ({
@@ -39,6 +60,8 @@ function LeadDetail() {
   const { data: products = [] } = useProducts();
   const { data: allFields = [] } = useAllSegmentFields();
   const [notes, setNotes] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+
 
   const { data: lead } = useQuery({
     queryKey: ["lead", id],
@@ -149,7 +172,7 @@ function LeadDetail() {
           <Info label="Cidade / UF" value={[lead.city, lead.state].filter(Boolean).join(" / ") || "-"} />
         </dl>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-[220px_auto]">
+        <div className="mt-5 grid gap-3 sm:grid-cols-[220px_auto_auto]">
           <Select value={lead.status} onValueChange={(v) => updateLead({ status: v }, "Status atualizado.")}>
             <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -158,6 +181,9 @@ function LeadDetail() {
               ))}
             </SelectContent>
           </Select>
+          <Button variant="outline" className="h-11" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-4 w-4" /> Editar lead
+          </Button>
           {lead.phone ? (
             <Button asChild variant="outline" className="h-11">
               <a href={`tel:${lead.phone.replace(/\D/g, "")}`}>
@@ -167,6 +193,7 @@ function LeadDetail() {
           ) : null}
         </div>
       </div>
+
 
       {selectedProducts.length > 0 && (
         <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)]">
@@ -226,11 +253,315 @@ function LeadDetail() {
         </Button>
       )}
       <div className="h-10 md:hidden" />
+
+      <EditLeadDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        lead={lead}
+        productIds={leadProducts.map((lp) => lp.product_id)}
+        customValues={customValues}
+        onSaved={() => {
+          setEditOpen(false);
+          void queryClient.invalidateQueries({ queryKey: ["lead", id] });
+          void queryClient.invalidateQueries({ queryKey: ["lead_products"] });
+          void queryClient.invalidateQueries({ queryKey: ["lead_custom_values", id] });
+          void queryClient.invalidateQueries({ queryKey: ["lead_history", id] });
+          void queryClient.invalidateQueries({ queryKey: ["leads"] });
+        }}
+      />
     </div>
   );
 }
 
+type LeadRow = {
+  id: string;
+  company_name: string;
+  contact_name: string | null;
+  phone: string | null;
+  segment_id: string | null;
+  street_id: string | null;
+  street_name: string | null;
+  number: string | null;
+  neighborhood_id: string | null;
+  notes: string | null;
+};
+
+function EditLeadDialog({
+  open,
+  onOpenChange,
+  lead,
+  productIds: initialProducts,
+  customValues,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  lead: LeadRow;
+  productIds: string[];
+  customValues: { field_id: string; value: unknown }[];
+  onSaved: () => void;
+}) {
+  const { data: segments = [] } = useSegments();
+  const { data: streets = [] } = useStreets();
+  const { data: neighborhoods = [] } = useNeighborhoods();
+  const { data: products = [] } = useProducts();
+  const { data: segmentProducts = [] } = useSegmentProducts();
+  const { data: allFields = [] } = useAllSegmentFields();
+
+  const [company, setCompany] = useState(lead.company_name);
+  const [contact, setContact] = useState(lead.contact_name ?? "");
+  const [phone, setPhone] = useState(lead.phone ?? "");
+  const [segmentId, setSegmentId] = useState<string | null>(lead.segment_id);
+  const [streetId, setStreetId] = useState<string | null>(lead.street_id);
+  const [streetName, setStreetName] = useState(lead.street_name ?? "");
+  const [number, setNumber] = useState(lead.number ?? "");
+  const [neighborhoodId, setNeighborhoodId] = useState<string | null>(lead.neighborhood_id);
+  const [productIds, setProductIds] = useState<string[]>(initialProducts);
+  const [custom, setCustom] = useState<Record<string, unknown>>({});
+  const [notes, setNotes] = useState(lead.notes ?? "");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setCompany(lead.company_name);
+    setContact(lead.contact_name ?? "");
+    setPhone(lead.phone ?? "");
+    setSegmentId(lead.segment_id);
+    setStreetId(lead.street_id);
+    setStreetName(lead.street_name ?? "");
+    setNumber(lead.number ?? "");
+    setNeighborhoodId(lead.neighborhood_id);
+    setProductIds(initialProducts);
+    setNotes(lead.notes ?? "");
+    setCustom(Object.fromEntries(customValues.map((cv) => [cv.field_id, cv.value])));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  const fields = useMemo(
+    () => allFields.filter((f) => f.segment_id === segmentId).sort((a, b) => a.sort_order - b.sort_order),
+    [allFields, segmentId],
+  );
+
+  const compatibleProducts = useMemo(() => {
+    if (!segmentId) return [];
+    const ids = new Set(
+      segmentProducts.filter((sp) => sp.segment_id === segmentId).map((sp) => sp.product_id),
+    );
+    return products.filter((p) => ids.has(p.id) && p.active);
+  }, [segmentId, segmentProducts, products]);
+
+  async function save() {
+    if (!company.trim()) {
+      toast.error("Informe o nome da empresa.");
+      return;
+    }
+    for (const f of fields) {
+      if (f.required && (custom[f.id] === undefined || custom[f.id] === "" || custom[f.id] === null)) {
+        toast.error(`Preencha o campo "${f.label}".`);
+        return;
+      }
+    }
+    setSaving(true);
+    const nb = neighborhoods.find((n) => n.id === neighborhoodId);
+    const { error } = await supabase
+      .from("leads")
+      .update({
+        company_name: company.trim(),
+        contact_name: contact.trim() || null,
+        phone: phone || null,
+        segment_id: segmentId,
+        street_id: streetId,
+        street_name: streetName || null,
+        number: number || null,
+        neighborhood_id: neighborhoodId,
+        neighborhood_name: nb?.name ?? null,
+        city: nb?.city ?? null,
+        state: nb?.state ?? null,
+        notes: notes.trim() || null,
+      })
+      .eq("id", lead.id);
+    if (error) {
+      setSaving(false);
+      toast.error("Não foi possível salvar as alterações.");
+      return;
+    }
+
+    const allowed = new Set(compatibleProducts.map((p) => p.id));
+    const finalProducts = productIds.filter((pid) => allowed.has(pid));
+    await supabase.from("lead_products").delete().eq("lead_id", lead.id);
+    if (finalProducts.length) {
+      await supabase
+        .from("lead_products")
+        .insert(finalProducts.map((product_id) => ({ lead_id: lead.id, product_id })));
+    }
+
+    const fieldIds = new Set(fields.map((f) => f.id));
+    const rows = Object.entries(custom)
+      .filter(([k, v]) => fieldIds.has(k) && v !== undefined && v !== "" && v !== null)
+      .map(([field_id, value]) => ({ lead_id: lead.id, field_id, value: value as never }));
+    await supabase.from("lead_custom_values").delete().eq("lead_id", lead.id);
+    if (rows.length) await supabase.from("lead_custom_values").insert(rows);
+
+    const { data: userData } = await supabase.auth.getUser();
+    await supabase.from("lead_history").insert({
+      lead_id: lead.id,
+      user_id: userData.user?.id ?? null,
+      event_type: "edicao",
+      description: "Dados do lead atualizados",
+    });
+
+    setSaving(false);
+    toast.success("Lead atualizado.");
+    onSaved();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Editar lead</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="editCompany">Nome da empresa *</Label>
+            <Input id="editCompany" className="h-11" value={company} onChange={(e) => setCompany(e.target.value)} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="editContact">Nome do contato</Label>
+              <Input id="editContact" className="h-11" value={contact} onChange={(e) => setContact(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editPhone">Telefone</Label>
+              <Input
+                id="editPhone"
+                className="h-11"
+                inputMode="tel"
+                value={phone}
+                onChange={(e) => setPhone(maskPhone(e.target.value))}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Segmento</Label>
+            <Combobox
+              options={segments.filter((s) => s.active).map((s) => ({ value: s.id, label: s.name }))}
+              value={segmentId}
+              onChange={(v) => {
+                setSegmentId(v);
+                const allowed = new Set(
+                  segmentProducts.filter((sp) => sp.segment_id === v).map((sp) => sp.product_id),
+                );
+                setProductIds((prev) => prev.filter((pid) => allowed.has(pid)));
+              }}
+              placeholder="Selecione o segmento"
+            />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <div className="space-y-2">
+              <Label>Rua</Label>
+              <Combobox
+                options={streets.map((s) => ({
+                  value: s.id,
+                  label: s.name,
+                  hint: neighborhoods.find((n) => n.id === s.neighborhood_id)?.name,
+                }))}
+                value={streetId}
+                onChange={(v) => {
+                  setStreetId(v);
+                  const st = streets.find((s) => s.id === v);
+                  if (st) {
+                    setStreetName(st.name);
+                    if (st.neighborhood_id) setNeighborhoodId(st.neighborhood_id);
+                  }
+                }}
+                placeholder="Pesquisar rua"
+                searchPlaceholder="Digite o nome da rua"
+                emptyText="Rua não cadastrada."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editNumber">Número</Label>
+              <Input
+                id="editNumber"
+                className="h-11"
+                inputMode="numeric"
+                value={number}
+                onChange={(e) => setNumber(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Bairro</Label>
+            <Combobox
+              options={neighborhoods.map((n) => ({ value: n.id, label: n.name, hint: n.city }))}
+              value={neighborhoodId}
+              onChange={setNeighborhoodId}
+              placeholder="Selecione o bairro"
+            />
+          </div>
+
+          {compatibleProducts.length > 0 && (
+            <div className="space-y-2">
+              <Label>Soluções de interesse</Label>
+              <div className="grid gap-2">
+                {compatibleProducts.map((p) => (
+                  <label
+                    key={p.id}
+                    className="flex cursor-pointer items-center gap-3 rounded-xl border p-3 text-sm"
+                  >
+                    <Checkbox
+                      checked={productIds.includes(p.id)}
+                      onCheckedChange={(v) =>
+                        setProductIds((prev) =>
+                          v ? [...prev, p.id] : prev.filter((pid) => pid !== p.id),
+                        )
+                      }
+                    />
+                    <span className="min-w-0 font-medium">{p.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {fields.length > 0 && (
+            <div className="space-y-3">
+              <Label>Qualificação do segmento</Label>
+              {fields.map((f) => (
+                <div key={f.id} className="space-y-2">
+                  <Label htmlFor={`edit-${f.id}`}>
+                    {f.label} {f.required ? "*" : ""}
+                  </Label>
+                  <DynamicField
+                    id={`edit-${f.id}`}
+                    type={f.field_type}
+                    options={toOptions(f.options)}
+                    value={custom[f.id]}
+                    onChange={(v) => setCustom((prev) => ({ ...prev, [f.id]: v }))}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="editNotes">Observações da visita</Label>
+            <Textarea id="editNotes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button className="h-11 w-full sm:w-auto" onClick={save} disabled={saving}>
+            Salvar alterações
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function Info({ label, value }: { label: string; value: string }) {
+
   return (
     <div className="min-w-0">
       <dt className="text-xs text-muted-foreground">{label}</dt>
