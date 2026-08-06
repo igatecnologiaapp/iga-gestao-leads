@@ -186,9 +186,9 @@ function Produtos() {
                 <p className="truncate text-xs text-muted-foreground">{p.description}</p>
               )}
               <div className="mt-2 flex flex-wrap gap-1">
-                {(segmentsOf.get(p.id) ?? []).map((s) => (
+                {Array.from(new Set(segmentsOf.get(p.id) ?? [])).map((s) => (
                   <span
-                    key={s}
+                    key={`${p.id}-${s}`}
                     className="rounded-full border bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
                   >
                     {s}
