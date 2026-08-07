@@ -58,11 +58,12 @@ function Dashboard() {
   const { data: leadProducts = [] } = useQuery({
     queryKey: ["lead_products", "dashboard"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("lead_products").select("product_id");
+      const { data, error } = await supabase.from("lead_products").select("product_id, lead_id");
       if (error) throw error;
-      return data as { product_id: string }[];
+      return data as { product_id: string; lead_id: string }[];
     },
   });
+
 
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
