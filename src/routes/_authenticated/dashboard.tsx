@@ -86,14 +86,18 @@ function Dashboard() {
     value: leads.filter((l) => l.status === s.value).length,
   })).filter((d) => d.value > 0);
 
+  const activeLeadIds = new Set(leads.map((l) => l.id));
+  const activeLeadProducts = leadProducts.filter((lp) => activeLeadIds.has(lp.lead_id));
+
   const topProducts = products
     .map((p) => ({
       name: p.name,
-      value: leadProducts.filter((lp) => lp.product_id === p.id).length,
+      value: activeLeadProducts.filter((lp) => lp.product_id === p.id).length,
     }))
     .filter((d) => d.value > 0)
     .sort((a, b) => b.value - a.value)
     .slice(0, 6);
+
 
   const chartColors = [
     "var(--chart-1)",
