@@ -93,7 +93,8 @@ export function Combobox({
               ))}
               {onCreate ? (
                 <CommandItem
-                  value={`__create__ ${search}`}
+                  forceMount
+                  value="__create__"
                   onSelect={() => {
                     onCreate(search);
                     setOpen(false);
@@ -103,6 +104,7 @@ export function Combobox({
                   {createLabel}
                 </CommandItem>
               ) : null}
+
             </CommandGroup>
           </CommandList>
         </Command>
