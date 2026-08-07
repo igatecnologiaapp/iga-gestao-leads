@@ -58,11 +58,12 @@ function Dashboard() {
   const { data: leadProducts = [] } = useQuery({
     queryKey: ["lead_products", "dashboard"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("lead_products").select("product_id");
+      const { data, error } = await supabase.from("lead_products").select("product_id, lead_id");
       if (error) throw error;
-      return data as { product_id: string }[];
+      return data as { product_id: string; lead_id: string }[];
     },
   });
+
 
   const now = new Date();
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -85,14 +86,18 @@ function Dashboard() {
     value: leads.filter((l) => l.status === s.value).length,
   })).filter((d) => d.value > 0);
 
+  const activeLeadIds = new Set(leads.map((l) => l.id));
+  const activeLeadProducts = leadProducts.filter((lp) => activeLeadIds.has(lp.lead_id));
+
   const topProducts = products
     .map((p) => ({
       name: p.name,
-      value: leadProducts.filter((lp) => lp.product_id === p.id).length,
+      value: activeLeadProducts.filter((lp) => lp.product_id === p.id).length,
     }))
     .filter((d) => d.value > 0)
     .sort((a, b) => b.value - a.value)
     .slice(0, 6);
+
 
   const chartColors = [
     "var(--chart-1)",

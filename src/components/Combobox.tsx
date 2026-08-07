@@ -43,6 +43,18 @@ export function Combobox({
   const [search, setSearch] = useState("");
   const selected = options.find((o) => o.value === value);
 
+  const normalize = (v: string) =>
+    v
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+
+  const query = normalize(search);
+  const visible = query
+    ? options.filter((o) => normalize(`${o.label} ${o.hint ?? ""}`).includes(query))
+    : options;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -61,19 +73,19 @@ export function Combobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <Command>
+        <Command shouldFilter={false}>
           <CommandInput
             placeholder={searchPlaceholder}
             value={search}
             onValueChange={setSearch}
           />
           <CommandList>
-            <CommandEmpty>{emptyText}</CommandEmpty>
+            {!visible.length && !onCreate ? <CommandEmpty>{emptyText}</CommandEmpty> : null}
             <CommandGroup>
-              {options.map((option) => (
+              {visible.map((option) => (
                 <CommandItem
                   key={option.value}
-                  value={`${option.label} ${option.hint ?? ""}`}
+                  value={option.value}
                   onSelect={() => {
                     onChange(option.value === value ? null : option.value, option);
                     setOpen(false);
@@ -93,7 +105,7 @@ export function Combobox({
               ))}
               {onCreate ? (
                 <CommandItem
-                  value={`__create__ ${search}`}
+                  value="__create__"
                   onSelect={() => {
                     onCreate(search);
                     setOpen(false);
@@ -110,3 +122,4 @@ export function Combobox({
     </Popover>
   );
 }
+
