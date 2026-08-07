@@ -248,10 +248,27 @@ function LeadDetail() {
       </div>
 
       {isAdmin && (
-        <Button variant="outline" className="text-destructive" onClick={softDelete}>
-          <Trash2 className="h-4 w-4" /> Excluir lead
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" className="text-destructive">
+              <Trash2 className="h-4 w-4" /> Excluir lead
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir este lead?</AlertDialogTitle>
+              <AlertDialogDescription>
+                O lead deixará de aparecer nas listagens e indicadores. O histórico é preservado.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={softDelete}>Excluir</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       )}
+
       <div className="h-10 md:hidden" />
 
       <EditLeadDialog
