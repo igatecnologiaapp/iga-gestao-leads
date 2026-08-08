@@ -83,7 +83,6 @@ function CaptarLead() {
   const [newStreetOpen, setNewStreetOpen] = useState(false);
   const [newStreetName, setNewStreetName] = useState("");
   const [newStreetNb, setNewStreetNb] = useState<string | null>(null);
-  const [newStreetDup, setNewStreetDup] = useState<string | null>(null);
 
 
   const { data: fields = [] } = useSegmentFields(segmentId);
@@ -175,7 +174,6 @@ function CaptarLead() {
     await queryClient.invalidateQueries({ queryKey: ["streets"] });
     setNewStreetOpen(false);
     setNewStreetName("");
-    setNewStreetDup(null);
     setStreetId(data.id);
     setStreetName(data.name);
     if (data.neighborhood_id) setNeighborhoodId(data.neighborhood_id);
@@ -228,9 +226,11 @@ function CaptarLead() {
         street_name: streetName || null,
         number: number || null,
         neighborhood_id: neighborhoodId,
-        neighborhood_name: nb?.name ?? null,
-        city: nb?.city ?? null,
-        state: nb?.state ?? null,
+        neighborhood_name: nb?.name ?? (neighborhoodName || null),
+        city: nb?.city || cityUf?.city || null,
+        state: nb?.state || cityUf?.state || null,
+        postal_code: cep || null,
+        next_contact_date: nextContactDate || null,
         notes: notes.trim() || null,
         created_by: userData.user!.id,
       })
