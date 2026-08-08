@@ -38,6 +38,79 @@ export function maskPhone(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
+/** Máscara de CEP: 00000-000 */
+export function maskCep(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 5) return digits;
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+}
+
+export function isCepComplete(value: string): boolean {
+  return value.replace(/\D/g, "").length === 8;
+}
+
+export type CepAddress = {
+  street: string;
+  neighborhood: string;
+  city: string;
+  state: string;
+};
+
+export type CepLookup =
+  | { status: "ok"; address: CepAddress }
+  | { status: "not_found" }
+  | { status: "unavailable" };
+
+/** Consulta de CEP via ViaCEP (serviço público, sem chave de API). */
+export async function lookupCep(cep: string): Promise<CepLookup> {
+  const digits = cep.replace(/\D/g, "");
+  if (digits.length !== 8) return { status: "not_found" };
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+    if (!res.ok) return { status: "unavailable" };
+    const data = (await res.json()) as {
+      erro?: boolean | string;
+      logradouro?: string;
+      bairro?: string;
+      localidade?: string;
+      uf?: string;
+    };
+    if (data.erro) return { status: "not_found" };
+    return {
+      status: "ok",
+      address: {
+        street: data.logradouro ?? "",
+        neighborhood: data.bairro ?? "",
+        city: data.localidade ?? "",
+        state: data.uf ?? "",
+      },
+    };
+  } catch {
+    return { status: "unavailable" };
+  }
+}
+
+/** Normaliza nomes de rua/bairro para comparação (sem acento, sem prefixo, minúsculo). */
+export function normalizePlace(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[.:,]/g, " ")
+    .replace(/\b(rua|r|avenida|av|travessa|tv|alameda|al|praca|estrada|est|rodovia|rod)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Data "yyyy-mm-dd" -> "dd/mm/aaaa" sem deslocamento de fuso. */
+export function formatDateOnly(value: string | null | undefined): string {
+  if (!value) return "-";
+  const [y, m, d] = value.slice(0, 10).split("-");
+  if (!y || !m || !d) return value;
+  return `${d}/${m}/${y}`;
+}
+
+
 export const FIELD_TYPES = [
   { value: "text", label: "Texto" },
   { value: "number", label: "Número" },

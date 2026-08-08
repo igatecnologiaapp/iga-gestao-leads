@@ -38,7 +38,16 @@ import {
 import { Combobox } from "@/components/Combobox";
 import { DynamicField } from "@/components/DynamicField";
 import { StatusBadge } from "@/components/StatusBadge";
-import { LEAD_STATUSES, formatDateTime, maskPhone } from "@/lib/leads";
+import {
+  LEAD_STATUSES,
+  formatDateOnly,
+  formatDateTime,
+  isCepComplete,
+  lookupCep,
+  maskCep,
+  maskPhone,
+  normalizePlace,
+} from "@/lib/leads";
 import {
   useAllSegmentFields,
   useNeighborhoods,
@@ -175,11 +184,13 @@ function LeadDetail() {
         <dl className="mt-5 grid gap-4 sm:grid-cols-2">
           <Info label="Contato" value={lead.contact_name ?? "-"} />
           <Info label="Telefone" value={lead.phone ?? "-"} />
+          <Info label="CEP" value={lead.postal_code ?? "-"} />
           <Info
             label="Endereço"
             value={`${lead.street_name ?? "-"}${lead.number ? ", " + lead.number : ""}`}
           />
           <Info label="Bairro" value={lead.neighborhood_name ?? "-"} />
+          <Info label="Previsão de retorno" value={formatDateOnly(lead.next_contact_date)} />
           <Info label="Captado em" value={formatDateTime(lead.created_at)} />
           <Info label="Cidade / UF" value={[lead.city, lead.state].filter(Boolean).join(" / ") || "-"} />
         </dl>
@@ -312,6 +323,8 @@ type LeadRow = {
   street_name: string | null;
   number: string | null;
   neighborhood_id: string | null;
+  postal_code: string | null;
+  next_contact_date: string | null;
   notes: string | null;
 };
 
@@ -345,6 +358,12 @@ function EditLeadDialog({
   const [streetName, setStreetName] = useState(lead.street_name ?? "");
   const [number, setNumber] = useState(lead.number ?? "");
   const [neighborhoodId, setNeighborhoodId] = useState<string | null>(lead.neighborhood_id);
+  const [neighborhoodName, setNeighborhoodName] = useState("");
+  const [cep, setCep] = useState(lead.postal_code ?? "");
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepMessage, setCepMessage] = useState<string | null>(null);
+  const [cityUf, setCityUf] = useState<{ city: string; state: string } | null>(null);
+  const [nextContactDate, setNextContactDate] = useState(lead.next_contact_date ?? "");
   const [productIds, setProductIds] = useState<string[]>(initialProducts);
   const [custom, setCustom] = useState<Record<string, unknown>>({});
   const [notes, setNotes] = useState(lead.notes ?? "");
@@ -360,6 +379,11 @@ function EditLeadDialog({
     setStreetName(lead.street_name ?? "");
     setNumber(lead.number ?? "");
     setNeighborhoodId(lead.neighborhood_id);
+    setNeighborhoodName("");
+    setCep(lead.postal_code ?? "");
+    setCepMessage(null);
+    setCityUf(null);
+    setNextContactDate(lead.next_contact_date ?? "");
     setProductIds(initialProducts);
     setNotes(lead.notes ?? "");
     setCustom(Object.fromEntries(customValues.map((cv) => [cv.field_id, cv.value])));
@@ -378,6 +402,44 @@ function EditLeadDialog({
     );
     return products.filter((p) => ids.has(p.id) && p.active);
   }, [segmentId, segmentProducts, products]);
+
+  async function handleCep(value: string) {
+    const masked = maskCep(value);
+    setCep(masked);
+    setCepMessage(null);
+    if (!isCepComplete(masked)) return;
+    setCepLoading(true);
+    const result = await lookupCep(masked);
+    setCepLoading(false);
+    if (result.status === "unavailable") {
+      setCepMessage("Busca automática indisponível no momento. Preencha o endereço manualmente.");
+      return;
+    }
+    if (result.status === "not_found") {
+      setCepMessage("CEP não localizado. Você pode preencher o endereço manualmente.");
+      return;
+    }
+    const { street, neighborhood, city, state } = result.address;
+    setCityUf({ city, state });
+    const nb = neighborhood
+      ? neighborhoods.find((n) => normalizePlace(n.name) === normalizePlace(neighborhood))
+      : undefined;
+    setNeighborhoodName(neighborhood);
+    setNeighborhoodId(nb?.id ?? null);
+    const existing = street
+      ? streets.find((st) => normalizePlace(st.name) === normalizePlace(street))
+      : undefined;
+    if (existing) {
+      setStreetId(existing.id);
+      setStreetName(existing.name);
+      if (existing.neighborhood_id) setNeighborhoodId(existing.neighborhood_id);
+      setCepMessage("Endereço preenchido pelo CEP (rua já cadastrada).");
+    } else {
+      setStreetId(null);
+      setStreetName(street);
+      setCepMessage("Endereço preenchido pelo CEP. Esta rua ainda não está cadastrada.");
+    }
+  }
 
   async function save() {
     if (!company.trim()) {
@@ -403,9 +465,11 @@ function EditLeadDialog({
         street_name: streetName || null,
         number: number || null,
         neighborhood_id: neighborhoodId,
-        neighborhood_name: nb?.name ?? null,
-        city: nb?.city ?? null,
-        state: nb?.state ?? null,
+        neighborhood_name: nb?.name ?? (neighborhoodName || null),
+        city: nb?.city || cityUf?.city || null,
+        state: nb?.state || cityUf?.state || null,
+        postal_code: cep || null,
+        next_contact_date: nextContactDate || null,
         notes: notes.trim() || null,
       })
       .eq("id", lead.id);
@@ -432,12 +496,31 @@ function EditLeadDialog({
     if (rows.length) await supabase.from("lead_custom_values").insert(rows);
 
     const { data: userData } = await supabase.auth.getUser();
-    await supabase.from("lead_history").insert({
-      lead_id: lead.id,
-      user_id: userData.user?.id ?? null,
-      event_type: "edicao",
-      description: "Dados do lead atualizados",
-    });
+    const historyRows: {
+      lead_id: string;
+      user_id: string | null;
+      event_type: string;
+      description: string;
+    }[] = [
+      {
+        lead_id: lead.id,
+        user_id: userData.user?.id ?? null,
+        event_type: "edicao",
+        description: "Dados do lead atualizados",
+      },
+    ];
+    const previousReturn = lead.next_contact_date ?? "";
+    if (previousReturn !== nextContactDate) {
+      historyRows.push({
+        lead_id: lead.id,
+        user_id: userData.user?.id ?? null,
+        event_type: "retorno",
+        description: nextContactDate
+          ? `Previsão de retorno alterada para ${formatDateOnly(nextContactDate)}.`
+          : "Previsão de retorno removida.",
+      });
+    }
+    await supabase.from("lead_history").insert(historyRows);
 
     setSaving(false);
     toast.success("Lead atualizado.");
@@ -486,6 +569,19 @@ function EditLeadDialog({
               placeholder="Selecione o segmento"
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="editCep">CEP</Label>
+            <Input
+              id="editCep"
+              className="h-11"
+              inputMode="numeric"
+              placeholder="00000-000"
+              value={cep}
+              onChange={(e) => void handleCep(e.target.value)}
+            />
+            {cepLoading && <p className="text-xs text-muted-foreground">Consultando CEP...</p>}
+            {cepMessage && <p className="text-xs text-muted-foreground">{cepMessage}</p>}
+          </div>
           <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <div className="space-y-2">
               <Label>Rua</Label>
@@ -508,6 +604,14 @@ function EditLeadDialog({
                 searchPlaceholder="Digite o nome da rua"
                 emptyText="Rua não cadastrada."
               />
+              {!streetId && streetName && (
+                <Input
+                  className="h-11"
+                  aria-label="Nome da rua (não cadastrada)"
+                  value={streetName}
+                  onChange={(e) => setStreetName(e.target.value)}
+                />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="editNumber">Número</Label>
@@ -525,9 +629,36 @@ function EditLeadDialog({
             <Combobox
               options={neighborhoods.map((n) => ({ value: n.id, label: n.name, hint: n.city }))}
               value={neighborhoodId}
-              onChange={setNeighborhoodId}
+              onChange={(v) => {
+                setNeighborhoodId(v);
+                setNeighborhoodName(neighborhoods.find((n) => n.id === v)?.name ?? "");
+              }}
               placeholder="Selecione o bairro"
             />
+            {!neighborhoodId && neighborhoodName && (
+              <p className="text-xs text-muted-foreground">
+                Bairro informado pelo CEP: {neighborhoodName} (ainda não cadastrado)
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="editNextContact">Previsão de retorno</Label>
+            <div className="flex gap-2">
+              <Input
+                id="editNextContact"
+                type="date"
+                className="h-11"
+                value={nextContactDate}
+                onChange={(e) => setNextContactDate(e.target.value)}
+              />
+              {nextContactDate && (
+                <Button type="button" variant="outline" className="h-11"
+                  onClick={() => setNextContactDate("")}>
+                  Limpar
+                </Button>
+              )}
+            </div>
           </div>
 
           {compatibleProducts.length > 0 && (

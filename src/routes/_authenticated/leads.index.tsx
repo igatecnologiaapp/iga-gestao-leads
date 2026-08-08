@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/StatusBadge";
-import { LEAD_STATUSES, formatDate } from "@/lib/leads";
+import { LEAD_STATUSES, formatDate, formatDateOnly } from "@/lib/leads";
 import { useAllLeadProducts, useProducts, useSegments } from "@/lib/queries";
 
 
@@ -48,6 +48,7 @@ type Lead = {
   number: string | null;
   neighborhood_name: string | null;
   status: string;
+  next_contact_date: string | null;
   created_at: string;
   created_by: string;
 };
@@ -75,7 +76,7 @@ function LeadsList() {
       const { data, error } = await supabase
         .from("leads")
         .select(
-          "id, company_name, contact_name, phone, segment_id, street_name, number, neighborhood_name, status, created_at, created_by",
+          "id, company_name, contact_name, phone, segment_id, street_name, number, neighborhood_name, status, next_contact_date, created_at, created_by",
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -293,6 +294,11 @@ function LeadsList() {
                 {segmentName(l.segment_id)} · {l.street_name ?? "-"}
                 {l.number ? `, ${l.number}` : ""} · {l.neighborhood_name ?? "-"}
               </p>
+              {l.next_contact_date && (
+                <p className="mt-1 text-xs font-semibold text-primary">
+                  Retorno: {formatDateOnly(l.next_contact_date)}
+                </p>
+              )}
             </Link>
             <div className="mt-3">
               <Select value={l.status} onValueChange={(v) => changeStatus(l.id, v)}>
@@ -321,6 +327,7 @@ function LeadsList() {
               <TableHead>Segmento</TableHead>
               <TableHead>Endereço</TableHead>
               <TableHead>Captado em</TableHead>
+              <TableHead>Retorno</TableHead>
               <TableHead>Responsável</TableHead>
               <TableHead className="w-[190px]">Status</TableHead>
             </TableRow>
@@ -344,6 +351,7 @@ function LeadsList() {
                   <div className="text-xs text-muted-foreground">{l.neighborhood_name ?? "-"}</div>
                 </TableCell>
                 <TableCell className="text-sm">{formatDate(l.created_at)}</TableCell>
+                <TableCell className="text-sm">{formatDateOnly(l.next_contact_date)}</TableCell>
                 <TableCell className="text-sm">{ownerName(l.created_by)}</TableCell>
                 <TableCell>
                   <Select value={l.status} onValueChange={(v) => changeStatus(l.id, v)}>
@@ -359,7 +367,7 @@ function LeadsList() {
             ))}
             {!filtered.length && (
               <TableRow>
-                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
                   Nenhum lead encontrado.
                 </TableCell>
               </TableRow>
