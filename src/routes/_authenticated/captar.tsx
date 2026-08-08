@@ -512,7 +512,31 @@ function CaptarLead() {
               <Label htmlFor="newStreet">Nome da rua</Label>
               <Input id="newStreet" className="h-11" value={newStreetName}
                 onChange={(e) => setNewStreetName(e.target.value)} />
+              {(() => {
+                const dup = newStreetName.trim()
+                  ? streets.find(
+                      (s) => normalizePlace(s.name) === normalizePlace(newStreetName),
+                    )
+                  : undefined;
+                if (!dup) return null;
+                return (
+                  <div className="rounded-lg border border-warning/40 bg-warning/10 p-2 text-xs">
+                    Já existe uma rua parecida cadastrada: <strong>{dup.name}</strong>.{" "}
+                    <button
+                      type="button"
+                      className="font-semibold underline"
+                      onClick={() => {
+                        setNewStreetOpen(false);
+                        selectStreet(dup.id);
+                      }}
+                    >
+                      Usar a rua existente
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
+
             <div className="space-y-2">
               <Label>Bairro</Label>
               <Combobox
