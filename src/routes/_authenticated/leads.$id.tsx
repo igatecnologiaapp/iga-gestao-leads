@@ -403,6 +403,44 @@ function EditLeadDialog({
     return products.filter((p) => ids.has(p.id) && p.active);
   }, [segmentId, segmentProducts, products]);
 
+  async function handleCep(value: string) {
+    const masked = maskCep(value);
+    setCep(masked);
+    setCepMessage(null);
+    if (!isCepComplete(masked)) return;
+    setCepLoading(true);
+    const result = await lookupCep(masked);
+    setCepLoading(false);
+    if (result.status === "unavailable") {
+      setCepMessage("Busca automática indisponível no momento. Preencha o endereço manualmente.");
+      return;
+    }
+    if (result.status === "not_found") {
+      setCepMessage("CEP não localizado. Você pode preencher o endereço manualmente.");
+      return;
+    }
+    const { street, neighborhood, city, state } = result.address;
+    setCityUf({ city, state });
+    const nb = neighborhood
+      ? neighborhoods.find((n) => normalizePlace(n.name) === normalizePlace(neighborhood))
+      : undefined;
+    setNeighborhoodName(neighborhood);
+    setNeighborhoodId(nb?.id ?? null);
+    const existing = street
+      ? streets.find((st) => normalizePlace(st.name) === normalizePlace(street))
+      : undefined;
+    if (existing) {
+      setStreetId(existing.id);
+      setStreetName(existing.name);
+      if (existing.neighborhood_id) setNeighborhoodId(existing.neighborhood_id);
+      setCepMessage("Endereço preenchido pelo CEP (rua já cadastrada).");
+    } else {
+      setStreetId(null);
+      setStreetName(street);
+      setCepMessage("Endereço preenchido pelo CEP. Esta rua ainda não está cadastrada.");
+    }
+  }
+
   async function save() {
     if (!company.trim()) {
       toast.error("Informe o nome da empresa.");
@@ -531,6 +569,19 @@ function EditLeadDialog({
               placeholder="Selecione o segmento"
             />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="editCep">CEP</Label>
+            <Input
+              id="editCep"
+              className="h-11"
+              inputMode="numeric"
+              placeholder="00000-000"
+              value={cep}
+              onChange={(e) => void handleCep(e.target.value)}
+            />
+            {cepLoading && <p className="text-xs text-muted-foreground">Consultando CEP...</p>}
+            {cepMessage && <p className="text-xs text-muted-foreground">{cepMessage}</p>}
+          </div>
           <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <div className="space-y-2">
               <Label>Rua</Label>
@@ -553,6 +604,14 @@ function EditLeadDialog({
                 searchPlaceholder="Digite o nome da rua"
                 emptyText="Rua não cadastrada."
               />
+              {!streetId && streetName && (
+                <Input
+                  className="h-11"
+                  aria-label="Nome da rua (não cadastrada)"
+                  value={streetName}
+                  onChange={(e) => setStreetName(e.target.value)}
+                />
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="editNumber">Número</Label>
@@ -570,9 +629,36 @@ function EditLeadDialog({
             <Combobox
               options={neighborhoods.map((n) => ({ value: n.id, label: n.name, hint: n.city }))}
               value={neighborhoodId}
-              onChange={setNeighborhoodId}
+              onChange={(v) => {
+                setNeighborhoodId(v);
+                setNeighborhoodName(neighborhoods.find((n) => n.id === v)?.name ?? "");
+              }}
               placeholder="Selecione o bairro"
             />
+            {!neighborhoodId && neighborhoodName && (
+              <p className="text-xs text-muted-foreground">
+                Bairro informado pelo CEP: {neighborhoodName} (ainda não cadastrado)
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="editNextContact">Previsão de retorno</Label>
+            <div className="flex gap-2">
+              <Input
+                id="editNextContact"
+                type="date"
+                className="h-11"
+                value={nextContactDate}
+                onChange={(e) => setNextContactDate(e.target.value)}
+              />
+              {nextContactDate && (
+                <Button type="button" variant="outline" className="h-11"
+                  onClick={() => setNextContactDate("")}>
+                  Limpar
+                </Button>
+              )}
+            </div>
           </div>
 
           {compatibleProducts.length > 0 && (
