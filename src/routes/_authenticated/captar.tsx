@@ -399,12 +399,39 @@ function CaptarLead() {
                   hint: n.city,
                 }))}
                 value={neighborhoodId}
-                onChange={setNeighborhoodId}
+                onChange={(v) => {
+                  setNeighborhoodId(v);
+                  setNeighborhoodName(neighborhoods.find((n) => n.id === v)?.name ?? "");
+                }}
                 placeholder="Selecione o bairro"
               />
+              {!neighborhoodId && neighborhoodName && (
+                <p className="text-xs text-muted-foreground">
+                  Bairro informado pelo CEP: {neighborhoodName} (ainda não cadastrado)
+                </p>
+              )}
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="nextContact">Previsão de retorno</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="nextContact"
+                  type="date"
+                  className="h-11"
+                  value={nextContactDate}
+                  onChange={(e) => setNextContactDate(e.target.value)}
+                />
+                {nextContactDate && (
+                  <Button type="button" variant="outline" className="h-11"
+                    onClick={() => setNextContactDate("")}>
+                    Limpar
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </section>
+
 
         {segmentId && compatibleProducts.length > 0 && (
           <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
