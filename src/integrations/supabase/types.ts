@@ -163,9 +163,11 @@ export type Database = {
           longitude: number | null
           neighborhood_id: string | null
           neighborhood_name: string | null
+          next_contact_date: string | null
           notes: string | null
           number: string | null
           phone: string | null
+          postal_code: string | null
           segment_id: string | null
           state: string | null
           status: Database["public"]["Enums"]["lead_status"]
@@ -185,9 +187,11 @@ export type Database = {
           longitude?: number | null
           neighborhood_id?: string | null
           neighborhood_name?: string | null
+          next_contact_date?: string | null
           notes?: string | null
           number?: string | null
           phone?: string | null
+          postal_code?: string | null
           segment_id?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
@@ -207,9 +211,11 @@ export type Database = {
           longitude?: number | null
           neighborhood_id?: string | null
           neighborhood_name?: string | null
+          next_contact_date?: string | null
           notes?: string | null
           number?: string | null
           phone?: string | null
+          postal_code?: string | null
           segment_id?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
