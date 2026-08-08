@@ -68,6 +68,12 @@ function CaptarLead() {
   const [streetName, setStreetName] = useState("");
   const [number, setNumber] = useState("");
   const [neighborhoodId, setNeighborhoodId] = useState<string | null>(null);
+  const [neighborhoodName, setNeighborhoodName] = useState("");
+  const [cep, setCep] = useState("");
+  const [cepLoading, setCepLoading] = useState(false);
+  const [cepMessage, setCepMessage] = useState<string | null>(null);
+  const [cityUf, setCityUf] = useState<{ city: string; state: string } | null>(null);
+  const [nextContactDate, setNextContactDate] = useState("");
   const [productIds, setProductIds] = useState<string[]>([]);
   const [custom, setCustom] = useState<Record<string, unknown>>({});
   const [notes, setNotes] = useState("");
@@ -77,6 +83,8 @@ function CaptarLead() {
   const [newStreetOpen, setNewStreetOpen] = useState(false);
   const [newStreetName, setNewStreetName] = useState("");
   const [newStreetNb, setNewStreetNb] = useState<string | null>(null);
+  const [newStreetDup, setNewStreetDup] = useState<string | null>(null);
+
 
   const { data: fields = [] } = useSegmentFields(segmentId);
 
