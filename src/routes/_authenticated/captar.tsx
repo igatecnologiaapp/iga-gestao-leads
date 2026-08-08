@@ -28,7 +28,14 @@ import {
   useStreets,
   toOptions,
 } from "@/lib/queries";
-import { maskPhone } from "@/lib/leads";
+import {
+  isCepComplete,
+  lookupCep,
+  maskCep,
+  maskPhone,
+  normalizePlace,
+} from "@/lib/leads";
+
 
 export const Route = createFileRoute("/_authenticated/captar")({
   head: () => ({
