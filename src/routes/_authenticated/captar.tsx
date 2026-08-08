@@ -115,6 +115,52 @@ function CaptarLead() {
     }
   }
 
+  async function handleCep(value: string) {
+    const masked = maskCep(value);
+    setCep(masked);
+    setCepMessage(null);
+    if (!isCepComplete(masked)) return;
+    setCepLoading(true);
+    const result = await lookupCep(masked);
+    setCepLoading(false);
+    if (result.status === "unavailable") {
+      setCepMessage("Busca automática indisponível no momento. Preencha o endereço manualmente.");
+      return;
+    }
+    if (result.status === "not_found") {
+      setCepMessage("CEP não localizado. Você pode preencher o endereço manualmente.");
+      return;
+    }
+    const { street, neighborhood, city, state } = result.address;
+    setCityUf({ city, state });
+    // Bairro: reaproveita cadastro existente quando houver
+    const nb = neighborhood
+      ? neighborhoods.find((n) => normalizePlace(n.name) === normalizePlace(neighborhood))
+      : undefined;
+    setNeighborhoodName(neighborhood);
+    setNeighborhoodId(nb?.id ?? null);
+    // Rua: nunca cria automaticamente, apenas reutiliza cadastro existente
+    const existing = street
+      ? streets.find((s) => normalizePlace(s.name) === normalizePlace(street))
+      : undefined;
+    if (existing) {
+      setStreetId(existing.id);
+      setStreetName(existing.name);
+      if (existing.neighborhood_id) setNeighborhoodId(existing.neighborhood_id);
+    } else {
+      setStreetId(null);
+      setStreetName(street);
+    }
+    setCepMessage(
+      existing
+        ? "Endereço preenchido pelo CEP (rua já cadastrada)."
+        : street
+          ? "Endereço preenchido pelo CEP. Esta rua ainda não está cadastrada."
+          : "CEP encontrado, mas sem logradouro. Informe a rua manualmente.",
+    );
+    setTimeout(() => numberRef.current?.focus(), 60);
+  }
+
   async function createStreet() {
     if (!newStreetName.trim()) return;
     const { data, error } = await supabase
@@ -129,6 +175,7 @@ function CaptarLead() {
     await queryClient.invalidateQueries({ queryKey: ["streets"] });
     setNewStreetOpen(false);
     setNewStreetName("");
+    setNewStreetDup(null);
     setStreetId(data.id);
     setStreetName(data.name);
     if (data.neighborhood_id) setNeighborhoodId(data.neighborhood_id);
@@ -143,11 +190,17 @@ function CaptarLead() {
     setStreetName("");
     setNumber("");
     setNeighborhoodId(null);
+    setNeighborhoodName("");
+    setCep("");
+    setCepMessage(null);
+    setCityUf(null);
+    setNextContactDate("");
     setProductIds([]);
     setCustom({});
     setNotes("");
     setSavedId(null);
   }
+
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
