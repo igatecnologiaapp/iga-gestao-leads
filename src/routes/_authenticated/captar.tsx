@@ -338,6 +338,23 @@ function CaptarLead() {
             Endereço
           </h2>
           <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="cep">CEP</Label>
+              <div className="relative">
+                <Input
+                  id="cep"
+                  className="h-11"
+                  inputMode="numeric"
+                  placeholder="00000-000"
+                  value={cep}
+                  onChange={(e) => void handleCep(e.target.value)}
+                />
+                {cepLoading && (
+                  <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                )}
+              </div>
+              {cepMessage && <p className="text-xs text-muted-foreground">{cepMessage}</p>}
+            </div>
             <div className="space-y-2">
               <Label>Rua</Label>
               <Combobox
@@ -352,13 +369,22 @@ function CaptarLead() {
                 searchPlaceholder="Digite o nome da rua"
                 emptyText="Rua não cadastrada."
                 onCreate={(search) => {
-                  setNewStreetName(search);
+                  setNewStreetName(search || streetName);
                   setNewStreetNb(neighborhoodId);
                   setNewStreetOpen(true);
                 }}
                 createLabel="Cadastrar nova rua"
               />
+              {!streetId && streetName && (
+                <Input
+                  className="h-11"
+                  aria-label="Nome da rua (não cadastrada)"
+                  value={streetName}
+                  onChange={(e) => setStreetName(e.target.value)}
+                />
+              )}
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="number">Número</Label>
               <Input id="number" ref={numberRef} className="h-11" inputMode="numeric"
