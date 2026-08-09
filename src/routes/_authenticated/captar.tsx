@@ -18,6 +18,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Combobox } from "@/components/Combobox";
+import { AppointmentFields, emptyAppointment, type AppointmentDraft } from "@/components/AppointmentFields";
+import { fromLocalParts, formatAppointment } from "@/lib/appointments";
 import { DynamicField } from "@/components/DynamicField";
 import {
   useNeighborhoods,
@@ -73,7 +75,7 @@ function CaptarLead() {
   const [cepLoading, setCepLoading] = useState(false);
   const [cepMessage, setCepMessage] = useState<string | null>(null);
   const [cityUf, setCityUf] = useState<{ city: string; state: string } | null>(null);
-  const [nextContactDate, setNextContactDate] = useState("");
+  const [appointment, setAppointment] = useState<AppointmentDraft>(emptyAppointment);
   const [productIds, setProductIds] = useState<string[]>([]);
   const [custom, setCustom] = useState<Record<string, unknown>>({});
   const [notes, setNotes] = useState("");
@@ -192,7 +194,7 @@ function CaptarLead() {
     setCep("");
     setCepMessage(null);
     setCityUf(null);
-    setNextContactDate("");
+    setAppointment(emptyAppointment);
     setProductIds([]);
     setCustom({});
     setNotes("");
@@ -212,6 +214,10 @@ function CaptarLead() {
         return;
       }
     }
+    if ((appointment.date && !appointment.time) || (!appointment.date && appointment.time)) {
+      toast.error("Informe data e hora do agendamento.");
+      return;
+    }
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
     const nb = neighborhoods.find((n) => n.id === neighborhoodId);
@@ -230,7 +236,7 @@ function CaptarLead() {
         city: nb?.city || cityUf?.city || null,
         state: nb?.state || cityUf?.state || null,
         postal_code: cep || null,
-        next_contact_date: nextContactDate || null,
+        next_contact_date: appointment.date || null,
         notes: notes.trim() || null,
         created_by: userData.user!.id,
       })
@@ -252,6 +258,24 @@ function CaptarLead() {
       .filter(([, v]) => v !== undefined && v !== "" && v !== null)
       .map(([field_id, value]) => ({ lead_id: lead.id, field_id, value: value as never }));
     if (customRows.length) await supabase.from("lead_custom_values").insert(customRows);
+
+    const scheduledAt = fromLocalParts(appointment.date, appointment.time);
+    if (scheduledAt) {
+      await supabase.from("lead_appointments").insert({
+        lead_id: lead.id,
+        scheduled_at: scheduledAt,
+        contact_type_id: appointment.contactTypeId,
+        status: "agendado",
+        created_by: userData.user!.id,
+      });
+      await supabase.from("lead_history").insert({
+        lead_id: lead.id,
+        user_id: userData.user!.id,
+        event_type: "agendamento",
+        description: `Agendamento criado para ${formatAppointment(scheduledAt)}.`,
+      });
+    }
+    await queryClient.invalidateQueries({ queryKey: ["lead_appointments"] });
 
     await queryClient.invalidateQueries({ queryKey: ["leads"] });
     setSaving(false);
@@ -411,24 +435,23 @@ function CaptarLead() {
                 </p>
               )}
             </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="nextContact">Previsão de retorno</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="nextContact"
-                  type="date"
-                  className="h-11"
-                  value={nextContactDate}
-                  onChange={(e) => setNextContactDate(e.target.value)}
-                />
-                {nextContactDate && (
-                  <Button type="button" variant="outline" className="h-11"
-                    onClick={() => setNextContactDate("")}>
-                    Limpar
-                  </Button>
-                )}
-              </div>
-            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
+          <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">
+            Agendamento de contato
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Opcional. Informe data e hora juntas para registrar o agendamento.
+          </p>
+          <div className="mt-4">
+            <AppointmentFields
+              idPrefix="novo"
+              value={appointment}
+              onChange={setAppointment}
+              onClear={() => setAppointment(emptyAppointment)}
+            />
           </div>
         </section>
 

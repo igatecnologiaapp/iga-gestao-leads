@@ -124,3 +124,81 @@ export function toOptions(value: unknown): string[] {
   return [];
 }
 
+
+export type ContactType = {
+  id: string;
+  name: string;
+  icon: string | null;
+  active: boolean;
+  sort_order: number;
+};
+
+export type Appointment = {
+  id: string;
+  lead_id: string;
+  scheduled_at: string;
+  contact_type_id: string | null;
+  status: string;
+  notes: string | null;
+  created_by: string | null;
+};
+
+export function useContactTypes() {
+  return useQuery({
+    queryKey: ["contact_types"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contact_types")
+        .select("id, name, icon, active, sort_order")
+        .order("sort_order");
+      if (error) throw error;
+      return data as ContactType[];
+    },
+  });
+}
+
+/** Agendamentos visíveis ao usuário (RLS aplica as mesmas regras do lead). */
+export function useAppointments() {
+  return useQuery({
+    queryKey: ["lead_appointments", "all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_appointments")
+        .select("id, lead_id, scheduled_at, contact_type_id, status, notes, created_by")
+        .order("scheduled_at");
+      if (error) throw error;
+      return data as Appointment[];
+    },
+  });
+}
+
+export function useLeadAppointments(leadId: string) {
+  return useQuery({
+    queryKey: ["lead_appointments", leadId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_appointments")
+        .select("id, lead_id, scheduled_at, contact_type_id, status, notes, created_by")
+        .eq("lead_id", leadId)
+        .order("scheduled_at");
+      if (error) throw error;
+      return data as Appointment[];
+    },
+  });
+}
+
+export type ProfileLite = { id: string; full_name: string; email: string | null };
+
+export function useProfiles() {
+  return useQuery({
+    queryKey: ["profiles", "all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, email")
+        .order("full_name");
+      if (error) throw error;
+      return data as ProfileLite[];
+    },
+  });
+}
