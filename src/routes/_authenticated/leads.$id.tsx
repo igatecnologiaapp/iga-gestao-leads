@@ -43,7 +43,6 @@ import { AppointmentFields, emptyAppointment, type AppointmentDraft } from "@/co
 import { formatAppointment, fromLocalParts, toLocalParts } from "@/lib/appointments";
 import {
   LEAD_STATUSES,
-  formatDateOnly,
   formatDateTime,
   isCepComplete,
   lookupCep,
