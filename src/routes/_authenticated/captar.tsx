@@ -413,24 +413,23 @@ function CaptarLead() {
                 </p>
               )}
             </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="nextContact">Previsão de retorno</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="nextContact"
-                  type="date"
-                  className="h-11"
-                  value={nextContactDate}
-                  onChange={(e) => setNextContactDate(e.target.value)}
-                />
-                {nextContactDate && (
-                  <Button type="button" variant="outline" className="h-11"
-                    onClick={() => setNextContactDate("")}>
-                    Limpar
-                  </Button>
-                )}
-              </div>
-            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
+          <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">
+            Agendamento de contato
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Opcional. Informe data e hora juntas para registrar o agendamento.
+          </p>
+          <div className="mt-4">
+            <AppointmentFields
+              idPrefix="novo"
+              value={appointment}
+              onChange={setAppointment}
+              onClear={() => setAppointment(emptyAppointment)}
+            />
           </div>
         </section>
 
