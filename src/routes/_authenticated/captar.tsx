@@ -18,6 +18,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Combobox } from "@/components/Combobox";
+import { AppointmentFields, emptyAppointment, type AppointmentDraft } from "@/components/AppointmentFields";
+import { fromLocalParts, formatAppointment } from "@/lib/appointments";
 import { DynamicField } from "@/components/DynamicField";
 import {
   useNeighborhoods,
@@ -73,7 +75,7 @@ function CaptarLead() {
   const [cepLoading, setCepLoading] = useState(false);
   const [cepMessage, setCepMessage] = useState<string | null>(null);
   const [cityUf, setCityUf] = useState<{ city: string; state: string } | null>(null);
-  const [nextContactDate, setNextContactDate] = useState("");
+  const [appointment, setAppointment] = useState<AppointmentDraft>(emptyAppointment);
   const [productIds, setProductIds] = useState<string[]>([]);
   const [custom, setCustom] = useState<Record<string, unknown>>({});
   const [notes, setNotes] = useState("");
@@ -192,7 +194,7 @@ function CaptarLead() {
     setCep("");
     setCepMessage(null);
     setCityUf(null);
-    setNextContactDate("");
+    setAppointment(emptyAppointment);
     setProductIds([]);
     setCustom({});
     setNotes("");
@@ -230,7 +232,7 @@ function CaptarLead() {
         city: nb?.city || cityUf?.city || null,
         state: nb?.state || cityUf?.state || null,
         postal_code: cep || null,
-        next_contact_date: nextContactDate || null,
+        next_contact_date: appointment.date || null,
         notes: notes.trim() || null,
         created_by: userData.user!.id,
       })
