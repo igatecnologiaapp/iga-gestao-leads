@@ -8,6 +8,7 @@ import {
   Building2,
   Package,
   Radar,
+  CalendarClock,
 } from "lucide-react";
 import {
   Sidebar,
@@ -25,11 +26,15 @@ import { useAuth } from "@/hooks/useAuth";
 
 const groups = [
   {
+    label: "Insights",
+    items: [{ title: "Dashboard", url: "/dashboard", icon: LayoutDashboard }],
+  },
+  {
     label: "Operação",
     items: [
-      { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
       { title: "Captar Lead", url: "/captar", icon: PlusCircle },
       { title: "Leads", url: "/leads", icon: Users2 },
+      { title: "Agendamentos", url: "/dashboard", icon: CalendarClock },
     ],
   },
   {
@@ -77,7 +82,7 @@ export function AppSidebar() {
                   {group.items
                     .filter((i) => !("adminOnly" in i && i.adminOnly) || isAdmin)
                     .map((item) => (
-                      <SidebarMenuItem key={item.url}>
+                      <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                           asChild
                           tooltip={item.title}
