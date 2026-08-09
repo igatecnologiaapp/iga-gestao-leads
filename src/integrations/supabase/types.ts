@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      contact_types: {
+        Row: {
+          active: boolean
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lead_appointments: {
+        Row: {
+          contact_type_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          lead_id: string
+          notes: string | null
+          scheduled_at: string
+          status: Database["public"]["Enums"]["appointment_status"]
+          updated_at: string
+        }
+        Insert: {
+          contact_type_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_id: string
+          notes?: string | null
+          scheduled_at: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Update: {
+          contact_type_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          scheduled_at?: string
+          status?: Database["public"]["Enums"]["appointment_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_appointments_contact_type_id_fkey"
+            columns: ["contact_type_id"]
+            isOneToOne: false
+            referencedRelation: "contact_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_appointments_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_custom_values: {
         Row: {
           field_id: string
@@ -500,6 +581,7 @@ export type Database = {
     }
     Functions: {
       can_access_lead: { Args: { _lead_id: string }; Returns: boolean }
+      can_edit_lead: { Args: { _lead_id: string }; Returns: boolean }
       can_view_all_leads: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -511,6 +593,11 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "captador"
+      appointment_status:
+        | "agendado"
+        | "realizado"
+        | "nao_realizado"
+        | "cancelado"
       lead_status:
         | "novo"
         | "em_contato"
@@ -648,6 +735,12 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "captador"],
+      appointment_status: [
+        "agendado",
+        "realizado",
+        "nao_realizado",
+        "cancelado",
+      ],
       lead_status: [
         "novo",
         "em_contato",
