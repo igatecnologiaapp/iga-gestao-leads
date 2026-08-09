@@ -214,6 +214,10 @@ function CaptarLead() {
         return;
       }
     }
+    if ((appointment.date && !appointment.time) || (!appointment.date && appointment.time)) {
+      toast.error("Informe data e hora do agendamento.");
+      return;
+    }
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
     const nb = neighborhoods.find((n) => n.id === neighborhoodId);
@@ -254,6 +258,24 @@ function CaptarLead() {
       .filter(([, v]) => v !== undefined && v !== "" && v !== null)
       .map(([field_id, value]) => ({ lead_id: lead.id, field_id, value: value as never }));
     if (customRows.length) await supabase.from("lead_custom_values").insert(customRows);
+
+    const scheduledAt = fromLocalParts(appointment.date, appointment.time);
+    if (scheduledAt) {
+      await supabase.from("lead_appointments").insert({
+        lead_id: lead.id,
+        scheduled_at: scheduledAt,
+        contact_type_id: appointment.contactTypeId,
+        status: "agendado",
+        created_by: userData.user!.id,
+      });
+      await supabase.from("lead_history").insert({
+        lead_id: lead.id,
+        user_id: userData.user!.id,
+        event_type: "agendamento",
+        description: `Agendamento criado para ${formatAppointment(scheduledAt)}.`,
+      });
+    }
+    await queryClient.invalidateQueries({ queryKey: ["lead_appointments"] });
 
     await queryClient.invalidateQueries({ queryKey: ["leads"] });
     setSaving(false);
