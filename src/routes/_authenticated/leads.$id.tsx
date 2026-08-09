@@ -314,6 +314,7 @@ function LeadDetail() {
           void queryClient.invalidateQueries({ queryKey: ["lead_custom_values", id] });
           void queryClient.invalidateQueries({ queryKey: ["lead_history", id] });
           void queryClient.invalidateQueries({ queryKey: ["leads"] });
+          void queryClient.invalidateQueries({ queryKey: ["lead_appointments"] });
         }}
       />
     </div>
