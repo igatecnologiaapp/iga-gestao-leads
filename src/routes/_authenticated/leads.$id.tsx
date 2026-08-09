@@ -38,6 +38,9 @@ import {
 import { Combobox } from "@/components/Combobox";
 import { DynamicField } from "@/components/DynamicField";
 import { StatusBadge } from "@/components/StatusBadge";
+import { LeadAppointments } from "@/components/LeadAppointments";
+import { AppointmentFields, emptyAppointment, type AppointmentDraft } from "@/components/AppointmentFields";
+import { formatAppointment, fromLocalParts, toLocalParts } from "@/lib/appointments";
 import {
   LEAD_STATUSES,
   formatDateOnly,
@@ -50,6 +53,7 @@ import {
 } from "@/lib/leads";
 import {
   useAllSegmentFields,
+  useLeadAppointments,
   useNeighborhoods,
   useProducts,
   useSegmentProducts,
@@ -76,7 +80,7 @@ function LeadDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const { data: segments = [] } = useSegments();
   const { data: products = [] } = useProducts();
   const { data: allFields = [] } = useAllSegmentFields();
@@ -190,7 +194,6 @@ function LeadDetail() {
             value={`${lead.street_name ?? "-"}${lead.number ? ", " + lead.number : ""}`}
           />
           <Info label="Bairro" value={lead.neighborhood_name ?? "-"} />
-          <Info label="Previsão de retorno" value={formatDateOnly(lead.next_contact_date)} />
           <Info label="Captado em" value={formatDateTime(lead.created_at)} />
           <Info label="Cidade / UF" value={[lead.city, lead.state].filter(Boolean).join(" / ") || "-"} />
         </dl>
@@ -217,6 +220,11 @@ function LeadDetail() {
         </div>
       </div>
 
+
+      <LeadAppointments
+        leadId={lead.id}
+        canEdit={isAdmin || lead.created_by === user?.id}
+      />
 
       {selectedProducts.length > 0 && (
         <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)]">
@@ -363,7 +371,9 @@ function EditLeadDialog({
   const [cepLoading, setCepLoading] = useState(false);
   const [cepMessage, setCepMessage] = useState<string | null>(null);
   const [cityUf, setCityUf] = useState<{ city: string; state: string } | null>(null);
-  const [nextContactDate, setNextContactDate] = useState(lead.next_contact_date ?? "");
+  const { data: leadAppointments = [] } = useLeadAppointments(lead.id);
+  const nextAppointment = leadAppointments.find((a) => a.status === "agendado") ?? null;
+  const [appointment, setAppointment] = useState<AppointmentDraft>(emptyAppointment);
   const [productIds, setProductIds] = useState<string[]>(initialProducts);
   const [custom, setCustom] = useState<Record<string, unknown>>({});
   const [notes, setNotes] = useState(lead.notes ?? "");
@@ -383,12 +393,20 @@ function EditLeadDialog({
     setCep(lead.postal_code ?? "");
     setCepMessage(null);
     setCityUf(null);
-    setNextContactDate(lead.next_contact_date ?? "");
+    setAppointment(
+      nextAppointment
+        ? {
+            ...toLocalParts(nextAppointment.scheduled_at),
+            contactTypeId: nextAppointment.contact_type_id,
+            status: nextAppointment.status,
+          }
+        : emptyAppointment,
+    );
     setProductIds(initialProducts);
     setNotes(lead.notes ?? "");
     setCustom(Object.fromEntries(customValues.map((cv) => [cv.field_id, cv.value])));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, nextAppointment?.id]);
 
   const fields = useMemo(
     () => allFields.filter((f) => f.segment_id === segmentId).sort((a, b) => a.sort_order - b.sort_order),
@@ -469,7 +487,7 @@ function EditLeadDialog({
         city: nb?.city || cityUf?.city || null,
         state: nb?.state || cityUf?.state || null,
         postal_code: cep || null,
-        next_contact_date: nextContactDate || null,
+        next_contact_date: appointment.date || null,
         notes: notes.trim() || null,
       })
       .eq("id", lead.id);
@@ -509,15 +527,50 @@ function EditLeadDialog({
         description: "Dados do lead atualizados",
       },
     ];
-    const previousReturn = lead.next_contact_date ?? "";
-    if (previousReturn !== nextContactDate) {
+    const scheduledAt = fromLocalParts(appointment.date, appointment.time);
+    if (scheduledAt) {
+      if (nextAppointment) {
+        if (nextAppointment.scheduled_at !== scheduledAt) {
+          historyRows.push({
+            lead_id: lead.id,
+            user_id: userData.user?.id ?? null,
+            event_type: "agendamento",
+            description: `Agendamento alterado de ${formatAppointment(nextAppointment.scheduled_at)} para ${formatAppointment(scheduledAt)}.`,
+          });
+        }
+        await supabase
+          .from("lead_appointments")
+          .update({
+            scheduled_at: scheduledAt,
+            contact_type_id: appointment.contactTypeId,
+            status: appointment.status as never,
+          })
+          .eq("id", nextAppointment.id);
+      } else {
+        await supabase.from("lead_appointments").insert({
+          lead_id: lead.id,
+          scheduled_at: scheduledAt,
+          contact_type_id: appointment.contactTypeId,
+          status: "agendado",
+          created_by: userData.user?.id ?? null,
+        });
+        historyRows.push({
+          lead_id: lead.id,
+          user_id: userData.user?.id ?? null,
+          event_type: "agendamento",
+          description: `Agendamento criado para ${formatAppointment(scheduledAt)}.`,
+        });
+      }
+    } else if (nextAppointment) {
+      await supabase
+        .from("lead_appointments")
+        .update({ status: "cancelado" as never })
+        .eq("id", nextAppointment.id);
       historyRows.push({
         lead_id: lead.id,
         user_id: userData.user?.id ?? null,
-        event_type: "retorno",
-        description: nextContactDate
-          ? `Previsão de retorno alterada para ${formatDateOnly(nextContactDate)}.`
-          : "Previsão de retorno removida.",
+        event_type: "agendamento",
+        description: `Agendamento de ${formatAppointment(nextAppointment.scheduled_at)} cancelado.`,
       });
     }
     await supabase.from("lead_history").insert(historyRows);
@@ -642,23 +695,15 @@ function EditLeadDialog({
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="editNextContact">Previsão de retorno</Label>
-            <div className="flex gap-2">
-              <Input
-                id="editNextContact"
-                type="date"
-                className="h-11"
-                value={nextContactDate}
-                onChange={(e) => setNextContactDate(e.target.value)}
-              />
-              {nextContactDate && (
-                <Button type="button" variant="outline" className="h-11"
-                  onClick={() => setNextContactDate("")}>
-                  Limpar
-                </Button>
-              )}
-            </div>
+          <div className="space-y-2 rounded-xl border p-3">
+            <Label className="text-xs font-bold tracking-wide uppercase">Agendamento</Label>
+            <AppointmentFields
+              idPrefix="editAppt"
+              value={appointment}
+              onChange={setAppointment}
+              showStatus={!!nextAppointment}
+              onClear={() => setAppointment(emptyAppointment)}
+            />
           </div>
 
           {compatibleProducts.length > 0 && (
