@@ -8,7 +8,6 @@ import {
   Building2,
   Package,
   Radar,
-  CalendarClock,
 } from "lucide-react";
 import {
   Sidebar,
@@ -34,7 +33,6 @@ const groups = [
     items: [
       { title: "Captar Lead", url: "/captar", icon: PlusCircle },
       { title: "Leads", url: "/leads", icon: Users2 },
-      { title: "Agendamentos", url: "/dashboard", icon: CalendarClock },
     ],
   },
   {
