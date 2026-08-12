@@ -87,14 +87,20 @@ function LeadDetail() {
   const [editOpen, setEditOpen] = useState(false);
 
 
-  const { data: lead } = useQuery({
+  const {
+    data: lead,
+    isLoading: leadLoading,
+    isError: leadError,
+  } = useQuery({
     queryKey: ["lead", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("leads").select("*").eq("id", id).single();
+      const { data, error } = await supabase.from("leads").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       return data;
     },
+    retry: false,
   });
+
 
   const { data: leadProducts = [] } = useQuery({
     queryKey: ["lead_products", id],
