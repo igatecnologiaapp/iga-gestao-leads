@@ -116,7 +116,7 @@ export function LeadAppointments({ leadId, canEdit }: { leadId: string; canEdit:
         toast.error("Não foi possível salvar o agendamento.");
         return;
       }
-      if (editing.scheduled_at !== scheduledAt) {
+      if (new Date(editing.scheduled_at).getTime() !== new Date(scheduledAt).getTime()) {
         await logHistory(
           `Agendamento alterado de ${formatAppointment(editing.scheduled_at)} para ${formatAppointment(scheduledAt)}.`,
         );
