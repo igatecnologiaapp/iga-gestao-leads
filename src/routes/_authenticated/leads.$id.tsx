@@ -144,8 +144,24 @@ function LeadDetail() {
   }, [lead]);
 
   if (!lead) {
-    return <p className="py-16 text-center text-sm text-muted-foreground">Carregando lead...</p>;
+    if (leadLoading) {
+      return <p className="py-16 text-center text-sm text-muted-foreground">Carregando lead...</p>;
+    }
+    return (
+      <div className="py-16 text-center">
+        <p className="text-sm font-semibold">Lead não encontrado</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {leadError
+            ? "Você não tem permissão para visualizar este lead."
+            : "Este lead não existe ou foi removido."}
+        </p>
+        <Button asChild variant="outline" className="mt-4 h-11">
+          <Link to="/leads">Voltar para os leads</Link>
+        </Button>
+      </div>
+    );
   }
+
 
   async function updateLead(patch: Record<string, unknown>, message: string) {
     const { error } = await supabase.from("leads").update(patch as never).eq("id", id);
