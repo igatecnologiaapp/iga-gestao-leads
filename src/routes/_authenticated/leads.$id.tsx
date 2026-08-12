@@ -87,14 +87,20 @@ function LeadDetail() {
   const [editOpen, setEditOpen] = useState(false);
 
 
-  const { data: lead } = useQuery({
+  const {
+    data: lead,
+    isLoading: leadLoading,
+    isError: leadError,
+  } = useQuery({
     queryKey: ["lead", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("leads").select("*").eq("id", id).single();
+      const { data, error } = await supabase.from("leads").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       return data;
     },
+    retry: false,
   });
+
 
   const { data: leadProducts = [] } = useQuery({
     queryKey: ["lead_products", id],
@@ -138,8 +144,24 @@ function LeadDetail() {
   }, [lead]);
 
   if (!lead) {
-    return <p className="py-16 text-center text-sm text-muted-foreground">Carregando lead...</p>;
+    if (leadLoading) {
+      return <p className="py-16 text-center text-sm text-muted-foreground">Carregando lead...</p>;
+    }
+    return (
+      <div className="py-16 text-center">
+        <p className="text-sm font-semibold">Lead não encontrado</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {leadError
+            ? "Você não tem permissão para visualizar este lead."
+            : "Este lead não existe ou foi removido."}
+        </p>
+        <Button asChild variant="outline" className="mt-4 h-11">
+          <Link to="/leads">Voltar para os leads</Link>
+        </Button>
+      </div>
+    );
   }
+
 
   async function updateLead(patch: Record<string, unknown>, message: string) {
     const { error } = await supabase.from("leads").update(patch as never).eq("id", id);
@@ -530,7 +552,7 @@ function EditLeadDialog({
     const scheduledAt = fromLocalParts(appointment.date, appointment.time);
     if (scheduledAt) {
       if (nextAppointment) {
-        if (nextAppointment.scheduled_at !== scheduledAt) {
+        if (new Date(nextAppointment.scheduled_at).getTime() !== new Date(scheduledAt).getTime()) {
           historyRows.push({
             lead_id: lead.id,
             user_id: userData.user?.id ?? null,
