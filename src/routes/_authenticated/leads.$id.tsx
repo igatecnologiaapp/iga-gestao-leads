@@ -552,7 +552,7 @@ function EditLeadDialog({
     const scheduledAt = fromLocalParts(appointment.date, appointment.time);
     if (scheduledAt) {
       if (nextAppointment) {
-        if (nextAppointment.scheduled_at !== scheduledAt) {
+        if (new Date(nextAppointment.scheduled_at).getTime() !== new Date(scheduledAt).getTime()) {
           historyRows.push({
             lead_id: lead.id,
             user_id: userData.user?.id ?? null,
