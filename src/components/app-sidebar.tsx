@@ -8,7 +8,10 @@ import {
   Building2,
   Package,
   Radar,
+  FileText,
+  Briefcase,
 } from "lucide-react";
+
 import {
   Sidebar,
   SidebarContent,
