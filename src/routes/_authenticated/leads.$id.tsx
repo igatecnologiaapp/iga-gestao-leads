@@ -39,6 +39,8 @@ import { Combobox } from "@/components/Combobox";
 import { DynamicField } from "@/components/DynamicField";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LeadAppointments } from "@/components/LeadAppointments";
+import { LeadCommercialDocs } from "@/components/LeadCommercialDocs";
+
 import { AppointmentFields, emptyAppointment, type AppointmentDraft } from "@/components/AppointmentFields";
 import { formatAppointment, fromLocalParts, toLocalParts } from "@/lib/appointments";
 import {
@@ -246,6 +248,9 @@ function LeadDetail() {
         leadId={lead.id}
         canEdit={isAdmin || lead.created_by === user?.id}
       />
+
+      <LeadCommercialDocs leadId={lead.id} />
+
 
       {selectedProducts.length > 0 && (
         <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)]">

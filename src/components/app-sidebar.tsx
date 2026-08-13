@@ -8,7 +8,10 @@ import {
   Building2,
   Package,
   Radar,
+  FileText,
+  Briefcase,
 } from "lucide-react";
+
 import {
   Sidebar,
   SidebarContent,
@@ -36,6 +39,10 @@ const groups = [
     ],
   },
   {
+    label: "Comercial",
+    items: [{ title: "Documentos Comerciais", url: "/comercial", icon: FileText }],
+  },
+  {
     label: "Cadastros",
     adminOnly: true,
     items: [
@@ -43,9 +50,11 @@ const groups = [
       { title: "Produtos / Serviços", url: "/produtos", icon: Package },
       { title: "Ruas", url: "/ruas", icon: Signpost },
       { title: "Bairros", url: "/bairros", icon: Building2 },
+      { title: "Empresa emissora", url: "/empresa", icon: Briefcase },
     ],
   },
 ] as const;
+
 
 
 export function AppSidebar() {

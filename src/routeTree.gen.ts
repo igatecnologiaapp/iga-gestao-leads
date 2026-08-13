@@ -15,9 +15,12 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedBairrosRouteImport } from './routes/_authenticated/bairros'
 import { Route as AuthenticatedCaptarRouteImport } from './routes/_authenticated/captar'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedEmpresaRouteImport } from './routes/_authenticated/empresa'
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedRuasRouteImport } from './routes/_authenticated/ruas'
 import { Route as AuthenticatedSegmentosRouteImport } from './routes/_authenticated/segmentos'
+import { Route as AuthenticatedComercialIndexRouteImport } from './routes/_authenticated/comercial.index'
+import { Route as AuthenticatedComercialIdRouteImport } from './routes/_authenticated/comercial.$id'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 
@@ -50,6 +53,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEmpresaRoute = AuthenticatedEmpresaRouteImport.update({
+  id: '/empresa',
+  path: '/empresa',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
   id: '/produtos',
   path: '/produtos',
@@ -65,6 +73,18 @@ const AuthenticatedSegmentosRoute = AuthenticatedSegmentosRouteImport.update({
   path: '/segmentos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedComercialIndexRoute =
+  AuthenticatedComercialIndexRouteImport.update({
+    id: '/comercial/',
+    path: '/comercial/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedComercialIdRoute =
+  AuthenticatedComercialIdRouteImport.update({
+    id: '/comercial/$id',
+    path: '/comercial/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLeadsIndexRoute = AuthenticatedLeadsIndexRouteImport.update({
   id: '/leads/',
   path: '/leads/',
@@ -82,10 +102,13 @@ export interface FileRoutesByFullPath {
   '/bairros': typeof AuthenticatedBairrosRoute
   '/captar': typeof AuthenticatedCaptarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/empresa': typeof AuthenticatedEmpresaRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/ruas': typeof AuthenticatedRuasRoute
   '/segmentos': typeof AuthenticatedSegmentosRoute
+  '/comercial/$id': typeof AuthenticatedComercialIdRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
+  '/comercial/': typeof AuthenticatedComercialIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -94,10 +117,13 @@ export interface FileRoutesByTo {
   '/bairros': typeof AuthenticatedBairrosRoute
   '/captar': typeof AuthenticatedCaptarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/empresa': typeof AuthenticatedEmpresaRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/ruas': typeof AuthenticatedRuasRoute
   '/segmentos': typeof AuthenticatedSegmentosRoute
+  '/comercial/$id': typeof AuthenticatedComercialIdRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
+  '/comercial': typeof AuthenticatedComercialIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
 }
 export interface FileRoutesById {
@@ -108,10 +134,13 @@ export interface FileRoutesById {
   '/_authenticated/bairros': typeof AuthenticatedBairrosRoute
   '/_authenticated/captar': typeof AuthenticatedCaptarRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/empresa': typeof AuthenticatedEmpresaRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
   '/_authenticated/ruas': typeof AuthenticatedRuasRoute
   '/_authenticated/segmentos': typeof AuthenticatedSegmentosRoute
+  '/_authenticated/comercial/$id': typeof AuthenticatedComercialIdRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
+  '/_authenticated/comercial/': typeof AuthenticatedComercialIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
 }
 export interface FileRouteTypes {
@@ -122,10 +151,13 @@ export interface FileRouteTypes {
     | '/bairros'
     | '/captar'
     | '/dashboard'
+    | '/empresa'
     | '/produtos'
     | '/ruas'
     | '/segmentos'
+    | '/comercial/$id'
     | '/leads/$id'
+    | '/comercial/'
     | '/leads/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -134,10 +166,13 @@ export interface FileRouteTypes {
     | '/bairros'
     | '/captar'
     | '/dashboard'
+    | '/empresa'
     | '/produtos'
     | '/ruas'
     | '/segmentos'
+    | '/comercial/$id'
     | '/leads/$id'
+    | '/comercial'
     | '/leads'
   id:
     | '__root__'
@@ -147,10 +182,13 @@ export interface FileRouteTypes {
     | '/_authenticated/bairros'
     | '/_authenticated/captar'
     | '/_authenticated/dashboard'
+    | '/_authenticated/empresa'
     | '/_authenticated/produtos'
     | '/_authenticated/ruas'
     | '/_authenticated/segmentos'
+    | '/_authenticated/comercial/$id'
     | '/_authenticated/leads/$id'
+    | '/_authenticated/comercial/'
     | '/_authenticated/leads/'
   fileRoutesById: FileRoutesById
 }
@@ -204,6 +242,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/empresa': {
+      id: '/_authenticated/empresa'
+      path: '/empresa'
+      fullPath: '/empresa'
+      preLoaderRoute: typeof AuthenticatedEmpresaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/produtos': {
       id: '/_authenticated/produtos'
       path: '/produtos'
@@ -223,6 +268,20 @@ declare module '@tanstack/react-router' {
       path: '/segmentos'
       fullPath: '/segmentos'
       preLoaderRoute: typeof AuthenticatedSegmentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/comercial/': {
+      id: '/_authenticated/comercial/'
+      path: '/comercial'
+      fullPath: '/comercial/'
+      preLoaderRoute: typeof AuthenticatedComercialIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/comercial/$id': {
+      id: '/_authenticated/comercial/$id'
+      path: '/comercial/$id'
+      fullPath: '/comercial/$id'
+      preLoaderRoute: typeof AuthenticatedComercialIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/leads/': {
@@ -246,10 +305,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBairrosRoute: typeof AuthenticatedBairrosRoute
   AuthenticatedCaptarRoute: typeof AuthenticatedCaptarRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedEmpresaRoute: typeof AuthenticatedEmpresaRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
   AuthenticatedRuasRoute: typeof AuthenticatedRuasRoute
   AuthenticatedSegmentosRoute: typeof AuthenticatedSegmentosRoute
+  AuthenticatedComercialIdRoute: typeof AuthenticatedComercialIdRoute
   AuthenticatedLeadsIdRoute: typeof AuthenticatedLeadsIdRoute
+  AuthenticatedComercialIndexRoute: typeof AuthenticatedComercialIndexRoute
   AuthenticatedLeadsIndexRoute: typeof AuthenticatedLeadsIndexRoute
 }
 
@@ -257,10 +319,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBairrosRoute: AuthenticatedBairrosRoute,
   AuthenticatedCaptarRoute: AuthenticatedCaptarRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedEmpresaRoute: AuthenticatedEmpresaRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
   AuthenticatedRuasRoute: AuthenticatedRuasRoute,
   AuthenticatedSegmentosRoute: AuthenticatedSegmentosRoute,
+  AuthenticatedComercialIdRoute: AuthenticatedComercialIdRoute,
   AuthenticatedLeadsIdRoute: AuthenticatedLeadsIdRoute,
+  AuthenticatedComercialIndexRoute: AuthenticatedComercialIndexRoute,
   AuthenticatedLeadsIndexRoute: AuthenticatedLeadsIndexRoute,
 }
 
@@ -275,3 +340,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
