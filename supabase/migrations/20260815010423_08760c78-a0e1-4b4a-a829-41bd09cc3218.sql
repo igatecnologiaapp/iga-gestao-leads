@@ -1,0 +1,10 @@
+DELETE FROM public.commercial_document_history WHERE document_id IN (SELECT id FROM public.commercial_documents WHERE client_company ILIKE 'ZZ TESTE COMERCIAL QA%');
+DELETE FROM public.commercial_document_items WHERE document_id IN (SELECT id FROM public.commercial_documents WHERE client_company ILIKE 'ZZ TESTE COMERCIAL QA%');
+DELETE FROM public.commercial_documents WHERE client_company ILIKE 'ZZ TESTE COMERCIAL QA%';
+DELETE FROM public.lead_history WHERE lead_id IN (SELECT id FROM public.leads WHERE company_name ILIKE 'ZZ TESTE COMERCIAL QA%');
+DELETE FROM public.lead_status_history WHERE lead_id IN (SELECT id FROM public.leads WHERE company_name ILIKE 'ZZ TESTE COMERCIAL QA%');
+DELETE FROM public.lead_appointments WHERE lead_id IN (SELECT id FROM public.leads WHERE company_name ILIKE 'ZZ TESTE COMERCIAL QA%');
+DELETE FROM public.lead_custom_values WHERE lead_id IN (SELECT id FROM public.leads WHERE company_name ILIKE 'ZZ TESTE COMERCIAL QA%');
+DELETE FROM public.lead_products WHERE lead_id IN (SELECT id FROM public.leads WHERE company_name ILIKE 'ZZ TESTE COMERCIAL QA%');
+DELETE FROM public.leads WHERE company_name ILIKE 'ZZ TESTE COMERCIAL QA%';
+DELETE FROM public.document_sequences WHERE doc_year = EXTRACT(YEAR FROM now())::int;
