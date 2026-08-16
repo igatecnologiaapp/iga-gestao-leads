@@ -695,6 +695,33 @@ export type Database = {
           },
         ]
       }
+      measurement_units: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       neighborhoods: {
         Row: {
           city: string
@@ -754,6 +781,7 @@ export type Database = {
           default_price: number | null
           description: string | null
           id: string
+          kind: string
           name: string
           unit: string | null
           updated_at: string
@@ -765,6 +793,7 @@ export type Database = {
           default_price?: number | null
           description?: string | null
           id?: string
+          kind?: string
           name: string
           unit?: string | null
           updated_at?: string
@@ -776,6 +805,7 @@ export type Database = {
           default_price?: number | null
           description?: string | null
           id?: string
+          kind?: string
           name?: string
           unit?: string | null
           updated_at?: string
@@ -793,6 +823,7 @@ export type Database = {
       profiles: {
         Row: {
           active: boolean
+          can_delete_documents: boolean
           can_view_all_leads: boolean
           created_at: string
           email: string | null
@@ -803,6 +834,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          can_delete_documents?: boolean
           can_view_all_leads?: boolean
           created_at?: string
           email?: string | null
@@ -813,6 +845,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          can_delete_documents?: boolean
           can_view_all_leads?: boolean
           created_at?: string
           email?: string | null
@@ -990,6 +1023,7 @@ export type Database = {
     Functions: {
       can_access_document: { Args: { _document_id: string }; Returns: boolean }
       can_access_lead: { Args: { _lead_id: string }; Returns: boolean }
+      can_delete_documents: { Args: { _user_id: string }; Returns: boolean }
       can_edit_lead: { Args: { _lead_id: string }; Returns: boolean }
       can_view_all_leads: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
