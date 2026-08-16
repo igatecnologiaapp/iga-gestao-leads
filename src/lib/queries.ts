@@ -11,7 +11,23 @@ export type Street = {
   city: string;
   state: string;
 };
-export type Product = { id: string; name: string; description: string | null; active: boolean };
+export type Product = {
+  id: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+  kind: string;
+  unit: string | null;
+  default_price: number | null;
+  category_id: string | null;
+};
+export type MeasurementUnit = {
+  id: string;
+  code: string;
+  name: string;
+  active: boolean;
+  sort_order: number;
+};
 export type SegmentField = {
   id: string;
   segment_id: string;
@@ -62,7 +78,22 @@ export function useProducts() {
     queryFn: async () => {
       const { data, error } = await supabase.from("products_services").select("*").order("name");
       if (error) throw error;
-      return data as Product[];
+      return data as unknown as Product[];
+    },
+  });
+}
+
+/** Unidades de medida padronizadas (administradas pelo admin). */
+export function useMeasurementUnits() {
+  return useQuery({
+    queryKey: ["measurement_units"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("measurement_units")
+        .select("id, code, name, active, sort_order")
+        .order("sort_order");
+      if (error) throw error;
+      return data as unknown as MeasurementUnit[];
     },
   });
 }
