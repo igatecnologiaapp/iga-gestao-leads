@@ -238,7 +238,7 @@ function DocumentDetail() {
 
   async function confirmShare() {
     if (!doc) return;
-    const out = buildPdf();
+    const out = await buildPdf();
     if (!out) return;
     // O PDF é sempre baixado/compartilhado como arquivo — o canal apenas prepara a mensagem.
     const url = URL.createObjectURL(out.blob);
