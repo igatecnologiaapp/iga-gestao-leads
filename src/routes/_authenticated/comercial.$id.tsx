@@ -321,13 +321,18 @@ function DocumentDetail() {
   }
 
   async function remove() {
+    if (deleteReason.trim().length < 3) {
+      toast.error("Informe o motivo da exclusão.");
+      return;
+    }
     try {
       await softDeleteDocument(id, deleteReason.trim());
       await queryClient.invalidateQueries({ queryKey: ["commercial_documents"] });
+      setDeleteOpen(false);
       toast.success("Documento excluído.");
       void navigate({ to: "/comercial" });
     } catch {
-      toast.error("Não foi possível excluir.");
+      toast.error("Sem permissão para excluir documentos comerciais.");
     }
   }
 
