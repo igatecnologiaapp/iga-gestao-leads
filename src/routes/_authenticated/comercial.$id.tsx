@@ -176,13 +176,19 @@ function DocumentDetail() {
     toast.success("Status atualizado.");
   }
 
-  function buildPdf() {
+  async function buildPdf() {
     if (!doc) return null;
-    return documentPdfBlob({ company: company ?? null, doc, items, categories, paymentMethod: paymentMethodName });
+    return await documentPdfBlob({
+      company: company ?? null,
+      doc,
+      items,
+      categories,
+      paymentMethod: paymentMethodName,
+    });
   }
 
   async function generatePdf() {
-    const out = buildPdf();
+    const out = await buildPdf();
     if (!out) return;
     const url = URL.createObjectURL(out.blob);
     const a = document.createElement("a");
@@ -195,7 +201,7 @@ function DocumentDetail() {
   }
 
   async function nativeShare() {
-    const out = buildPdf();
+    const out = await buildPdf();
     if (!out || !doc) return;
     const file = new File([out.blob], out.fileName, { type: "application/pdf" });
     const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
