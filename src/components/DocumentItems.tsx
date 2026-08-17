@@ -246,8 +246,16 @@ export function DocumentItems({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="item-unit">Unidade</Label>
-                <Input id="item-unit" className="h-11" value={unit} onChange={(e) => setUnit(e.target.value)} />
+                <Label>Unidade</Label>
+                <Select value={unit || "none"} onValueChange={(v) => setUnit(v === "none" ? "" : v)}>
+                  <SelectTrigger className="h-11"><SelectValue placeholder="Unidade" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Não informada</SelectItem>
+                    {unitOptions.map((u) => (
+                      <SelectItem key={u} value={u}>{u}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="item-qty">Quantidade</Label>
