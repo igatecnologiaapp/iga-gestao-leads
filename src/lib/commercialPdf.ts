@@ -111,7 +111,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
     pdf.text(line, pageWidth - MARGIN, y + 10 + i * 4, { align: "right" }),
   );
 
-  y += 12 + Math.max(companyLines.length, headRight.length) * 4;
+  y = Math.max(y + 12 + Math.max(companyLines.length, headRight.length) * 4, y + logoHeight + 4);
   pdf.setDrawColor(200);
   pdf.line(MARGIN, y, pageWidth - MARGIN, y);
   y += 7;
