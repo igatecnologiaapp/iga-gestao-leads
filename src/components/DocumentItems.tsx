@@ -236,7 +236,12 @@ export function DocumentItems({
             <div className="space-y-2">
               <Label>Produto / serviço cadastrado (opcional)</Label>
               <Combobox
-                options={products.filter((p) => p.active).map((p) => ({ value: p.id, label: p.name }))}
+                options={products
+                  .filter((p) => p.active || p.id === productId)
+                  .map((p) => ({
+                    value: p.id,
+                    label: p.active ? p.name : `${p.name} (inativo)`,
+                  }))}
                 value={productId}
                 onChange={(v) => pickProduct(v)}
                 placeholder="Item manual (sem cadastro)"
