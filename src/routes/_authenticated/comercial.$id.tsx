@@ -603,7 +603,13 @@ function DocumentDetail() {
           />
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void remove()}>Excluir</AlertDialogAction>
+            <Button
+              variant="destructive"
+              disabled={deleteReason.trim().length < 3}
+              onClick={() => void remove()}
+            >
+              Excluir documento
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
