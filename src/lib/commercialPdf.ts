@@ -250,8 +250,12 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
   return pdf;
 }
 
-export function documentPdfBlob(input: Input): { blob: Blob; fileName: string } {
-  const pdf = buildDocumentPdf(input);
+/** Gera o PDF já com o logotipo da empresa emissora carregado. */
+export async function documentPdfBlob(
+  input: Omit<Input, "logo">,
+): Promise<{ blob: Blob; fileName: string }> {
+  const logo = await loadCompanyLogo(input.company?.logo_url ?? null);
+  const pdf = buildDocumentPdf({ ...input, logo });
   const fileName = pdfFileName(
     input.doc.doc_type,
     input.doc.number_label,
