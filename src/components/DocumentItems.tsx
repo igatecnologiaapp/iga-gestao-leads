@@ -23,6 +23,7 @@ import {
 import { Combobox } from "@/components/Combobox";
 import { formatCurrency, toNumber } from "@/lib/commercial";
 import { logDocumentEvent, type DocumentItem, type ItemCategory } from "@/lib/commercialQueries";
+import { useMeasurementUnits } from "@/lib/queries";
 
 type ProductRow = {
   id: string;
@@ -60,6 +61,12 @@ export function DocumentItems({
   const [quantity, setQuantity] = useState("1");
   const [discount, setDiscount] = useState("0");
   const [saving, setSaving] = useState(false);
+  const { data: units = [] } = useMeasurementUnits();
+
+  // Unidades padronizadas + a unidade já gravada no item (documentos históricos).
+  const unitOptions = Array.from(
+    new Set([...units.filter((u) => u.active).map((u) => u.code), ...(unit ? [unit] : [])]),
+  );
 
   useEffect(() => {
     if (!open) return;
