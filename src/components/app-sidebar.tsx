@@ -1,4 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   PlusCircle,
@@ -10,6 +11,7 @@ import {
   Radar,
   FileText,
   Briefcase,
+  ChevronDown,
 } from "lucide-react";
 
 import {
@@ -24,7 +26,14 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { useAuth } from "@/hooks/useAuth";
+
+const STORAGE_KEY = "sidebar:groups";
 
 const groups = [
   {

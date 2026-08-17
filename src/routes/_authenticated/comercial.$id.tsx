@@ -19,7 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
-  AlertDialogAction,
+  
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -99,7 +99,7 @@ function DocumentDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAdmin } = useAuth();
+  const { isAdmin, canDeleteDocuments } = useAuth();
 
   const { data: doc, isLoading, isError } = useCommercialDocument(id);
   const { data: items = [] } = useDocumentItems(id);
@@ -176,13 +176,19 @@ function DocumentDetail() {
     toast.success("Status atualizado.");
   }
 
-  function buildPdf() {
+  async function buildPdf() {
     if (!doc) return null;
-    return documentPdfBlob({ company: company ?? null, doc, items, categories, paymentMethod: paymentMethodName });
+    return await documentPdfBlob({
+      company: company ?? null,
+      doc,
+      items,
+      categories,
+      paymentMethod: paymentMethodName,
+    });
   }
 
   async function generatePdf() {
-    const out = buildPdf();
+    const out = await buildPdf();
     if (!out) return;
     const url = URL.createObjectURL(out.blob);
     const a = document.createElement("a");
@@ -195,7 +201,7 @@ function DocumentDetail() {
   }
 
   async function nativeShare() {
-    const out = buildPdf();
+    const out = await buildPdf();
     if (!out || !doc) return;
     const file = new File([out.blob], out.fileName, { type: "application/pdf" });
     const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
@@ -232,7 +238,7 @@ function DocumentDetail() {
 
   async function confirmShare() {
     if (!doc) return;
-    const out = buildPdf();
+    const out = await buildPdf();
     if (!out) return;
     // O PDF é sempre baixado/compartilhado como arquivo — o canal apenas prepara a mensagem.
     const url = URL.createObjectURL(out.blob);
@@ -315,13 +321,18 @@ function DocumentDetail() {
   }
 
   async function remove() {
+    if (deleteReason.trim().length < 3) {
+      toast.error("Informe o motivo da exclusão.");
+      return;
+    }
     try {
       await softDeleteDocument(id, deleteReason.trim());
       await queryClient.invalidateQueries({ queryKey: ["commercial_documents"] });
+      setDeleteOpen(false);
       toast.success("Documento excluído.");
       void navigate({ to: "/comercial" });
     } catch {
-      toast.error("Não foi possível excluir.");
+      toast.error("Sem permissão para excluir documentos comerciais.");
     }
   }
 
@@ -478,9 +489,11 @@ function DocumentDetail() {
           >
             <ArrowRightLeft className="h-4 w-4" /> Converter
           </Button>
-          <Button variant="outline" className="h-11" onClick={() => setDeleteOpen(true)}>
-            <Trash2 className="h-4 w-4 text-destructive" /> Excluir
-          </Button>
+          {canDeleteDocuments && (
+            <Button variant="outline" className="h-11" onClick={() => setDeleteOpen(true)}>
+              <Trash2 className="h-4 w-4 text-destructive" /> Excluir
+            </Button>
+          )}
         </div>
       </section>
 
@@ -578,7 +591,8 @@ function DocumentDetail() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir documento?</AlertDialogTitle>
             <AlertDialogDescription>
-              O documento sai das listagens, mas o histórico é preservado. Informe o motivo (opcional).
+              A exclusão é lógica: o documento sai das listagens, mas número, itens, valores, versões e
+              histórico são preservados para auditoria. Informe o motivo da exclusão (obrigatório).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Input
@@ -589,7 +603,13 @@ function DocumentDetail() {
           />
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void remove()}>Excluir</AlertDialogAction>
+            <Button
+              variant="destructive"
+              disabled={deleteReason.trim().length < 3}
+              onClick={() => void remove()}
+            >
+              Excluir documento
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -9,25 +9,77 @@ import type {
   ItemCategory,
 } from "@/lib/commercialQueries";
 
+import igaLogo from "@/assets/iga-logo.png.asset.json";
+
+export type PdfLogo = { dataUrl: string; width: number; height: number };
+
 type Input = {
   company: CompanySettings | null;
   doc: CommercialDocument;
   items: DocumentItem[];
   categories: ItemCategory[];
   paymentMethod?: string | null;
+  logo?: PdfLogo | null;
 };
 
 const MARGIN = 14;
+const LOGO_MAX_W = 26;
+const LOGO_MAX_H = 18;
 
-export function buildDocumentPdf({ company, doc, items, categories, paymentMethod }: Input): jsPDF {
+/**
+ * Carrega o logotipo da empresa emissora (logo_url configurado ou o logotipo
+ * oficial da IGA) como dataURL, preservando a proporção original.
+ */
+export async function loadCompanyLogo(logoUrl?: string | null): Promise<PdfLogo | null> {
+  const url = logoUrl?.trim() ? logoUrl.trim() : igaLogo.url;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error("logo"));
+      reader.readAsDataURL(blob);
+    });
+    const size = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => reject(new Error("logo"));
+      img.src = dataUrl;
+    });
+    if (!size.width || !size.height) return null;
+    return { dataUrl, ...size };
+  } catch {
+    return null;
+  }
+}
+
+export function buildDocumentPdf({ company, doc, items, categories, paymentMethod, logo }: Input): jsPDF {
   const pdf = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = pdf.internal.pageSize.getWidth();
   let y = MARGIN;
 
+  // Logotipo (mantém proporção, sem distorcer nem sobrepor textos)
+  let textLeft = MARGIN;
+  let logoHeight = 0;
+  if (logo) {
+    const ratio = Math.min(LOGO_MAX_W / logo.width, LOGO_MAX_H / logo.height);
+    const w = logo.width * ratio;
+    const h = logo.height * ratio;
+    try {
+      pdf.addImage(logo.dataUrl, "PNG", MARGIN, y, w, h, undefined, "FAST");
+      textLeft = MARGIN + w + 5;
+      logoHeight = h;
+    } catch {
+      /* logotipo inválido: segue sem imagem */
+    }
+  }
+
   // Cabeçalho — empresa emissora
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(15);
-  pdf.text(company?.name ?? "Empresa", MARGIN, y + 4);
+  pdf.text(company?.name ?? "Empresa", textLeft, y + 4);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8.5);
   const companyLines = [
@@ -40,7 +92,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
       .join(", ") || null,
     company?.postal_code ? `CEP ${company.postal_code}` : null,
   ].filter(Boolean) as string[];
-  companyLines.forEach((line, i) => pdf.text(line, MARGIN, y + 10 + i * 4));
+  companyLines.forEach((line, i) => pdf.text(line, textLeft, y + 10 + i * 4));
 
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(13);
@@ -59,7 +111,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
     pdf.text(line, pageWidth - MARGIN, y + 10 + i * 4, { align: "right" }),
   );
 
-  y += 12 + Math.max(companyLines.length, headRight.length) * 4;
+  y = Math.max(y + 12 + Math.max(companyLines.length, headRight.length) * 4, y + logoHeight + 4);
   pdf.setDrawColor(200);
   pdf.line(MARGIN, y, pageWidth - MARGIN, y);
   y += 7;
@@ -198,8 +250,12 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
   return pdf;
 }
 
-export function documentPdfBlob(input: Input): { blob: Blob; fileName: string } {
-  const pdf = buildDocumentPdf(input);
+/** Gera o PDF já com o logotipo da empresa emissora carregado. */
+export async function documentPdfBlob(
+  input: Omit<Input, "logo">,
+): Promise<{ blob: Blob; fileName: string }> {
+  const logo = await loadCompanyLogo(input.company?.logo_url ?? null);
+  const pdf = buildDocumentPdf({ ...input, logo });
   const fileName = pdfFileName(
     input.doc.doc_type,
     input.doc.number_label,

@@ -23,6 +23,7 @@ import {
 import { Combobox } from "@/components/Combobox";
 import { formatCurrency, toNumber } from "@/lib/commercial";
 import { logDocumentEvent, type DocumentItem, type ItemCategory } from "@/lib/commercialQueries";
+import { useMeasurementUnits } from "@/lib/queries";
 
 type ProductRow = {
   id: string;
@@ -60,6 +61,12 @@ export function DocumentItems({
   const [quantity, setQuantity] = useState("1");
   const [discount, setDiscount] = useState("0");
   const [saving, setSaving] = useState(false);
+  const { data: units = [] } = useMeasurementUnits();
+
+  // Unidades padronizadas + a unidade já gravada no item (documentos históricos).
+  const unitOptions = Array.from(
+    new Set([...units.filter((u) => u.active).map((u) => u.code), ...(unit ? [unit] : [])]),
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -229,7 +236,12 @@ export function DocumentItems({
             <div className="space-y-2">
               <Label>Produto / serviço cadastrado (opcional)</Label>
               <Combobox
-                options={products.filter((p) => p.active).map((p) => ({ value: p.id, label: p.name }))}
+                options={products
+                  .filter((p) => p.active || p.id === productId)
+                  .map((p) => ({
+                    value: p.id,
+                    label: p.active ? p.name : `${p.name} (inativo)`,
+                  }))}
                 value={productId}
                 onChange={(v) => pickProduct(v)}
                 placeholder="Item manual (sem cadastro)"
@@ -246,8 +258,16 @@ export function DocumentItems({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label htmlFor="item-unit">Unidade</Label>
-                <Input id="item-unit" className="h-11" value={unit} onChange={(e) => setUnit(e.target.value)} />
+                <Label>Unidade</Label>
+                <Select value={unit || "none"} onValueChange={(v) => setUnit(v === "none" ? "" : v)}>
+                  <SelectTrigger className="h-11"><SelectValue placeholder="Unidade" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Não informada</SelectItem>
+                    {unitOptions.map((u) => (
+                      <SelectItem key={u} value={u}>{u}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="item-qty">Quantidade</Label>
