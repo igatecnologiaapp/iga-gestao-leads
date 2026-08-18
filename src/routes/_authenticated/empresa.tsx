@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCompanySettings, type CompanySettings } from "@/lib/commercialQueries";
 import { maskCep, maskPhone } from "@/lib/leads";
 import { useAuth } from "@/hooks/useAuth";
+import igaLogo from "@/assets/iga-logo.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/empresa")({
   head: () => ({
@@ -71,7 +72,24 @@ function Empresa() {
         <Field label="Endereço" value={current.address ?? ""} onChange={(v) => set("address", v)} />
         <Field label="Cidade" value={current.city ?? ""} onChange={(v) => set("city", v)} />
         <Field label="UF" value={current.state ?? ""} onChange={(v) => set("state", v)} />
-        <Field label="Logo (URL)" value={current.logo_url ?? ""} onChange={(v) => set("logo_url", v)} />
+        <div className="space-y-2 sm:col-span-2">
+          <Field
+            label="Logo (URL) — deixe vazio para usar o logotipo IGA padrão"
+            value={current.logo_url ?? ""}
+            onChange={(v) => set("logo_url", v)}
+          />
+          <div className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
+            <img
+              src={current.logo_url || igaLogo.url}
+              alt="Pré-visualização do logotipo usado no cabeçalho dos PDFs"
+              className="h-12 w-auto max-w-[160px] object-contain"
+            />
+            <p className="text-xs text-muted-foreground">
+              Este logotipo aparece no cabeçalho dos orçamentos, propostas e pedidos em PDF, com a
+              proporção original preservada.
+            </p>
+          </div>
+        </div>
         <Field label="Rodapé" value={current.footer_note ?? ""} onChange={(v) => set("footer_note", v)} />
         <Field
           label="Validade padrão (dias)"

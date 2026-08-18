@@ -72,6 +72,32 @@ export function AppSidebar() {
   const { isAdmin } = useAuth();
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
+  // Estado expandido/recolhido de cada grupo, persistido entre sessões.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      setOpenGroups(raw ? (JSON.parse(raw) as Record<string, boolean>) : {});
+    } catch {
+      setOpenGroups({});
+    }
+  }, []);
+
+  function toggleGroup(label: string, open: boolean) {
+    setOpenGroups((prev) => {
+      const next = { ...prev, [label]: open };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* storage indisponível */
+      }
+      return next;
+    });
+  }
+
+  const isActive = (url: string) => pathname === url || pathname.startsWith(url + "/");
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -90,31 +116,53 @@ export function AppSidebar() {
       <SidebarContent>
         {groups
           .filter((g) => !("adminOnly" in g && g.adminOnly) || isAdmin)
-          .map((group) => (
-            <SidebarGroup key={group.label}>
-              <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {group.items
-                    .filter((i) => !("adminOnly" in i && i.adminOnly) || isAdmin)
-                    .map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                          asChild
-                          tooltip={item.title}
-                          isActive={pathname === item.url || pathname.startsWith(item.url + "/")}
-                        >
-                          <Link to={item.url} onClick={() => setOpenMobile(false)}>
-                            <item.icon className="h-4 w-4" />
-                            <span>{item.title}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          ))}
+          .map((group) => {
+            const hasActive = group.items.some((i) => isActive(i.url));
+            // Grupo com rota ativa sempre abre; no modo ícone tudo permanece visível.
+            const isOpen = collapsed || hasActive || (openGroups[group.label] ?? true);
+            return (
+              <Collapsible
+                key={group.label}
+                open={isOpen}
+                onOpenChange={(v) => toggleGroup(group.label, v)}
+              >
+                <SidebarGroup>
+                  {!collapsed && (
+                    <CollapsibleTrigger className="w-full">
+                      <SidebarGroupLabel className="flex w-full cursor-pointer items-center justify-between hover:text-foreground">
+                        <span>{group.label}</span>
+                        <ChevronDown
+                          className={`h-4 w-4 transition-transform ${isOpen ? "" : "-rotate-90"}`}
+                        />
+                      </SidebarGroupLabel>
+                    </CollapsibleTrigger>
+                  )}
+                  <CollapsibleContent>
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        {group.items
+                          .filter((i) => !("adminOnly" in i && i.adminOnly) || isAdmin)
+                          .map((item) => (
+                            <SidebarMenuItem key={item.title}>
+                              <SidebarMenuButton
+                                asChild
+                                tooltip={item.title}
+                                isActive={isActive(item.url)}
+                              >
+                                <Link to={item.url} onClick={() => setOpenMobile(false)}>
+                                  <item.icon className="h-4 w-4" />
+                                  <span>{item.title}</span>
+                                </Link>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          ))}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </CollapsibleContent>
+                </SidebarGroup>
+              </Collapsible>
+            );
+          })}
       </SidebarContent>
     </Sidebar>
   );
