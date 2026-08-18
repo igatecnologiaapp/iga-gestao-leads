@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCompanySettings, type CompanySettings } from "@/lib/commercialQueries";
 import { maskCep, maskPhone } from "@/lib/leads";
 import { useAuth } from "@/hooks/useAuth";
+import igaLogo from "@/assets/iga-logo.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/empresa")({
   head: () => ({
