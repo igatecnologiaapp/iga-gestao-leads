@@ -8,10 +8,10 @@ import {
   Signpost,
   Building2,
   Package,
-  Radar,
   FileText,
   Briefcase,
   ChevronDown,
+  ShieldCheck,
 } from "lucide-react";
 
 import {
@@ -32,6 +32,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { useAuth } from "@/hooks/useAuth";
+import { BrandMark } from "@/components/BrandMark";
+import logoAsset from "@/assets/iga-logo.png.asset.json";
 
 const STORAGE_KEY = "sidebar:groups";
 
@@ -61,6 +63,11 @@ const groups = [
       { title: "Bairros", url: "/bairros", icon: Building2 },
       { title: "Empresa emissora", url: "/empresa", icon: Briefcase },
     ],
+  },
+  {
+    label: "Administração",
+    adminOnly: true,
+    items: [{ title: "Usuários", url: "/usuarios", icon: ShieldCheck }],
   },
 ] as const;
 
@@ -102,14 +109,14 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-1 py-2">
-          <div className="gradient-brand grid h-9 w-9 shrink-0 place-items-center rounded-xl text-primary-foreground">
-            <Radar className="h-5 w-5" />
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-extrabold tracking-tight">LeadField</p>
-              <p className="truncate text-[11px] text-muted-foreground">Captação de leads</p>
-            </div>
+          {collapsed ? (
+            <img
+              src={logoAsset.url}
+              alt="Logotipo IGA Tecnologia"
+              className="h-9 w-9 shrink-0 rounded-xl object-contain"
+            />
+          ) : (
+            <BrandMark size="sm" tagline="Captação e Gestão de Leads" />
           )}
         </div>
       </SidebarHeader>
