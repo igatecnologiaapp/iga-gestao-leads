@@ -74,9 +74,9 @@ import { useAuth } from "@/hooks/useAuth";
 export const Route = createFileRoute("/_authenticated/comercial/$id")({
   head: () => ({
     meta: [
-      { title: "Documento Comercial — LeadField" },
+      { title: "Documento Comercial — IGA TECNOLOGIA" },
       { name: "description", content: "Detalhes, itens, totais, PDF e histórico do documento comercial." },
-      { property: "og:title", content: "Documento Comercial — LeadField" },
+      { property: "og:title", content: "Documento Comercial — IGA TECNOLOGIA" },
       { property: "og:description", content: "Detalhes, itens, totais, PDF e histórico do documento comercial." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

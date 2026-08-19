@@ -43,12 +43,12 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — LeadField" },
+      { title: "Dashboard — IGA TECNOLOGIA" },
       {
         name: "description",
         content: "Painel operacional: total de leads, agendamentos, segmentos e captação por vendedor.",
       },
-      { property: "og:title", content: "Dashboard — LeadField" },
+      { property: "og:title", content: "Dashboard — IGA TECNOLOGIA" },
       {
         property: "og:description",
         content: "Painel operacional: total de leads, agendamentos, segmentos e captação por vendedor.",

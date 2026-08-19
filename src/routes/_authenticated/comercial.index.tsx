@@ -31,12 +31,12 @@ import { useProfiles, useSegments } from "@/lib/queries";
 export const Route = createFileRoute("/_authenticated/comercial/")({
   head: () => ({
     meta: [
-      { title: "Documentos Comerciais — LeadField" },
+      { title: "Documentos Comerciais — IGA TECNOLOGIA" },
       {
         name: "description",
         content: "Orçamentos, propostas e pedidos vinculados aos leads, com status, totais e histórico.",
       },
-      { property: "og:title", content: "Documentos Comerciais — LeadField" },
+      { property: "og:title", content: "Documentos Comerciais — IGA TECNOLOGIA" },
       {
         property: "og:description",
         content: "Orçamentos, propostas e pedidos vinculados aos leads, com status, totais e histórico.",

@@ -37,13 +37,13 @@ import { useAuth } from "@/hooks/useAuth";
 export const Route = createFileRoute("/_authenticated/produtos")({
   head: () => ({
     meta: [
-      { title: "Produtos e Serviços — LeadField" },
+      { title: "Produtos e Serviços — IGA TECNOLOGIA" },
       {
         name: "description",
         content:
           "Cadastro comercial de produtos e serviços: tipo, categoria, unidade, preço padrão e segmentos compatíveis.",
       },
-      { property: "og:title", content: "Produtos e Serviços — LeadField" },
+      { property: "og:title", content: "Produtos e Serviços — IGA TECNOLOGIA" },
       {
         property: "og:description",
         content:

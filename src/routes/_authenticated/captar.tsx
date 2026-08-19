@@ -42,9 +42,9 @@ import {
 export const Route = createFileRoute("/_authenticated/captar")({
   head: () => ({
     meta: [
-      { title: "Captar Lead — LeadField" },
+      { title: "Captar Lead — IGA TECNOLOGIA" },
       { name: "description", content: "Cadastro rápido de leads durante a visita comercial." },
-      { property: "og:title", content: "Captar Lead — LeadField" },
+      { property: "og:title", content: "Captar Lead — IGA TECNOLOGIA" },
       { property: "og:description", content: "Cadastro rápido de leads durante a visita comercial." },
     ],
   }),

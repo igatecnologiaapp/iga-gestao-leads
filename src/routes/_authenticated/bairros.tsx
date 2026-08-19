@@ -19,9 +19,9 @@ import { useNeighborhoods } from "@/lib/queries";
 export const Route = createFileRoute("/_authenticated/bairros")({
   head: () => ({
     meta: [
-      { title: "Bairros — LeadField" },
+      { title: "Bairros — IGA TECNOLOGIA" },
       { name: "description", content: "Cadastro prévio de bairros com cidade e estado." },
-      { property: "og:title", content: "Bairros — LeadField" },
+      { property: "og:title", content: "Bairros — IGA TECNOLOGIA" },
       { property: "og:description", content: "Cadastro prévio de bairros com cidade e estado." },
     ],
   }),

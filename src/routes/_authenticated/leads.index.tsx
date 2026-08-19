@@ -29,9 +29,9 @@ import { useAllLeadProducts, useProducts, useSegments } from "@/lib/queries";
 export const Route = createFileRoute("/_authenticated/leads/")({
   head: () => ({
     meta: [
-      { title: "Leads — LeadField" },
+      { title: "Leads — IGA TECNOLOGIA" },
       { name: "description", content: "Consulte, filtre e atualize o status dos leads captados." },
-      { property: "og:title", content: "Leads — LeadField" },
+      { property: "og:title", content: "Leads — IGA TECNOLOGIA" },
       { property: "og:description", content: "Consulte, filtre e atualize o status dos leads captados." },
     ],
   }),

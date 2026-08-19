@@ -68,9 +68,9 @@ import { useAuth } from "@/hooks/useAuth";
 export const Route = createFileRoute("/_authenticated/leads/$id")({
   head: () => ({
     meta: [
-      { title: "Detalhes do Lead — LeadField" },
+      { title: "Detalhes do Lead — IGA TECNOLOGIA" },
       { name: "description", content: "Informações, qualificação e histórico completo do lead." },
-      { property: "og:title", content: "Detalhes do Lead — LeadField" },
+      { property: "og:title", content: "Detalhes do Lead — IGA TECNOLOGIA" },
       { property: "og:description", content: "Informações, qualificação e histórico completo do lead." },
     ],
   }),
