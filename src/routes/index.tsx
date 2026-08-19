@@ -7,13 +7,13 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "LeadField — Captação de leads em campo" },
+      { title: "IGA TECNOLOGIA — Captação e Gestão de Leads" },
       {
         name: "description",
         content:
           "Cadastre leads durante visitas comerciais em segundos: endereço inteligente, campos por segmento e gestão completa.",
       },
-      { property: "og:title", content: "LeadField — Captação de leads em campo" },
+      { property: "og:title", content: "IGA TECNOLOGIA — Captação e Gestão de Leads" },
       {
         property: "og:description",
         content:

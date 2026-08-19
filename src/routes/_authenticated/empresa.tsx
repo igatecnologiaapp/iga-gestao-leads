@@ -15,9 +15,9 @@ import igaLogo from "@/assets/iga-logo.png.asset.json";
 export const Route = createFileRoute("/_authenticated/empresa")({
   head: () => ({
     meta: [
-      { title: "Empresa Emissora — LeadField" },
+      { title: "Empresa Emissora — IGA TECNOLOGIA" },
       { name: "description", content: "Dados da empresa que emite orçamentos, propostas e pedidos." },
-      { property: "og:title", content: "Empresa Emissora — LeadField" },
+      { property: "og:title", content: "Empresa Emissora — IGA TECNOLOGIA" },
       { property: "og:description", content: "Dados da empresa que emite orçamentos, propostas e pedidos." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

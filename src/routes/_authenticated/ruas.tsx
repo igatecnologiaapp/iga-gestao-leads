@@ -20,9 +20,9 @@ import { useNeighborhoods, useStreets } from "@/lib/queries";
 export const Route = createFileRoute("/_authenticated/ruas")({
   head: () => ({
     meta: [
-      { title: "Ruas — LeadField" },
+      { title: "Ruas — IGA TECNOLOGIA" },
       { name: "description", content: "Pré-cadastro de ruas com bairro, CEP, cidade e estado." },
-      { property: "og:title", content: "Ruas — LeadField" },
+      { property: "og:title", content: "Ruas — IGA TECNOLOGIA" },
       { property: "og:description", content: "Pré-cadastro de ruas com bairro, CEP, cidade e estado." },
     ],
   }),

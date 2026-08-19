@@ -28,12 +28,12 @@ import { FIELD_TYPES } from "@/lib/leads";
 export const Route = createFileRoute("/_authenticated/segmentos")({
   head: () => ({
     meta: [
-      { title: "Segmentos — LeadField" },
+      { title: "Segmentos — IGA TECNOLOGIA" },
       {
         name: "description",
         content: "Cadastre segmentos e configure os campos de qualificação exibidos na captação.",
       },
-      { property: "og:title", content: "Segmentos — LeadField" },
+      { property: "og:title", content: "Segmentos — IGA TECNOLOGIA" },
       {
         property: "og:description",
         content: "Cadastre segmentos e configure os campos de qualificação exibidos na captação.",
