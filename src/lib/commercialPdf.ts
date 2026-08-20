@@ -217,7 +217,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
   for (const [title, text] of blocks) {
     if (y > 255) {
       pdf.addPage();
-      y = MARGIN;
+      y = CONT_HEADER_H;
     }
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(10);
