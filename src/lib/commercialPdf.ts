@@ -25,6 +25,8 @@ type Input = {
 const MARGIN = 14;
 const LOGO_MAX_W = 26;
 const LOGO_MAX_H = 18;
+/** Faixa reservada no topo das páginas seguintes para o cabeçalho compacto com logotipo. */
+const CONT_HEADER_H = 24;
 
 /**
  * Carrega o logotipo da empresa emissora (logo_url configurado ou o logotipo
