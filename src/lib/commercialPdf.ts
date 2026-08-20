@@ -160,7 +160,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
     pdf.text(group.name, MARGIN, y);
     autoTable(pdf, {
       startY: y + 2,
-      margin: { left: MARGIN, right: MARGIN },
+      margin: { left: MARGIN, right: MARGIN, top: CONT_HEADER_H },
       styles: { fontSize: 8.5, cellPadding: 2, valign: "top" },
       headStyles: { fillColor: [235, 238, 243], textColor: 40, fontStyle: "bold" },
       columnStyles: {
