@@ -193,7 +193,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
 
   autoTable(pdf, {
     startY: y + 4,
-    margin: { left: pageWidth / 2, right: MARGIN },
+    margin: { left: pageWidth / 2, right: MARGIN, top: CONT_HEADER_H },
     styles: { fontSize: 9.5, cellPadding: 2 },
     theme: "plain",
     columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
