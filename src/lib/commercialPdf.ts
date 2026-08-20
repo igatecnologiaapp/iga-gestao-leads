@@ -25,6 +25,8 @@ type Input = {
 const MARGIN = 14;
 const LOGO_MAX_W = 26;
 const LOGO_MAX_H = 18;
+/** Faixa reservada no topo das páginas seguintes para o cabeçalho compacto com logotipo. */
+const CONT_HEADER_H = 24;
 
 /**
  * Carrega o logotipo da empresa emissora (logo_url configurado ou o logotipo
@@ -158,7 +160,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
     pdf.text(group.name, MARGIN, y);
     autoTable(pdf, {
       startY: y + 2,
-      margin: { left: MARGIN, right: MARGIN },
+      margin: { left: MARGIN, right: MARGIN, top: CONT_HEADER_H },
       styles: { fontSize: 8.5, cellPadding: 2, valign: "top" },
       headStyles: { fillColor: [235, 238, 243], textColor: 40, fontStyle: "bold" },
       columnStyles: {
@@ -191,7 +193,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
 
   autoTable(pdf, {
     startY: y + 4,
-    margin: { left: pageWidth / 2, right: MARGIN },
+    margin: { left: pageWidth / 2, right: MARGIN, top: CONT_HEADER_H },
     styles: { fontSize: 9.5, cellPadding: 2 },
     theme: "plain",
     columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
@@ -215,7 +217,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
   for (const [title, text] of blocks) {
     if (y > 255) {
       pdf.addPage();
-      y = MARGIN;
+      y = CONT_HEADER_H;
     }
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(10);
@@ -235,6 +237,38 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
   for (let i = 1; i <= total; i++) {
     pdf.setPage(i);
     const h = pdf.internal.pageSize.getHeight();
+
+    // Cabeçalho compacto (logotipo + empresa + documento) nas páginas seguintes
+    if (i > 1) {
+      let x = MARGIN;
+      if (logo) {
+        const ratio = Math.min(LOGO_MAX_W / logo.width, 10 / logo.height);
+        const w = logo.width * ratio;
+        const hh = logo.height * ratio;
+        try {
+          pdf.addImage(logo.dataUrl, "PNG", MARGIN, MARGIN - 4, w, hh, undefined, "FAST");
+          x = MARGIN + w + 4;
+        } catch {
+          /* segue sem imagem */
+        }
+      }
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(9.5);
+      pdf.setTextColor(40);
+      pdf.text(company?.name ?? "Empresa", x, MARGIN + 1);
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8.5);
+      pdf.text(
+        `${docTypeLabel(doc.doc_type)} ${doc.number_label} · V${doc.version}`,
+        pageWidth - MARGIN,
+        MARGIN + 1,
+        { align: "right" },
+      );
+      pdf.setDrawColor(200);
+      pdf.line(MARGIN, MARGIN + 5, pageWidth - MARGIN, MARGIN + 5);
+      pdf.setTextColor(0);
+    }
+
     pdf.setFontSize(7.5);
     pdf.setTextColor(120);
     pdf.text(footer, MARGIN, h - 8);
