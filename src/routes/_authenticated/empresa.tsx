@@ -36,6 +36,10 @@ function Empresa() {
   const current = form ?? company ?? null;
   if (!current) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
+  // Só URLs realmente carregáveis pelo navegador servem para o PDF.
+  const logoValue = current.logo_url?.trim() ?? "";
+  const logoInvalid = logoValue.length > 0 && !/^(https?:\/\/|data:image\/|\/)/i.test(logoValue);
+
   function set<K extends keyof CompanySettings>(key: K, value: CompanySettings[K]) {
     setForm({ ...(current as CompanySettings), [key]: value });
   }
@@ -78,15 +82,22 @@ function Empresa() {
             value={current.logo_url ?? ""}
             onChange={(v) => set("logo_url", v)}
           />
+          {logoInvalid ? (
+            <p className="text-xs text-destructive">
+              Endereço inválido: informe uma URL pública (https://...) ou deixe o campo vazio.
+              Caminhos locais do computador (ex.: C:\...) não podem ser lidos e o sistema usará o
+              logotipo IGA padrão.
+            </p>
+          ) : null}
           <div className="flex items-center gap-3 rounded-xl border bg-muted/30 p-3">
             <img
-              src={current.logo_url || igaLogo.url}
+              src={logoInvalid || !current.logo_url ? igaLogo.url : current.logo_url}
               alt="Pré-visualização do logotipo usado no cabeçalho dos PDFs"
               className="h-12 w-auto max-w-[160px] object-contain"
             />
             <p className="text-xs text-muted-foreground">
-              Este logotipo aparece no cabeçalho dos orçamentos, propostas e pedidos em PDF, com a
-              proporção original preservada.
+              Este logotipo aparece no cabeçalho de todas as páginas dos orçamentos, propostas e
+              pedidos em PDF, com a proporção original preservada.
             </p>
           </div>
         </div>
