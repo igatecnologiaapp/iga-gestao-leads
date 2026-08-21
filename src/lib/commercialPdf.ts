@@ -215,6 +215,8 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
       startY: y,
       margin: { left: MARGIN, right: MARGIN, top: CONT_HEADER_H },
       theme: "plain",
+      // Evita que a descrição de um item seja partida entre duas páginas.
+      rowPageBreak: "avoid",
       styles: { fontSize: 8.5, cellPadding: { top: 1.9, bottom: 1.9, left: 2, right: 2 }, valign: "top" },
       headStyles: { textColor: MUTED, fontStyle: "normal", lineWidth: { bottom: 0.2 }, lineColor: 205 },
       bodyStyles: { lineWidth: { bottom: 0.1 }, lineColor: 225, textColor: 30 },
