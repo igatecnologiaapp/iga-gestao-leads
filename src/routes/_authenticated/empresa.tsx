@@ -36,6 +36,10 @@ function Empresa() {
   const current = form ?? company ?? null;
   if (!current) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
+  // Só URLs realmente carregáveis pelo navegador servem para o PDF.
+  const logoValue = current.logo_url?.trim() ?? "";
+  const logoInvalid = logoValue.length > 0 && !/^(https?:\/\/|data:image\/|\/)/i.test(logoValue);
+
   function set<K extends keyof CompanySettings>(key: K, value: CompanySettings[K]) {
     setForm({ ...(current as CompanySettings), [key]: value });
   }
