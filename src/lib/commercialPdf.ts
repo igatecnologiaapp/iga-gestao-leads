@@ -80,7 +80,7 @@ export async function loadCompanyLogo(logoUrl?: string | null): Promise<PdfLogo 
   return fetchLogo(igaLogo.url);
 }
 
-function drawLogo(pdf: jsPDF, logo: PdfLogo | null, x: number, y: number, maxW: number, maxH: number) {
+function drawLogo(pdf: jsPDF, logo: PdfLogo | null | undefined, x: number, y: number, maxW: number, maxH: number) {
   if (!logo) return 0;
   const ratio = Math.min(maxW / logo.width, maxH / logo.height);
   const w = logo.width * ratio;
