@@ -23,8 +23,8 @@ type Input = {
 };
 
 const MARGIN = 14;
-const LOGO_MAX_W = 30;
-const LOGO_MAX_H = 30;
+const LOGO_MAX_W = 26;
+const LOGO_MAX_H = 26;
 /** Faixa reservada no topo das páginas seguintes para o cabeçalho compacto com logotipo. */
 const CONT_HEADER_H = 26;
 const BAND = [232, 235, 240] as const;
@@ -233,12 +233,9 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
             4: { cellWidth: 30, halign: "right" },
           },
       head: [head],
-      body: group.items.map((item) => {
+      body: group.items.flatMap((item) => {
         const row: unknown[] = [
-          {
-            content: item.description + (item.extra_notes ? `\n${item.extra_notes}` : ""),
-            styles: { fontStyle: "bold" },
-          },
+          { content: item.description, styles: { fontStyle: "bold" } },
           item.unit ?? "",
           formatCurrency(item.unit_price),
           String(Number(item.quantity)),
@@ -246,7 +243,21 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
         if (hasDiscount)
           row.push(Number(item.discount_value) ? formatCurrency(item.discount_value) : "-");
         row.push(formatCurrency(item.total));
-        return row as never;
+        if (!item.extra_notes) return [row as never];
+        // Descrição complementar em linha própria (peso normal, sem sobreposição)
+        const noteRow: unknown[] = [
+          {
+            content: item.extra_notes,
+            colSpan: head.length,
+            styles: { fontStyle: "normal", textColor: MUTED, cellPadding: { top: 0, bottom: 2.2, left: 2, right: 2 } },
+          },
+        ];
+        return [
+          [...(row as unknown[])].map((c, i) =>
+            i === 0 ? c : c,
+          ) as never,
+          noteRow as never,
+        ];
       }),
     });
     y = (pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 2;
@@ -278,7 +289,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
         : [label, value],
     ) as never,
   });
-  y = (pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+  y = (pdf as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4;
 
   // ---------- Pagamento / observações ----------
   const blocks: [string, string][] = [];
@@ -295,22 +306,22 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
 
   for (const [title, text] of blocks) {
     const lines = pdf.splitTextToSize(text, contentW - 4) as string[];
-    if (y + 14 + lines.length * 4 > 275) {
+    if (y + 13 + lines.length * 4 > 282) {
       pdf.addPage();
       y = CONT_HEADER_H;
     }
-    y = band(pdf, y, contentW, title) + 6;
+    y = band(pdf, y, contentW, title) + 5.5;
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(8.5);
     pdf.setTextColor(30);
     pdf.text(lines, MARGIN, y);
     pdf.setTextColor(0);
-    y += lines.length * 4 + 6;
+    y += lines.length * 4 + 4;
   }
 
   // ---------- Assinatura da empresa emissora ----------
   const pageH = pdf.internal.pageSize.getHeight();
-  if (y + 24 > pageH - 16) {
+  if (y + 22 > pageH - 14) {
     pdf.addPage();
     y = CONT_HEADER_H;
   }
