@@ -143,7 +143,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
   pdf.text(formatDateOnly(doc.issue_date), pageWidth - MARGIN, y + 5, { align: "right" });
   pdf.setTextColor(0);
 
-  y = Math.max(y + 12 + companyLines.length * 4, y + (logo ? LOGO_MAX_H : 0)) + 4;
+  y = Math.max(y + 11 + companyLines.length * 4, y + (logo ? LOGO_MAX_H : 0)) + 3;
   if (company?.footer_note) {
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(8.5);
@@ -205,7 +205,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
       pdf.addPage();
       y = CONT_HEADER_H;
     }
-    y = band(pdf, y + 3, contentW, group.name) + 1;
+    y = band(pdf, y + 2, contentW, group.name) + 1;
 
     const head = ["Descrição", "Unidade", "Preço unit.", "Qtd."];
     if (hasDiscount) head.push("Desconto");
@@ -215,7 +215,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
       startY: y,
       margin: { left: MARGIN, right: MARGIN, top: CONT_HEADER_H },
       theme: "plain",
-      styles: { fontSize: 8.5, cellPadding: { top: 2.2, bottom: 2.2, left: 2, right: 2 }, valign: "top" },
+      styles: { fontSize: 8.5, cellPadding: { top: 1.9, bottom: 1.9, left: 2, right: 2 }, valign: "top" },
       headStyles: { textColor: MUTED, fontStyle: "normal", lineWidth: { bottom: 0.2 }, lineColor: 205 },
       bodyStyles: { lineWidth: { bottom: 0.1 }, lineColor: 225, textColor: 30 },
       columnStyles: hasDiscount
@@ -275,7 +275,7 @@ export function buildDocumentPdf({ company, doc, items, categories, paymentMetho
     startY: y + 4,
     margin: { left: pageWidth / 2, right: MARGIN, top: CONT_HEADER_H },
     theme: "plain",
-    styles: { fontSize: 9.5, cellPadding: 2.4, fillColor: [244, 246, 249] },
+    styles: { fontSize: 9.5, cellPadding: 2.1, fillColor: [244, 246, 249] },
     columnStyles: { 1: { halign: "right" } },
     body: totals.map(([label, value], i) =>
       i === totals.length - 1
