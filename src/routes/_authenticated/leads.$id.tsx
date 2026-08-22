@@ -36,17 +36,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/Combobox";
-import {
-  AddressFields,
-  addressFromLead,
-  type AddressValue,
-} from "@/components/AddressFields";
+import { AddressFields, addressFromLead, type AddressValue } from "@/components/AddressFields";
 import { DynamicField } from "@/components/DynamicField";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LeadAppointments } from "@/components/LeadAppointments";
 import { LeadCommercialDocs } from "@/components/LeadCommercialDocs";
 
-import { AppointmentFields, emptyAppointment, type AppointmentDraft } from "@/components/AppointmentFields";
+import {
+  AppointmentFields,
+  emptyAppointment,
+  type AppointmentDraft,
+} from "@/components/AppointmentFields";
 import { formatAppointment, fromLocalParts, toLocalParts } from "@/lib/appointments";
 import {
   LEAD_STATUSES,
@@ -69,14 +69,16 @@ import {
 } from "@/lib/queries";
 import { useAuth } from "@/hooks/useAuth";
 
-
 export const Route = createFileRoute("/_authenticated/leads/$id")({
   head: () => ({
     meta: [
       { title: "Detalhes do Lead — IGA TECNOLOGIA" },
       { name: "description", content: "Informações, qualificação e histórico completo do lead." },
       { property: "og:title", content: "Detalhes do Lead — IGA TECNOLOGIA" },
-      { property: "og:description", content: "Informações, qualificação e histórico completo do lead." },
+      {
+        property: "og:description",
+        content: "Informações, qualificação e histórico completo do lead.",
+      },
     ],
   }),
   component: LeadDetail,
@@ -93,7 +95,6 @@ function LeadDetail() {
   const [notes, setNotes] = useState("");
   const [editOpen, setEditOpen] = useState(false);
 
-
   const {
     data: lead,
     isLoading: leadLoading,
@@ -107,7 +108,6 @@ function LeadDetail() {
     },
     retry: false,
   });
-
 
   const { data: leadProducts = [] } = useQuery({
     queryKey: ["lead_products", id],
@@ -142,7 +142,12 @@ function LeadDetail() {
         .eq("lead_id", id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as { id: string; event_type: string; description: string | null; created_at: string }[];
+      return data as {
+        id: string;
+        event_type: string;
+        description: string | null;
+        created_at: string;
+      }[];
     },
   });
 
@@ -169,9 +174,11 @@ function LeadDetail() {
     );
   }
 
-
   async function updateLead(patch: Record<string, unknown>, message: string) {
-    const { error } = await supabase.from("leads").update(patch as never).eq("id", id);
+    const { error } = await supabase
+      .from("leads")
+      .update(patch as never)
+      .eq("id", id);
     if (error) {
       toast.error("Não foi possível salvar.");
       return;
@@ -188,7 +195,9 @@ function LeadDetail() {
   }
 
   const segmentName = segments.find((s) => s.id === lead.segment_id)?.name ?? "-";
-  const selectedProducts = products.filter((p) => leadProducts.some((lp) => lp.product_id === p.id));
+  const selectedProducts = products.filter((p) =>
+    leadProducts.some((lp) => lp.product_id === p.id),
+  );
 
   function renderValue(value: unknown) {
     if (typeof value === "boolean") return value ? "Sim" : "Não";
@@ -223,15 +232,25 @@ function LeadDetail() {
           />
           <Info label="Bairro" value={lead.neighborhood_name ?? "-"} />
           <Info label="Captado em" value={formatDateTime(lead.created_at)} />
-          <Info label="Cidade / UF" value={[lead.city, lead.state].filter(Boolean).join(" / ") || "-"} />
+          <Info
+            label="Cidade / UF"
+            value={[lead.city, lead.state].filter(Boolean).join(" / ") || "-"}
+          />
         </dl>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-[220px_auto_auto]">
-          <Select value={lead.status} onValueChange={(v) => updateLead({ status: v }, "Status atualizado.")}>
-            <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+          <Select
+            value={lead.status}
+            onValueChange={(v) => updateLead({ status: v }, "Status atualizado.")}
+          >
+            <SelectTrigger className="h-11">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {LEAD_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -248,21 +267,19 @@ function LeadDetail() {
         </div>
       </div>
 
-
-      <LeadAppointments
-        leadId={lead.id}
-        canEdit={isAdmin || lead.created_by === user?.id}
-      />
+      <LeadAppointments leadId={lead.id} canEdit={isAdmin || lead.created_by === user?.id} />
 
       <LeadCommercialDocs leadId={lead.id} />
-
 
       {selectedProducts.length > 0 && (
         <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)]">
           <h2 className="text-sm font-bold">Soluções de interesse</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {selectedProducts.map((p) => (
-              <span key={p.id} className="rounded-full border bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <span
+                key={p.id}
+                className="rounded-full border bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
+              >
                 {p.name}
               </span>
             ))}
@@ -287,7 +304,12 @@ function LeadDetail() {
 
       <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)]">
         <h2 className="text-sm font-bold">Observações da visita</h2>
-        <Textarea className="mt-3" rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <Textarea
+          className="mt-3"
+          rows={4}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
         <Button className="mt-3" onClick={() => updateLead({ notes }, "Observações salvas.")}>
           Salvar observações
         </Button>
@@ -428,7 +450,10 @@ function EditLeadDialog({
   }, [open, nextAppointment?.id]);
 
   const fields = useMemo(
-    () => allFields.filter((f) => f.segment_id === segmentId).sort((a, b) => a.sort_order - b.sort_order),
+    () =>
+      allFields
+        .filter((f) => f.segment_id === segmentId)
+        .sort((a, b) => a.sort_order - b.sort_order),
     [allFields, segmentId],
   );
 
@@ -440,14 +465,16 @@ function EditLeadDialog({
     return products.filter((p) => ids.has(p.id) && p.active);
   }, [segmentId, segmentProducts, products]);
 
-
   async function save() {
     if (!company.trim()) {
       toast.error("Informe o nome da empresa.");
       return;
     }
     for (const f of fields) {
-      if (f.required && (custom[f.id] === undefined || custom[f.id] === "" || custom[f.id] === null)) {
+      if (
+        f.required &&
+        (custom[f.id] === undefined || custom[f.id] === "" || custom[f.id] === null)
+      ) {
         toast.error(`Preencha o campo "${f.label}".`);
         return;
       }
@@ -572,12 +599,22 @@ function EditLeadDialog({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="editCompany">Nome da empresa *</Label>
-            <Input id="editCompany" className="h-11" value={company} onChange={(e) => setCompany(e.target.value)} />
+            <Input
+              id="editCompany"
+              className="h-11"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+            />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="editContact">Nome do contato</Label>
-              <Input id="editContact" className="h-11" value={contact} onChange={(e) => setContact(e.target.value)} />
+              <Input
+                id="editContact"
+                className="h-11"
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="editPhone">Telefone</Label>
@@ -593,7 +630,9 @@ function EditLeadDialog({
           <div className="space-y-2">
             <Label>Segmento</Label>
             <Combobox
-              options={segments.filter((s) => s.active).map((s) => ({ value: s.id, label: s.name }))}
+              options={segments
+                .filter((s) => s.active)
+                .map((s) => ({ value: s.id, label: s.name }))}
               value={segmentId}
               onChange={(v) => {
                 setSegmentId(v);
@@ -610,7 +649,6 @@ function EditLeadDialog({
             value={address}
             onChange={(patch) => setAddress((prev) => ({ ...prev, ...patch }))}
           />
-
 
           <div className="space-y-2 rounded-xl border p-3">
             <Label className="text-xs font-bold tracking-wide uppercase">Agendamento</Label>
@@ -669,7 +707,12 @@ function EditLeadDialog({
 
           <div className="space-y-2">
             <Label htmlFor="editNotes">Observações da visita</Label>
-            <Textarea id="editNotes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Textarea
+              id="editNotes"
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
           </div>
         </div>
         <DialogFooter>
@@ -683,7 +726,6 @@ function EditLeadDialog({
 }
 
 function Info({ label, value }: { label: string; value: string }) {
-
   return (
     <div className="min-w-0">
       <dt className="text-xs text-muted-foreground">{label}</dt>

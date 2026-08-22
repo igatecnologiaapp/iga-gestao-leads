@@ -280,9 +280,7 @@ export function AddressFields({
                 />
                 {(() => {
                   const dup = newStreetName.trim()
-                    ? streets.find(
-                        (s) => normalizePlace(s.name) === normalizePlace(newStreetName),
-                      )
+                    ? streets.find((s) => normalizePlace(s.name) === normalizePlace(newStreetName))
                     : undefined;
                   if (!dup) return null;
                   return (

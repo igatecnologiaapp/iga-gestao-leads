@@ -13,7 +13,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Combobox } from "@/components/Combobox";
 import { PageHeader } from "@/components/PageHeader";
 import { AddressFields, emptyAddress, type AddressValue } from "@/components/AddressFields";
-import { AppointmentFields, emptyAppointment, type AppointmentDraft } from "@/components/AppointmentFields";
+import {
+  AppointmentFields,
+  emptyAppointment,
+  type AppointmentDraft,
+} from "@/components/AppointmentFields";
 import { fromLocalParts, formatAppointment } from "@/lib/appointments";
 import { DynamicField } from "@/components/DynamicField";
 import {
@@ -26,15 +30,16 @@ import {
 } from "@/lib/queries";
 import { maskPhone } from "@/lib/leads";
 
-
-
 export const Route = createFileRoute("/_authenticated/captar")({
   head: () => ({
     meta: [
       { title: "Captar Lead — IGA TECNOLOGIA" },
       { name: "description", content: "Cadastro rápido de leads durante a visita comercial." },
       { property: "og:title", content: "Captar Lead — IGA TECNOLOGIA" },
-      { property: "og:description", content: "Cadastro rápido de leads durante a visita comercial." },
+      {
+        property: "og:description",
+        content: "Cadastro rápido de leads durante a visita comercial.",
+      },
     ],
   }),
   component: CaptarLead,
@@ -97,8 +102,6 @@ function CaptarLead() {
     setNotes("");
     setSavedId(null);
   }
-
-
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -222,23 +225,40 @@ function CaptarLead() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="company">Nome da empresa *</Label>
-              <Input id="company" className="h-11" value={company} autoFocus
-                onChange={(e) => setCompany(e.target.value)} />
+              <Input
+                id="company"
+                className="h-11"
+                value={company}
+                autoFocus
+                onChange={(e) => setCompany(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="contact">Nome do contato</Label>
-              <Input id="contact" className="h-11" value={contact}
-                onChange={(e) => setContact(e.target.value)} />
+              <Input
+                id="contact"
+                className="h-11"
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
-              <Input id="phone" className="h-11" inputMode="tel" placeholder="(11) 99999-9999"
-                value={phone} onChange={(e) => setPhone(maskPhone(e.target.value))} />
+              <Input
+                id="phone"
+                className="h-11"
+                inputMode="tel"
+                placeholder="(11) 99999-9999"
+                value={phone}
+                onChange={(e) => setPhone(maskPhone(e.target.value))}
+              />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Segmento</Label>
               <Combobox
-                options={segments.filter((s) => s.active).map((s) => ({ value: s.id, label: s.name }))}
+                options={segments
+                  .filter((s) => s.active)
+                  .map((s) => ({ value: s.id, label: s.name }))}
                 value={segmentId}
                 onChange={(v) => {
                   setSegmentId(v);
@@ -252,7 +272,6 @@ function CaptarLead() {
                 placeholder="Selecione o segmento"
               />
             </div>
-
           </div>
         </section>
 
@@ -267,7 +286,6 @@ function CaptarLead() {
             allowCreateStreet
           />
         </section>
-
 
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
           <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">
@@ -285,7 +303,6 @@ function CaptarLead() {
             />
           </div>
         </section>
-
 
         {segmentId && compatibleProducts.length > 0 && (
           <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
@@ -341,12 +358,20 @@ function CaptarLead() {
         )}
 
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
-          <Label htmlFor="notes" className="text-sm font-bold tracking-wide text-muted-foreground uppercase">
+          <Label
+            htmlFor="notes"
+            className="text-sm font-bold tracking-wide text-muted-foreground uppercase"
+          >
             Observações da visita
           </Label>
-          <Textarea id="notes" rows={4} className="mt-3" value={notes}
+          <Textarea
+            id="notes"
+            rows={4}
+            className="mt-3"
+            value={notes}
             placeholder="Ex.: Proprietário interessado em sistema de estoque."
-            onChange={(e) => setNotes(e.target.value)} />
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </section>
 
         <Button type="submit" className="h-12 w-full text-base font-semibold" disabled={saving}>
@@ -355,8 +380,6 @@ function CaptarLead() {
         </Button>
         <div className="h-14 md:hidden" />
       </form>
-
     </div>
   );
 }
-
