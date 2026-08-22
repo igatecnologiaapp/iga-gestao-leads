@@ -216,10 +216,13 @@ function ComercialList() {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Carregando...</p>
+        <LoadingState label="Carregando documentos..." />
       ) : !filtered.length ? (
-        <div className="rounded-xl border bg-card p-8 text-center text-sm text-muted-foreground">
-          Nenhum documento encontrado.
+        <div className="rounded-xl border bg-card">
+          <EmptyState
+            title="Nenhum documento encontrado"
+            description="Ajuste os filtros ou crie um novo documento."
+          />
         </div>
       ) : (
         <>
