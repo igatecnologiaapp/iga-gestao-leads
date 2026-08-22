@@ -405,14 +405,8 @@ function EditLeadDialog({
     setContact(lead.contact_name ?? "");
     setPhone(lead.phone ?? "");
     setSegmentId(lead.segment_id);
-    setStreetId(lead.street_id);
-    setStreetName(lead.street_name ?? "");
-    setNumber(lead.number ?? "");
-    setNeighborhoodId(lead.neighborhood_id);
-    setNeighborhoodName("");
-    setCep(lead.postal_code ?? "");
-    setCepMessage(null);
-    setCityUf(null);
+    setAddress(addressFromLead(lead));
+
     setAppointment(
       nextAppointment
         ? {
