@@ -389,15 +389,8 @@ function EditLeadDialog({
   const [contact, setContact] = useState(lead.contact_name ?? "");
   const [phone, setPhone] = useState(lead.phone ?? "");
   const [segmentId, setSegmentId] = useState<string | null>(lead.segment_id);
-  const [streetId, setStreetId] = useState<string | null>(lead.street_id);
-  const [streetName, setStreetName] = useState(lead.street_name ?? "");
-  const [number, setNumber] = useState(lead.number ?? "");
-  const [neighborhoodId, setNeighborhoodId] = useState<string | null>(lead.neighborhood_id);
-  const [neighborhoodName, setNeighborhoodName] = useState("");
-  const [cep, setCep] = useState(lead.postal_code ?? "");
-  const [cepLoading, setCepLoading] = useState(false);
-  const [cepMessage, setCepMessage] = useState<string | null>(null);
-  const [cityUf, setCityUf] = useState<{ city: string; state: string } | null>(null);
+  const [address, setAddress] = useState<AddressValue>(() => addressFromLead(lead));
+
   const { data: leadAppointments = [] } = useLeadAppointments(lead.id);
   const nextAppointment = leadAppointments.find((a) => a.status === "agendado") ?? null;
   const [appointment, setAppointment] = useState<AppointmentDraft>(emptyAppointment);
