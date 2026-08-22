@@ -36,6 +36,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/Combobox";
+import {
+  AddressFields,
+  addressFromLead,
+  type AddressValue,
+} from "@/components/AddressFields";
 import { DynamicField } from "@/components/DynamicField";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LeadAppointments } from "@/components/LeadAppointments";
