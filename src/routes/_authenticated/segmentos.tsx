@@ -115,7 +115,9 @@ function Segmentos() {
                   </span>
                 )}
               </p>
-              {s.description && <p className="truncate text-xs text-muted-foreground">{s.description}</p>}
+              {s.description && (
+                <p className="truncate text-xs text-muted-foreground">{s.description}</p>
+              )}
             </div>
             <div className="flex shrink-0 gap-1">
               <Button
@@ -155,7 +157,12 @@ function Segmentos() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome</Label>
-              <Input id="nome" className="h-11" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input
+                id="nome"
+                className="h-11"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="desc">Descrição</Label>

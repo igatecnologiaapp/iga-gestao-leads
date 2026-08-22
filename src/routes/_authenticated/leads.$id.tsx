@@ -48,11 +48,7 @@ import {
   type AppointmentDraft,
 } from "@/components/AppointmentFields";
 import { formatAppointment, fromLocalParts, toLocalParts } from "@/lib/appointments";
-import {
-  LEAD_STATUSES,
-  formatDateTime,
-  maskPhone,
-} from "@/lib/leads";
+import { LEAD_STATUSES, formatDateTime, maskPhone } from "@/lib/leads";
 import {
   useAllSegmentFields,
   useLeadAppointments,

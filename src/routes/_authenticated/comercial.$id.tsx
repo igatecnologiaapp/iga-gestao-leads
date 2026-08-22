@@ -19,7 +19,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog,
-  
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -75,9 +74,15 @@ export const Route = createFileRoute("/_authenticated/comercial/$id")({
   head: () => ({
     meta: [
       { title: "Documento Comercial — IGA TECNOLOGIA" },
-      { name: "description", content: "Detalhes, itens, totais, PDF e histórico do documento comercial." },
+      {
+        name: "description",
+        content: "Detalhes, itens, totais, PDF e histórico do documento comercial.",
+      },
       { property: "og:title", content: "Documento Comercial — IGA TECNOLOGIA" },
-      { property: "og:description", content: "Detalhes, itens, totais, PDF e histórico do documento comercial." },
+      {
+        property: "og:description",
+        content: "Detalhes, itens, totais, PDF e histórico do documento comercial.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -152,8 +157,15 @@ function DocumentDetail() {
     await logDocumentEvent(id, event, description);
     if (!isDraft(doc.status)) {
       const nextVersion = doc.version + 1;
-      await supabase.from("commercial_documents").update({ version: nextVersion } as never).eq("id", id);
-      await logDocumentEvent(id, "nova_versao", `Versão ${nextVersion} gerada após alteração do documento`);
+      await supabase
+        .from("commercial_documents")
+        .update({ version: nextVersion } as never)
+        .eq("id", id);
+      await logDocumentEvent(
+        id,
+        "nova_versao",
+        `Versão ${nextVersion} gerada após alteração do documento`,
+      );
     }
     await refresh();
   }
@@ -161,8 +173,11 @@ function DocumentDetail() {
   async function changeStatus(status: string) {
     if (!doc) return;
     const patch: Record<string, unknown> = { status };
-    if (!doc.issued_at && status !== "rascunho") patch['issued_at'] = new Date().toISOString();
-    const { error } = await supabase.from("commercial_documents").update(patch as never).eq("id", id);
+    if (!doc.issued_at && status !== "rascunho") patch["issued_at"] = new Date().toISOString();
+    const { error } = await supabase
+      .from("commercial_documents")
+      .update(patch as never)
+      .eq("id", id);
     if (error) {
       toast.error("Não foi possível alterar o status.");
       return;
@@ -208,7 +223,11 @@ function DocumentDetail() {
     if (nav.canShare?.({ files: [file] })) {
       try {
         await navigator.share({ files: [file], title: out.fileName });
-        await logDocumentEvent(id, "envio_preparado", `PDF compartilhado pelo dispositivo (${out.fileName})`);
+        await logDocumentEvent(
+          id,
+          "envio_preparado",
+          `PDF compartilhado pelo dispositivo (${out.fileName})`,
+        );
         await refresh();
       } catch {
         /* usuário cancelou */
@@ -354,7 +373,9 @@ function DocumentDetail() {
     <div className="mx-auto max-w-4xl space-y-4">
       <div className="flex items-center gap-2">
         <Button asChild variant="ghost" size="icon">
-          <Link to="/comercial"><ArrowLeft className="h-4 w-4" /></Link>
+          <Link to="/comercial">
+            <ArrowLeft className="h-4 w-4" />
+          </Link>
         </Button>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-xl font-extrabold tracking-tight">
@@ -365,7 +386,9 @@ function DocumentDetail() {
             {profiles.find((p) => p.id === doc.owner_id)?.full_name ?? "-"}
           </p>
         </div>
-        <span className={`shrink-0 rounded-full border px-2 py-1 text-[11px] font-medium ${docStatusClass(doc.status)}`}>
+        <span
+          className={`shrink-0 rounded-full border px-2 py-1 text-[11px] font-medium ${docStatusClass(doc.status)}`}
+        >
           {docStatusLabel(doc.status)}
         </span>
       </div>
@@ -388,19 +411,27 @@ function DocumentDetail() {
 
       {/* Cabeçalho / emissora */}
       <section className="rounded-xl border bg-card p-3 text-sm shadow-[var(--shadow-card)]">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Empresa emissora</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          Empresa emissora
+        </h2>
         <p className="mt-1 font-semibold">{company?.name ?? "Configure a empresa emissora"}</p>
         <p className="text-xs text-muted-foreground">
-          {[company?.cnpj && `CNPJ ${company.cnpj}`, company?.phone, company?.email].filter(Boolean).join(" · ")}
+          {[company?.cnpj && `CNPJ ${company.cnpj}`, company?.phone, company?.email]
+            .filter(Boolean)
+            .join(" · ")}
         </p>
       </section>
 
       {/* Cliente */}
       <section className="rounded-xl border bg-card p-3 text-sm shadow-[var(--shadow-card)]">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Cliente</h2>
+          <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+            Cliente
+          </h2>
           <Button asChild variant="ghost" size="sm">
-            <Link to="/leads/$id" params={{ id: doc.lead_id }}>Ver lead</Link>
+            <Link to="/leads/$id" params={{ id: doc.lead_id }}>
+              Ver lead
+            </Link>
           </Button>
         </div>
         <p className="mt-1 font-semibold">{doc.client_company}</p>
@@ -418,7 +449,8 @@ function DocumentDetail() {
             .join(" · ")}
         </p>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          Os dados acima são um snapshot do lead no momento da criação e não são alterados por edições posteriores no cadastro.
+          Os dados acima são um snapshot do lead no momento da criação e não são alterados por
+          edições posteriores no cadastro.
         </p>
       </section>
 
@@ -434,26 +466,42 @@ function DocumentDetail() {
       {/* Totais */}
       <section className="space-y-1 rounded-xl border bg-card p-3 text-sm shadow-[var(--shadow-card)]">
         <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Totais</h2>
-        <div className="flex justify-between"><span>Serviços</span><span>{formatCurrency(doc.total_services)}</span></div>
-        <div className="flex justify-between"><span>Peças</span><span>{formatCurrency(doc.total_parts)}</span></div>
+        <div className="flex justify-between">
+          <span>Serviços</span>
+          <span>{formatCurrency(doc.total_services)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Peças</span>
+          <span>{formatCurrency(doc.total_parts)}</span>
+        </div>
         <div className="flex justify-between text-muted-foreground">
-          <span>Descontos</span><span>- {formatCurrency(doc.total_discount)}</span>
+          <span>Descontos</span>
+          <span>- {formatCurrency(doc.total_discount)}</span>
         </div>
         <div className="flex justify-between border-t pt-2 text-base font-bold">
-          <span>Total</span><span>{formatCurrency(doc.total_general)}</span>
+          <span>Total</span>
+          <span>{formatCurrency(doc.total_general)}</span>
         </div>
       </section>
 
       {/* Pagamento e observações */}
       <section className="space-y-1 rounded-xl border bg-card p-3 text-sm shadow-[var(--shadow-card)]">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Pagamento</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          Pagamento
+        </h2>
         <p>{paymentMethodName ?? "Forma de pagamento não informada"}</p>
-        {doc.payment_terms && <p className="text-xs text-muted-foreground">Condição: {doc.payment_terms}</p>}
-        {doc.payment_deadline && <p className="text-xs text-muted-foreground">Prazo: {doc.payment_deadline}</p>}
+        {doc.payment_terms && (
+          <p className="text-xs text-muted-foreground">Condição: {doc.payment_terms}</p>
+        )}
+        {doc.payment_deadline && (
+          <p className="text-xs text-muted-foreground">Prazo: {doc.payment_deadline}</p>
+        )}
         {doc.payment_notes && <p className="text-xs text-muted-foreground">{doc.payment_notes}</p>}
         {doc.notes && (
           <>
-            <h2 className="pt-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">Observações</h2>
+            <h2 className="pt-3 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+              Observações
+            </h2>
             <p className="whitespace-pre-line text-sm">{doc.notes}</p>
           </>
         )}
@@ -464,19 +512,33 @@ function DocumentDetail() {
         <div className="space-y-2">
           <Label>Status</Label>
           <Select value={doc.status} onValueChange={(v) => void changeStatus(v)}>
-            <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-11">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {statuses.map((s) => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:items-end">
-          <Button variant="outline" className="h-11" onClick={() => setEditOpen(true)} disabled={!editable}>
+          <Button
+            variant="outline"
+            className="h-11"
+            onClick={() => setEditOpen(true)}
+            disabled={!editable}
+          >
             Editar dados
           </Button>
-          <Button variant="outline" className="h-11" onClick={() => void duplicate()} disabled={busy}>
+          <Button
+            variant="outline"
+            className="h-11"
+            onClick={() => void duplicate()}
+            disabled={busy}
+          >
             <Copy className="h-4 w-4" /> Duplicar
           </Button>
           <Button
@@ -499,8 +561,12 @@ function DocumentDetail() {
 
       {/* Histórico */}
       <section className="space-y-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]">
-        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Histórico</h2>
-        {!history.length && <p className="text-sm text-muted-foreground">Sem eventos registrados.</p>}
+        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+          Histórico
+        </h2>
+        {!history.length && (
+          <p className="text-sm text-muted-foreground">Sem eventos registrados.</p>
+        )}
         {history.map((h) => (
           <div key={h.id} className="border-l-2 border-primary/40 pl-3 text-sm">
             <p className="font-medium">{HISTORY_LABELS[h.event_type] ?? h.event_type}</p>
@@ -537,22 +603,31 @@ function DocumentDetail() {
                 className="h-11"
                 value={shareTarget}
                 onChange={(e) =>
-                  setShareTarget(shareChannel === "whatsapp" ? maskPhone(e.target.value) : e.target.value)
+                  setShareTarget(
+                    shareChannel === "whatsapp" ? maskPhone(e.target.value) : e.target.value,
+                  )
                 }
               />
             </div>
             <div className="space-y-2">
               <Label>Mensagem</Label>
-              <Textarea rows={7} value={shareMessage} onChange={(e) => setShareMessage(e.target.value)} />
+              <Textarea
+                rows={7}
+                value={shareMessage}
+                onChange={(e) => setShareMessage(e.target.value)}
+              />
             </div>
             <p className="rounded-lg bg-muted p-2 text-xs text-muted-foreground">
-              O PDF será baixado no dispositivo e o app de destino será aberto com a mensagem pronta. O anexo
-              precisa ser adicionado manualmente — não há API oficial de WhatsApp/e-mail configurada. A ação é
-              registrada como <strong>Envio preparado</strong>.
+              O PDF será baixado no dispositivo e o app de destino será aberto com a mensagem
+              pronta. O anexo precisa ser adicionado manualmente — não há API oficial de
+              WhatsApp/e-mail configurada. A ação é registrada como <strong>Envio preparado</strong>
+              .
             </p>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => void markSent()}>Marcar como enviado</Button>
+            <Button variant="outline" onClick={() => void markSent()}>
+              Marcar como enviado
+            </Button>
             <Button onClick={() => void confirmShare()}>Gerar PDF e abrir</Button>
           </DialogFooter>
         </DialogContent>
@@ -567,20 +642,26 @@ function DocumentDetail() {
           <div className="space-y-2">
             <Label>Novo tipo</Label>
             <Select value={convertType} onValueChange={(v) => setConvertType(v as DocType)}>
-              <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-11">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {DOC_TYPES.filter((t) => t.value !== doc.doc_type).map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              O documento atual é preservado. Um novo documento será criado com novo número, copiando itens,
-              preços, descontos e condições comerciais.
+              O documento atual é preservado. Um novo documento será criado com novo número,
+              copiando itens, preços, descontos e condições comerciais.
             </p>
           </div>
           <DialogFooter>
-            <Button onClick={() => void convert()} disabled={busy}>Converter</Button>
+            <Button onClick={() => void convert()} disabled={busy}>
+              Converter
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -591,8 +672,9 @@ function DocumentDetail() {
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir documento?</AlertDialogTitle>
             <AlertDialogDescription>
-              A exclusão é lógica: o documento sai das listagens, mas número, itens, valores, versões e
-              histórico são preservados para auditoria. Informe o motivo da exclusão (obrigatório).
+              A exclusão é lógica: o documento sai das listagens, mas número, itens, valores,
+              versões e histórico são preservados para auditoria. Informe o motivo da exclusão
+              (obrigatório).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Input
@@ -616,7 +698,11 @@ function DocumentDetail() {
 
       {isAdmin && (
         <p className="text-center text-[11px] text-muted-foreground">
-          Dados da empresa emissora em <Link to="/empresa" className="underline">Configurações da empresa</Link>.
+          Dados da empresa emissora em{" "}
+          <Link to="/empresa" className="underline">
+            Configurações da empresa
+          </Link>
+          .
         </p>
       )}
       <div className="h-10 md:hidden" />
@@ -677,7 +763,8 @@ function EditDocumentDialog({
   async function save() {
     setSaving(true);
     const discountChanged =
-      Number(form.discount_value) !== Number(doc.discount_value) || form.discount_type !== doc.discount_type;
+      Number(form.discount_value) !== Number(doc.discount_value) ||
+      form.discount_type !== doc.discount_type;
     const { error } = await supabase
       .from("commercial_documents")
       .update({
@@ -691,7 +778,10 @@ function EditDocumentDialog({
       return;
     }
     onOpenChange(false);
-    await onSaved(discountChanged ? "desconto" : "editado", discountChanged ? "Desconto do documento alterado" : "Dados do documento editados");
+    await onSaved(
+      discountChanged ? "desconto" : "editado",
+      discountChanged ? "Desconto do documento alterado" : "Dados do documento editados",
+    );
     toast.success("Documento atualizado.");
   }
 
@@ -705,57 +795,119 @@ function EditDocumentDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="issue">Data de emissão</Label>
-              <Input id="issue" type="date" className="h-11" value={form.issue_date}
-                onChange={(e) => set("issue_date", e.target.value)} />
+              <Input
+                id="issue"
+                type="date"
+                className="h-11"
+                value={form.issue_date}
+                onChange={(e) => set("issue_date", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="valid">Validade</Label>
-              <Input id="valid" type="date" className="h-11" value={form.valid_until ?? ""}
-                onChange={(e) => set("valid_until", e.target.value || null)} />
+              <Input
+                id="valid"
+                type="date"
+                className="h-11"
+                value={form.valid_until ?? ""}
+                onChange={(e) => set("valid_until", e.target.value || null)}
+              />
             </div>
           </div>
 
-          <p className="text-xs font-bold uppercase text-muted-foreground">Cliente (somente neste documento)</p>
+          <p className="text-xs font-bold uppercase text-muted-foreground">
+            Cliente (somente neste documento)
+          </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="cc">Empresa</Label>
-              <Input id="cc" className="h-11" value={form.client_company} onChange={(e) => set("client_company", e.target.value)} />
+              <Input
+                id="cc"
+                className="h-11"
+                value={form.client_company}
+                onChange={(e) => set("client_company", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="ct">Contato</Label>
-              <Input id="ct" className="h-11" value={form.client_contact ?? ""} onChange={(e) => set("client_contact", e.target.value)} />
+              <Input
+                id="ct"
+                className="h-11"
+                value={form.client_contact ?? ""}
+                onChange={(e) => set("client_contact", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cp">Telefone</Label>
-              <Input id="cp" className="h-11" value={form.client_phone ?? ""} onChange={(e) => set("client_phone", maskPhone(e.target.value))} />
+              <Input
+                id="cp"
+                className="h-11"
+                value={form.client_phone ?? ""}
+                onChange={(e) => set("client_phone", maskPhone(e.target.value))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="ce">E-mail</Label>
-              <Input id="ce" className="h-11" value={form.client_email ?? ""} onChange={(e) => set("client_email", e.target.value)} />
+              <Input
+                id="ce"
+                className="h-11"
+                value={form.client_email ?? ""}
+                onChange={(e) => set("client_email", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cz">CEP</Label>
-              <Input id="cz" className="h-11" value={form.client_postal_code ?? ""} onChange={(e) => set("client_postal_code", maskCep(e.target.value))} />
+              <Input
+                id="cz"
+                className="h-11"
+                value={form.client_postal_code ?? ""}
+                onChange={(e) => set("client_postal_code", maskCep(e.target.value))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cs">Rua</Label>
-              <Input id="cs" className="h-11" value={form.client_street ?? ""} onChange={(e) => set("client_street", e.target.value)} />
+              <Input
+                id="cs"
+                className="h-11"
+                value={form.client_street ?? ""}
+                onChange={(e) => set("client_street", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cn">Número</Label>
-              <Input id="cn" className="h-11" value={form.client_number ?? ""} onChange={(e) => set("client_number", e.target.value)} />
+              <Input
+                id="cn"
+                className="h-11"
+                value={form.client_number ?? ""}
+                onChange={(e) => set("client_number", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cb">Bairro</Label>
-              <Input id="cb" className="h-11" value={form.client_neighborhood ?? ""} onChange={(e) => set("client_neighborhood", e.target.value)} />
+              <Input
+                id="cb"
+                className="h-11"
+                value={form.client_neighborhood ?? ""}
+                onChange={(e) => set("client_neighborhood", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="ci">Cidade</Label>
-              <Input id="ci" className="h-11" value={form.client_city ?? ""} onChange={(e) => set("client_city", e.target.value)} />
+              <Input
+                id="ci"
+                className="h-11"
+                value={form.client_city ?? ""}
+                onChange={(e) => set("client_city", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="cu">UF</Label>
-              <Input id="cu" className="h-11" value={form.client_state ?? ""} onChange={(e) => set("client_state", e.target.value)} />
+              <Input
+                id="cu"
+                className="h-11"
+                value={form.client_state ?? ""}
+                onChange={(e) => set("client_state", e.target.value)}
+              />
             </div>
           </div>
 
@@ -767,27 +919,43 @@ function EditDocumentDialog({
                 value={form.payment_method_id ?? "none"}
                 onValueChange={(v) => set("payment_method_id", v === "none" ? null : v)}
               >
-                <SelectTrigger className="h-11"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Não informado</SelectItem>
                   {methods.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="pt">Condição de pagamento</Label>
-              <Input id="pt" className="h-11" value={form.payment_terms ?? ""} onChange={(e) => set("payment_terms", e.target.value)} />
+              <Input
+                id="pt"
+                className="h-11"
+                value={form.payment_terms ?? ""}
+                onChange={(e) => set("payment_terms", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="pd">Prazo</Label>
-              <Input id="pd" className="h-11" value={form.payment_deadline ?? ""} onChange={(e) => set("payment_deadline", e.target.value)} />
+              <Input
+                id="pd"
+                className="h-11"
+                value={form.payment_deadline ?? ""}
+                onChange={(e) => set("payment_deadline", e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="dt">Tipo de desconto</Label>
               <Select value={form.discount_type} onValueChange={(v) => set("discount_type", v)}>
-                <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-11">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="valor">Valor (R$)</SelectItem>
                   <SelectItem value="percentual">Percentual (%)</SelectItem>
@@ -796,21 +964,38 @@ function EditDocumentDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="dv">Desconto geral</Label>
-              <Input id="dv" className="h-11" inputMode="decimal" value={String(form.discount_value)}
-                onChange={(e) => set("discount_value", e.target.value as unknown as number)} />
+              <Input
+                id="dv"
+                className="h-11"
+                inputMode="decimal"
+                value={String(form.discount_value)}
+                onChange={(e) => set("discount_value", e.target.value as unknown as number)}
+              />
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="pn">Observações de pagamento</Label>
-            <Textarea id="pn" rows={2} value={form.payment_notes ?? ""} onChange={(e) => set("payment_notes", e.target.value)} />
+            <Textarea
+              id="pn"
+              rows={2}
+              value={form.payment_notes ?? ""}
+              onChange={(e) => set("payment_notes", e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="nt">Observações gerais</Label>
-            <Textarea id="nt" rows={3} value={form.notes ?? ""} onChange={(e) => set("notes", e.target.value)} />
+            <Textarea
+              id="nt"
+              rows={3}
+              value={form.notes ?? ""}
+              onChange={(e) => set("notes", e.target.value)}
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button onClick={save} disabled={saving}>Salvar</Button>
+          <Button onClick={save} disabled={saving}>
+            Salvar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

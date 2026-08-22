@@ -76,19 +76,32 @@ function Bairros() {
         actions={
           <Button
             className="h-10"
-            onClick={() => { setEditing(null); setName(""); setCity(""); setState(""); setOpen(true); }}
+            onClick={() => {
+              setEditing(null);
+              setName("");
+              setCity("");
+              setState("");
+              setOpen(true);
+            }}
           >
             <Plus className="h-4 w-4" /> Novo
           </Button>
         }
       />
 
-      <SearchField value={search} onChange={setSearch} label="Pesquisar bairro" placeholder="Pesquisar bairro" />
+      <SearchField
+        value={search}
+        onChange={setSearch}
+        label="Pesquisar bairro"
+        placeholder="Pesquisar bairro"
+      />
 
       <div className="grid gap-2 sm:grid-cols-2">
         {list.map((n) => (
-          <div key={n.id}
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]">
+          <div
+            key={n.id}
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]"
+          >
             <div className="min-w-0">
               <p className="truncate font-semibold">{n.name}</p>
               <p className="truncate text-xs text-muted-foreground">
@@ -96,9 +109,17 @@ function Bairros() {
               </p>
             </div>
             <div className="flex shrink-0 gap-1">
-              <Button variant="ghost" size="icon" onClick={() => {
-                setEditing(n.id); setName(n.name); setCity(n.city); setState(n.state); setOpen(true);
-              }}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setEditing(n.id);
+                  setName(n.name);
+                  setCity(n.city);
+                  setState(n.state);
+                  setOpen(true);
+                }}
+              >
                 <Pencil className="h-4 w-4" />
               </Button>
               <Button variant="ghost" size="icon" onClick={() => remove(n.id)}>
@@ -117,17 +138,32 @@ function Bairros() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="nb">Nome do bairro</Label>
-              <Input id="nb" className="h-11" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input
+                id="nb"
+                className="h-11"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
             <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_100px]">
               <div className="space-y-2">
                 <Label htmlFor="city">Cidade</Label>
-                <Input id="city" className="h-11" value={city} onChange={(e) => setCity(e.target.value)} />
+                <Input
+                  id="city"
+                  className="h-11"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="uf">Estado</Label>
-                <Input id="uf" className="h-11" maxLength={2} value={state}
-                  onChange={(e) => setState(e.target.value)} />
+                <Input
+                  id="uf"
+                  className="h-11"
+                  maxLength={2}
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                />
               </div>
             </div>
           </div>

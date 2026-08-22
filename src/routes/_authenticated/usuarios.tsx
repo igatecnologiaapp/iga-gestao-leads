@@ -151,9 +151,7 @@ function UsuariosPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Usuários</h1>
-          <p className="text-sm text-muted-foreground">
-            Crie e administre os acessos ao sistema.
-          </p>
+          <p className="text-sm text-muted-foreground">Crie e administre os acessos ao sistema.</p>
         </div>
         <Button onClick={() => setCreateOpen(true)} className="h-11">
           <Plus className="mr-2 h-4 w-4" /> Novo usuário
@@ -324,8 +322,7 @@ function UsuariosPage() {
                   setEditing({
                     ...editing,
                     can_view_all_leads: p.canViewAllLeads ?? editing.can_view_all_leads,
-                    can_delete_documents:
-                      p.canDeleteDocuments ?? editing.can_delete_documents,
+                    can_delete_documents: p.canDeleteDocuments ?? editing.can_delete_documents,
                   })
                 }
               />

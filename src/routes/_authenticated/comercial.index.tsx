@@ -24,7 +24,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/Combobox";
-import { DOC_TYPES, docStatusClass, docStatusLabel, docTypeLabel, formatCurrency, statusesFor, type DocType } from "@/lib/commercial";
+import {
+  DOC_TYPES,
+  docStatusClass,
+  docStatusLabel,
+  docTypeLabel,
+  formatCurrency,
+  statusesFor,
+  type DocType,
+} from "@/lib/commercial";
 import { formatDateOnly } from "@/lib/leads";
 import { useCommercialDocuments } from "@/lib/commercialQueries";
 import { createCommercialDocument } from "@/lib/commercialActions";
@@ -36,12 +44,14 @@ export const Route = createFileRoute("/_authenticated/comercial/")({
       { title: "Documentos Comerciais — IGA TECNOLOGIA" },
       {
         name: "description",
-        content: "Orçamentos, propostas e pedidos vinculados aos leads, com status, totais e histórico.",
+        content:
+          "Orçamentos, propostas e pedidos vinculados aos leads, com status, totais e histórico.",
       },
       { property: "og:title", content: "Documentos Comerciais — IGA TECNOLOGIA" },
       {
         property: "og:description",
-        content: "Orçamentos, propostas e pedidos vinculados aos leads, com status, totais e histórico.",
+        content:
+          "Orçamentos, propostas e pedidos vinculados aos leads, com status, totais e histórico.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -121,30 +131,48 @@ function ComercialList() {
           </Button>
         </div>
         <div className="grid gap-2 sm:grid-cols-3">
-          <Select value={type} onValueChange={(v) => { setType(v); setStatus("todos"); }}>
-            <SelectTrigger className="h-11"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <Select
+            value={type}
+            onValueChange={(v) => {
+              setType(v);
+              setStatus("todos");
+            }}
+          >
+            <SelectTrigger className="h-11">
+              <SelectValue placeholder="Tipo" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os tipos</SelectItem>
               {DOC_TYPES.map((t) => (
-                <SelectItem key={t.value} value={t.value}>{t.plural}</SelectItem>
+                <SelectItem key={t.value} value={t.value}>
+                  {t.plural}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-11"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectTrigger className="h-11">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os status</SelectItem>
               {statusOptions.map((s) => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={owner} onValueChange={setOwner}>
-            <SelectTrigger className="h-11"><SelectValue placeholder="Responsável" /></SelectTrigger>
+            <SelectTrigger className="h-11">
+              <SelectValue placeholder="Responsável" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os responsáveis</SelectItem>
               {profiles.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.full_name}</SelectItem>
+                <SelectItem key={p.id} value={p.id}>
+                  {p.full_name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -152,16 +180,30 @@ function ComercialList() {
         {more && (
           <div className="grid gap-2 sm:grid-cols-4">
             <Select value={segment} onValueChange={setSegment}>
-              <SelectTrigger className="h-11"><SelectValue placeholder="Segmento" /></SelectTrigger>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="Segmento" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos os segmentos</SelectItem>
                 {segments.map((s) => (
-                  <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
+                  <SelectItem key={s.id} value={s.name}>
+                    {s.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Input type="date" className="h-11" value={from} onChange={(e) => setFrom(e.target.value)} />
-            <Input type="date" className="h-11" value={to} onChange={(e) => setTo(e.target.value)} />
+            <Input
+              type="date"
+              className="h-11"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+            />
+            <Input
+              type="date"
+              className="h-11"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+            />
             <Input
               type="number"
               className="h-11"
@@ -196,12 +238,15 @@ function ComercialList() {
                   </p>
                   <p className="truncate font-semibold">{d.client_company}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {formatDateOnly(d.issue_date)} · {profiles.find((p) => p.id === d.owner_id)?.full_name ?? "-"}
+                    {formatDateOnly(d.issue_date)} ·{" "}
+                    {profiles.find((p) => p.id === d.owner_id)?.full_name ?? "-"}
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="font-bold">{formatCurrency(d.total_general)}</p>
-                  <span className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium ${docStatusClass(d.status)}`}>
+                  <span
+                    className={`mt-1 inline-block rounded-full border px-2 py-0.5 text-[10px] font-medium ${docStatusClass(d.status)}`}
+                  >
                     {docStatusLabel(d.status)}
                   </span>
                 </div>
@@ -235,11 +280,15 @@ function ComercialList() {
                       {profiles.find((p) => p.id === d.owner_id)?.full_name ?? "-"}
                     </td>
                     <td className="px-3 py-2">
-                      <span className={`inline-block rounded-full border px-2 py-0.5 text-[11px] font-medium ${docStatusClass(d.status)}`}>
+                      <span
+                        className={`inline-block rounded-full border px-2 py-0.5 text-[11px] font-medium ${docStatusClass(d.status)}`}
+                      >
                         {docStatusLabel(d.status)}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right font-semibold">{formatCurrency(d.total_general)}</td>
+                    <td className="px-3 py-2 text-right font-semibold">
+                      {formatCurrency(d.total_general)}
+                    </td>
                     <td className="px-3 py-2 text-right">
                       <Button asChild variant="ghost" size="sm">
                         <Link to="/comercial/$id" params={{ id: d.id }}>
@@ -293,7 +342,12 @@ export function NewDocumentDialog({
         .is("deleted_at", null)
         .order("company_name");
       if (error) throw error;
-      return data as { id: string; company_name: string; contact_name: string | null; neighborhood_name: string | null }[];
+      return data as {
+        id: string;
+        company_name: string;
+        contact_name: string | null;
+        neighborhood_name: string | null;
+      }[];
     },
   });
 
@@ -326,10 +380,14 @@ export function NewDocumentDialog({
           <div className="space-y-2">
             <Label>Tipo</Label>
             <Select value={docType} onValueChange={(v) => setDocType(v as DocType)}>
-              <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-11">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {DOC_TYPES.map((t) => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -352,7 +410,9 @@ export function NewDocumentDialog({
           )}
         </div>
         <DialogFooter>
-          <Button onClick={create} disabled={saving}>Criar documento</Button>
+          <Button onClick={create} disabled={saving}>
+            Criar documento
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

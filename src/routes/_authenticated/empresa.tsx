@@ -17,9 +17,15 @@ export const Route = createFileRoute("/_authenticated/empresa")({
   head: () => ({
     meta: [
       { title: "Empresa Emissora — IGA TECNOLOGIA" },
-      { name: "description", content: "Dados da empresa que emite orçamentos, propostas e pedidos." },
+      {
+        name: "description",
+        content: "Dados da empresa que emite orçamentos, propostas e pedidos.",
+      },
       { property: "og:title", content: "Empresa Emissora — IGA TECNOLOGIA" },
-      { property: "og:description", content: "Dados da empresa que emite orçamentos, propostas e pedidos." },
+      {
+        property: "og:description",
+        content: "Dados da empresa que emite orçamentos, propostas e pedidos.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -48,7 +54,10 @@ function Empresa() {
   async function save() {
     setSaving(true);
     const { id, ...rest } = current as CompanySettings;
-    const { error } = await supabase.from("company_settings").update(rest as never).eq("id", id);
+    const { error } = await supabase
+      .from("company_settings")
+      .update(rest as never)
+      .eq("id", id);
     setSaving(false);
     if (error) {
       toast.error("Não foi possível salvar (apenas administradores).");
@@ -67,11 +76,23 @@ function Empresa() {
 
       <div className="grid gap-3 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)] sm:grid-cols-2">
         <Field label="Nome" value={current.name} onChange={(v) => set("name", v)} />
-        <Field label="Razão social" value={current.legal_name ?? ""} onChange={(v) => set("legal_name", v)} />
+        <Field
+          label="Razão social"
+          value={current.legal_name ?? ""}
+          onChange={(v) => set("legal_name", v)}
+        />
         <Field label="CNPJ" value={current.cnpj ?? ""} onChange={(v) => set("cnpj", v)} />
         <Field label="E-mail" value={current.email ?? ""} onChange={(v) => set("email", v)} />
-        <Field label="Telefone" value={current.phone ?? ""} onChange={(v) => set("phone", maskPhone(v))} />
-        <Field label="CEP" value={current.postal_code ?? ""} onChange={(v) => set("postal_code", maskCep(v))} />
+        <Field
+          label="Telefone"
+          value={current.phone ?? ""}
+          onChange={(v) => set("phone", maskPhone(v))}
+        />
+        <Field
+          label="CEP"
+          value={current.postal_code ?? ""}
+          onChange={(v) => set("postal_code", maskCep(v))}
+        />
         <Field label="Endereço" value={current.address ?? ""} onChange={(v) => set("address", v)} />
         <Field label="Cidade" value={current.city ?? ""} onChange={(v) => set("city", v)} />
         <Field label="UF" value={current.state ?? ""} onChange={(v) => set("state", v)} />
@@ -100,7 +121,11 @@ function Empresa() {
             </p>
           </div>
         </div>
-        <Field label="Rodapé" value={current.footer_note ?? ""} onChange={(v) => set("footer_note", v)} />
+        <Field
+          label="Rodapé"
+          value={current.footer_note ?? ""}
+          onChange={(v) => set("footer_note", v)}
+        />
         <Field
           label="Validade padrão (dias)"
           value={String(current.default_validity_days)}
@@ -117,10 +142,15 @@ function Empresa() {
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="tpl">Mensagem padrão de envio</Label>
-          <Textarea id="tpl" rows={8} value={current.whatsapp_template}
-            onChange={(e) => set("whatsapp_template", e.target.value)} />
+          <Textarea
+            id="tpl"
+            rows={8}
+            value={current.whatsapp_template}
+            onChange={(e) => set("whatsapp_template", e.target.value)}
+          />
           <p className="text-xs text-muted-foreground">
-            Variáveis disponíveis: [CONTATO], [TIPO], [NUMERO], [CLIENTE], [EMPRESA], [TELEFONE_EMPRESA], [VALOR].
+            Variáveis disponíveis: [CONTATO], [TIPO], [NUMERO], [CLIENTE], [EMPRESA],
+            [TELEFONE_EMPRESA], [VALOR].
           </p>
         </div>
       </div>
@@ -129,14 +159,24 @@ function Empresa() {
         Salvar
       </Button>
       {!isAdmin && (
-        <p className="text-xs text-muted-foreground">Somente administradores podem alterar estes dados.</p>
+        <p className="text-xs text-muted-foreground">
+          Somente administradores podem alterar estes dados.
+        </p>
       )}
       <div className="h-10 md:hidden" />
     </div>
   );
 }
 
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function Field({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const id = label.toLowerCase().replace(/\W+/g, "-");
   return (
     <div className="space-y-2">
