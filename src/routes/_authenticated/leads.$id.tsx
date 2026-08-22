@@ -498,7 +498,7 @@ function EditLeadDialog({
       }
     }
     setSaving(true);
-    const nb = neighborhoods.find((n) => n.id === neighborhoodId);
+    const nb = neighborhoods.find((n) => n.id === address.neighborhoodId);
     const { error } = await supabase
       .from("leads")
       .update({
@@ -506,14 +506,15 @@ function EditLeadDialog({
         contact_name: contact.trim() || null,
         phone: phone || null,
         segment_id: segmentId,
-        street_id: streetId,
-        street_name: streetName || null,
-        number: number || null,
-        neighborhood_id: neighborhoodId,
-        neighborhood_name: nb?.name ?? (neighborhoodName || null),
-        city: nb?.city || cityUf?.city || null,
-        state: nb?.state || cityUf?.state || null,
-        postal_code: cep || null,
+        street_id: address.streetId,
+        street_name: address.streetName || null,
+        number: address.number || null,
+        neighborhood_id: address.neighborhoodId,
+        neighborhood_name: nb?.name ?? (address.neighborhoodName || null),
+        city: nb?.city || address.city || null,
+        state: nb?.state || address.state || null,
+        postal_code: address.cep || null,
+
         next_contact_date: appointment.date || null,
         notes: notes.trim() || null,
       })
