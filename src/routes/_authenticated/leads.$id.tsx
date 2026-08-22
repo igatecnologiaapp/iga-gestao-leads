@@ -649,78 +649,12 @@ function EditLeadDialog({
               placeholder="Selecione o segmento"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="editCep">CEP</Label>
-            <Input
-              id="editCep"
-              className="h-11"
-              inputMode="numeric"
-              placeholder="00000-000"
-              value={cep}
-              onChange={(e) => void handleCep(e.target.value)}
-            />
-            {cepLoading && <p className="text-xs text-muted-foreground">Consultando CEP...</p>}
-            {cepMessage && <p className="text-xs text-muted-foreground">{cepMessage}</p>}
-          </div>
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <div className="space-y-2">
-              <Label>Rua</Label>
-              <Combobox
-                options={streets.map((s) => ({
-                  value: s.id,
-                  label: s.name,
-                  hint: neighborhoods.find((n) => n.id === s.neighborhood_id)?.name,
-                }))}
-                value={streetId}
-                onChange={(v) => {
-                  setStreetId(v);
-                  const st = streets.find((s) => s.id === v);
-                  if (st) {
-                    setStreetName(st.name);
-                    if (st.neighborhood_id) setNeighborhoodId(st.neighborhood_id);
-                  }
-                }}
-                placeholder="Pesquisar rua"
-                searchPlaceholder="Digite o nome da rua"
-                emptyText="Rua não cadastrada."
-              />
-              {!streetId && streetName && (
-                <Input
-                  className="h-11"
-                  aria-label="Nome da rua (não cadastrada)"
-                  value={streetName}
-                  onChange={(e) => setStreetName(e.target.value)}
-                />
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="editNumber">Número</Label>
-              <Input
-                id="editNumber"
-                className="h-11"
-                inputMode="numeric"
-                value={number}
-                onChange={(e) => setNumber(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Bairro</Label>
-            <Combobox
-              options={neighborhoods.map((n) => ({ value: n.id, label: n.name, hint: n.city }))}
-              value={neighborhoodId}
-              onChange={(v) => {
-                setNeighborhoodId(v);
-                setNeighborhoodName(neighborhoods.find((n) => n.id === v)?.name ?? "");
-              }}
-              placeholder="Selecione o bairro"
-            />
-            {!neighborhoodId && neighborhoodName && (
-              <p className="text-xs text-muted-foreground">
-                Bairro informado pelo CEP: {neighborhoodName} (ainda não cadastrado)
-              </p>
-            )}
-          </div>
+          <AddressFields
+            idPrefix="edit"
+            value={address}
+            onChange={(patch) => setAddress((prev) => ({ ...prev, ...patch }))}
+          />
+
 
           <div className="space-y-2 rounded-xl border p-3">
             <Label className="text-xs font-bold tracking-wide uppercase">Agendamento</Label>
