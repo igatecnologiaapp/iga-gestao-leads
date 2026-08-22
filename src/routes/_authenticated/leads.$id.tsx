@@ -51,11 +51,7 @@ import { formatAppointment, fromLocalParts, toLocalParts } from "@/lib/appointme
 import {
   LEAD_STATUSES,
   formatDateTime,
-  isCepComplete,
-  lookupCep,
-  maskCep,
   maskPhone,
-  normalizePlace,
 } from "@/lib/leads";
 import {
   useAllSegmentFields,
@@ -64,7 +60,6 @@ import {
   useProducts,
   useSegmentProducts,
   useSegments,
-  useStreets,
   toOptions,
 } from "@/lib/queries";
 import { useAuth } from "@/hooks/useAuth";
@@ -406,7 +401,6 @@ function EditLeadDialog({
   onSaved: () => void;
 }) {
   const { data: segments = [] } = useSegments();
-  const { data: streets = [] } = useStreets();
   const { data: neighborhoods = [] } = useNeighborhoods();
   const { data: products = [] } = useProducts();
   const { data: segmentProducts = [] } = useSegmentProducts();
