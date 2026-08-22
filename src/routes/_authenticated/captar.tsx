@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2, Save } from "lucide-react";
+import { CheckCircle2, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,14 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Combobox } from "@/components/Combobox";
+import { PageHeader } from "@/components/PageHeader";
+import {
+  AddressFields,
+  addressFromLead,
+  emptyAddress,
+  type AddressValue,
+} from "@/components/AddressFields";
 import { AppointmentFields, emptyAppointment, type AppointmentDraft } from "@/components/AppointmentFields";
 import { fromLocalParts, formatAppointment } from "@/lib/appointments";
 import { DynamicField } from "@/components/DynamicField";
@@ -27,16 +27,10 @@ import {
   useSegmentFields,
   useSegmentProducts,
   useSegments,
-  useStreets,
   toOptions,
 } from "@/lib/queries";
-import {
-  isCepComplete,
-  lookupCep,
-  maskCep,
-  maskPhone,
-  normalizePlace,
-} from "@/lib/leads";
+import { maskPhone } from "@/lib/leads";
+
 
 
 export const Route = createFileRoute("/_authenticated/captar")({
