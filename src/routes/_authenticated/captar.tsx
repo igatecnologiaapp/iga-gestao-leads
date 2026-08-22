@@ -12,12 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 import { Combobox } from "@/components/Combobox";
 import { PageHeader } from "@/components/PageHeader";
-import {
-  AddressFields,
-  addressFromLead,
-  emptyAddress,
-  type AddressValue,
-} from "@/components/AddressFields";
+import { AddressFields, emptyAddress, type AddressValue } from "@/components/AddressFields";
 import { AppointmentFields, emptyAppointment, type AppointmentDraft } from "@/components/AppointmentFields";
 import { fromLocalParts, formatAppointment } from "@/lib/appointments";
 import { DynamicField } from "@/components/DynamicField";
