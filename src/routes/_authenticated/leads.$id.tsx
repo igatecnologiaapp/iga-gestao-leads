@@ -448,43 +448,6 @@ function EditLeadDialog({
     return products.filter((p) => ids.has(p.id) && p.active);
   }, [segmentId, segmentProducts, products]);
 
-  async function handleCep(value: string) {
-    const masked = maskCep(value);
-    setCep(masked);
-    setCepMessage(null);
-    if (!isCepComplete(masked)) return;
-    setCepLoading(true);
-    const result = await lookupCep(masked);
-    setCepLoading(false);
-    if (result.status === "unavailable") {
-      setCepMessage("Busca automática indisponível no momento. Preencha o endereço manualmente.");
-      return;
-    }
-    if (result.status === "not_found") {
-      setCepMessage("CEP não localizado. Você pode preencher o endereço manualmente.");
-      return;
-    }
-    const { street, neighborhood, city, state } = result.address;
-    setCityUf({ city, state });
-    const nb = neighborhood
-      ? neighborhoods.find((n) => normalizePlace(n.name) === normalizePlace(neighborhood))
-      : undefined;
-    setNeighborhoodName(neighborhood);
-    setNeighborhoodId(nb?.id ?? null);
-    const existing = street
-      ? streets.find((st) => normalizePlace(st.name) === normalizePlace(street))
-      : undefined;
-    if (existing) {
-      setStreetId(existing.id);
-      setStreetName(existing.name);
-      if (existing.neighborhood_id) setNeighborhoodId(existing.neighborhood_id);
-      setCepMessage("Endereço preenchido pelo CEP (rua já cadastrada).");
-    } else {
-      setStreetId(null);
-      setStreetName(street);
-      setCepMessage("Endereço preenchido pelo CEP. Esta rua ainda não está cadastrada.");
-    }
-  }
 
   async function save() {
     if (!company.trim()) {
