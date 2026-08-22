@@ -48,10 +48,8 @@ export const Route = createFileRoute("/_authenticated/captar")({
 function CaptarLead() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const numberRef = useRef<HTMLInputElement>(null);
 
   const { data: segments = [] } = useSegments();
-  const { data: streets = [] } = useStreets();
   const { data: neighborhoods = [] } = useNeighborhoods();
   const { data: products = [] } = useProducts();
   const { data: segmentProducts = [] } = useSegmentProducts();
@@ -60,15 +58,8 @@ function CaptarLead() {
   const [company, setCompany] = useState("");
   const [contact, setContact] = useState("");
   const [phone, setPhone] = useState("");
-  const [streetId, setStreetId] = useState<string | null>(null);
-  const [streetName, setStreetName] = useState("");
-  const [number, setNumber] = useState("");
-  const [neighborhoodId, setNeighborhoodId] = useState<string | null>(null);
-  const [neighborhoodName, setNeighborhoodName] = useState("");
-  const [cep, setCep] = useState("");
-  const [cepLoading, setCepLoading] = useState(false);
-  const [cepMessage, setCepMessage] = useState<string | null>(null);
-  const [cityUf, setCityUf] = useState<{ city: string; state: string } | null>(null);
+  const [address, setAddress] = useState<AddressValue>(emptyAddress);
+  const [addressKey, setAddressKey] = useState(0);
   const [appointment, setAppointment] = useState<AppointmentDraft>(emptyAppointment);
   const [productIds, setProductIds] = useState<string[]>([]);
   const [custom, setCustom] = useState<Record<string, unknown>>({});
@@ -76,12 +67,11 @@ function CaptarLead() {
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
 
-  const [newStreetOpen, setNewStreetOpen] = useState(false);
-  const [newStreetName, setNewStreetName] = useState("");
-  const [newStreetNb, setNewStreetNb] = useState<string | null>(null);
-
-
   const { data: fields = [] } = useSegmentFields(segmentId);
+
+  function patchAddress(patch: Partial<AddressValue>) {
+    setAddress((prev) => ({ ...prev, ...patch }));
+  }
 
   // Lembrar o último segmento usado na sessão
   useEffect(() => {
@@ -100,100 +90,19 @@ function CaptarLead() {
     return products.filter((p) => ids.has(p.id) && p.active);
   }, [segmentId, segmentProducts, products]);
 
-  function selectStreet(id: string | null) {
-    setStreetId(id);
-    const street = streets.find((s) => s.id === id);
-    if (street) {
-      setStreetName(street.name);
-      if (street.neighborhood_id) setNeighborhoodId(street.neighborhood_id);
-      setTimeout(() => numberRef.current?.focus(), 60);
-    }
-  }
-
-  async function handleCep(value: string) {
-    const masked = maskCep(value);
-    setCep(masked);
-    setCepMessage(null);
-    if (!isCepComplete(masked)) return;
-    setCepLoading(true);
-    const result = await lookupCep(masked);
-    setCepLoading(false);
-    if (result.status === "unavailable") {
-      setCepMessage("Busca automática indisponível no momento. Preencha o endereço manualmente.");
-      return;
-    }
-    if (result.status === "not_found") {
-      setCepMessage("CEP não localizado. Você pode preencher o endereço manualmente.");
-      return;
-    }
-    const { street, neighborhood, city, state } = result.address;
-    setCityUf({ city, state });
-    // Bairro: reaproveita cadastro existente quando houver
-    const nb = neighborhood
-      ? neighborhoods.find((n) => normalizePlace(n.name) === normalizePlace(neighborhood))
-      : undefined;
-    setNeighborhoodName(neighborhood);
-    setNeighborhoodId(nb?.id ?? null);
-    // Rua: nunca cria automaticamente, apenas reutiliza cadastro existente
-    const existing = street
-      ? streets.find((s) => normalizePlace(s.name) === normalizePlace(street))
-      : undefined;
-    if (existing) {
-      setStreetId(existing.id);
-      setStreetName(existing.name);
-      if (existing.neighborhood_id) setNeighborhoodId(existing.neighborhood_id);
-    } else {
-      setStreetId(null);
-      setStreetName(street);
-    }
-    setCepMessage(
-      existing
-        ? "Endereço preenchido pelo CEP (rua já cadastrada)."
-        : street
-          ? "Endereço preenchido pelo CEP. Esta rua ainda não está cadastrada."
-          : "CEP encontrado, mas sem logradouro. Informe a rua manualmente.",
-    );
-    setTimeout(() => numberRef.current?.focus(), 60);
-  }
-
-  async function createStreet() {
-    if (!newStreetName.trim()) return;
-    const { data, error } = await supabase
-      .from("streets")
-      .insert({ name: newStreetName.trim(), neighborhood_id: newStreetNb })
-      .select()
-      .single();
-    if (error) {
-      toast.error("Não foi possível cadastrar a rua.");
-      return;
-    }
-    await queryClient.invalidateQueries({ queryKey: ["streets"] });
-    setNewStreetOpen(false);
-    setNewStreetName("");
-    setStreetId(data.id);
-    setStreetName(data.name);
-    if (data.neighborhood_id) setNeighborhoodId(data.neighborhood_id);
-    setTimeout(() => numberRef.current?.focus(), 60);
-  }
-
   function resetForm() {
     setCompany("");
     setContact("");
     setPhone("");
-    setStreetId(null);
-    setStreetName("");
-    setNumber("");
-    setNeighborhoodId(null);
-    setNeighborhoodName("");
-    setCep("");
-    setCepMessage(null);
-    setCityUf(null);
+    setAddress(emptyAddress);
+    setAddressKey((k) => k + 1);
     setAppointment(emptyAppointment);
     setProductIds([]);
     setCustom({});
     setNotes("");
     setSavedId(null);
   }
+
 
 
   async function save(e: React.FormEvent) {
