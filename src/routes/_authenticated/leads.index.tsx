@@ -27,9 +27,8 @@ import { SearchField } from "@/components/SearchField";
 import { LoadingState, EmptyState } from "@/components/DataState";
 import { PendingBadge } from "@/components/PendingBadge";
 import { leadPending } from "@/lib/pendings";
-import { LEAD_STATUSES, formatDate, formatDateOnly } from "@/lib/leads";
+import { LEAD_STATUSES, formatDate } from "@/lib/leads";
 import { useAllLeadProducts, useAppointments, useProducts, useSegments } from "@/lib/queries";
-
 
 export const Route = createFileRoute("/_authenticated/leads/")({
   head: () => ({
@@ -37,7 +36,10 @@ export const Route = createFileRoute("/_authenticated/leads/")({
       { title: "Leads — IGA TECNOLOGIA" },
       { name: "description", content: "Consulte, filtre e atualize o status dos leads captados." },
       { property: "og:title", content: "Leads — IGA TECNOLOGIA" },
-      { property: "og:description", content: "Consulte, filtre e atualize o status dos leads captados." },
+      {
+        property: "og:description",
+        content: "Consulte, filtre e atualize o status dos leads captados.",
+      },
     ],
   }),
   component: LeadsList,
@@ -108,7 +110,8 @@ function LeadsList() {
   };
 
   const neighborhoodOptions = useMemo(
-    () => Array.from(new Set(leads.map((l) => l.neighborhood_name).filter(Boolean) as string[])).sort(),
+    () =>
+      Array.from(new Set(leads.map((l) => l.neighborhood_name).filter(Boolean) as string[])).sort(),
     [leads],
   );
   const streetOptions = useMemo(
@@ -138,7 +141,8 @@ function LeadsList() {
       if (neighborhood !== "todos" && l.neighborhood_name !== neighborhood) return false;
       if (street !== "todos" && l.street_name !== street) return false;
       if (owner !== "todos" && l.created_by !== owner) return false;
-      if (pendingFilter !== "todos" && pendingByLead.get(l.id)?.tone !== pendingFilter) return false;
+      if (pendingFilter !== "todos" && pendingByLead.get(l.id)?.tone !== pendingFilter)
+        return false;
       if (
         product !== "todos" &&
         !leadProducts.some((lp) => lp.lead_id === l.id && lp.product_id === product)
@@ -223,20 +227,28 @@ function LeadsList() {
           placeholder="Pesquisar empresa, contato, telefone, rua..."
         />
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="h-11"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="h-11">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os status</SelectItem>
             {LEAD_STATUSES.map((s) => (
-              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={segment} onValueChange={setSegment}>
-          <SelectTrigger className="h-11"><SelectValue placeholder="Segmento" /></SelectTrigger>
+          <SelectTrigger className="h-11">
+            <SelectValue placeholder="Segmento" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os segmentos</SelectItem>
             {segments.map((s) => (
-              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              <SelectItem key={s.id} value={s.id}>
+                {s.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -254,29 +266,41 @@ function LeadsList() {
       {moreFilters && (
         <div className="grid gap-2 rounded-2xl border bg-card p-3 sm:grid-cols-2 lg:grid-cols-3">
           <Select value={neighborhood} onValueChange={setNeighborhood}>
-            <SelectTrigger className="h-11"><SelectValue placeholder="Bairro" /></SelectTrigger>
+            <SelectTrigger className="h-11">
+              <SelectValue placeholder="Bairro" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os bairros</SelectItem>
               {neighborhoodOptions.map((n) => (
-                <SelectItem key={n} value={n}>{n}</SelectItem>
+                <SelectItem key={n} value={n}>
+                  {n}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={street} onValueChange={setStreet}>
-            <SelectTrigger className="h-11"><SelectValue placeholder="Rua" /></SelectTrigger>
+            <SelectTrigger className="h-11">
+              <SelectValue placeholder="Rua" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todas as ruas</SelectItem>
               {streetOptions.map((s) => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={product} onValueChange={setProduct}>
-            <SelectTrigger className="h-11"><SelectValue placeholder="Solução" /></SelectTrigger>
+            <SelectTrigger className="h-11">
+              <SelectValue placeholder="Solução" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todas as soluções</SelectItem>
               {products.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -293,25 +317,44 @@ function LeadsList() {
             </SelectContent>
           </Select>
           <Select value={owner} onValueChange={setOwner}>
-            <SelectTrigger className="h-11"><SelectValue placeholder="Responsável" /></SelectTrigger>
+            <SelectTrigger className="h-11">
+              <SelectValue placeholder="Responsável" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos os responsáveis</SelectItem>
               {profiles.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.full_name || p.email || p.id}</SelectItem>
+                <SelectItem key={p.id} value={p.id}>
+                  {p.full_name || p.email || p.id}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground" htmlFor="from">De</label>
-            <Input id="from" type="date" className="h-11" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <label className="text-xs text-muted-foreground" htmlFor="from">
+              De
+            </label>
+            <Input
+              id="from"
+              type="date"
+              className="h-11"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+            />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground" htmlFor="to">Até</label>
-            <Input id="to" type="date" className="h-11" value={to} onChange={(e) => setTo(e.target.value)} />
+            <label className="text-xs text-muted-foreground" htmlFor="to">
+              Até
+            </label>
+            <Input
+              id="to"
+              type="date"
+              className="h-11"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+            />
           </div>
         </div>
       )}
-
 
       {/* Mobile: cards */}
       <div className="space-y-3 lg:hidden">
@@ -337,10 +380,14 @@ function LeadsList() {
             </Link>
             <div className="mt-3">
               <Select value={l.status} onValueChange={(v) => changeStatus(l.id, v)}>
-                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {LEAD_STATUSES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -396,10 +443,14 @@ function LeadsList() {
                 <TableCell className="text-sm">{ownerName(l.created_by)}</TableCell>
                 <TableCell>
                   <Select value={l.status} onValueChange={(v) => changeStatus(l.id, v)}>
-                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="h-9">
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       {LEAD_STATUSES.map((s) => (
-                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
