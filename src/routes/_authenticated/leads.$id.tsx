@@ -36,22 +36,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/Combobox";
+import { AddressFields, addressFromLead, type AddressValue } from "@/components/AddressFields";
 import { DynamicField } from "@/components/DynamicField";
 import { StatusBadge } from "@/components/StatusBadge";
 import { LeadAppointments } from "@/components/LeadAppointments";
 import { LeadCommercialDocs } from "@/components/LeadCommercialDocs";
 
-import { AppointmentFields, emptyAppointment, type AppointmentDraft } from "@/components/AppointmentFields";
-import { formatAppointment, fromLocalParts, toLocalParts } from "@/lib/appointments";
 import {
-  LEAD_STATUSES,
-  formatDateTime,
-  isCepComplete,
-  lookupCep,
-  maskCep,
-  maskPhone,
-  normalizePlace,
-} from "@/lib/leads";
+  AppointmentFields,
+  emptyAppointment,
+  type AppointmentDraft,
+} from "@/components/AppointmentFields";
+import { formatAppointment, fromLocalParts, toLocalParts } from "@/lib/appointments";
+import { LEAD_STATUSES, formatDateTime, maskPhone } from "@/lib/leads";
 import {
   useAllSegmentFields,
   useLeadAppointments,
@@ -59,11 +56,9 @@ import {
   useProducts,
   useSegmentProducts,
   useSegments,
-  useStreets,
   toOptions,
 } from "@/lib/queries";
 import { useAuth } from "@/hooks/useAuth";
-
 
 export const Route = createFileRoute("/_authenticated/leads/$id")({
   head: () => ({
@@ -71,7 +66,10 @@ export const Route = createFileRoute("/_authenticated/leads/$id")({
       { title: "Detalhes do Lead — IGA TECNOLOGIA" },
       { name: "description", content: "Informações, qualificação e histórico completo do lead." },
       { property: "og:title", content: "Detalhes do Lead — IGA TECNOLOGIA" },
-      { property: "og:description", content: "Informações, qualificação e histórico completo do lead." },
+      {
+        property: "og:description",
+        content: "Informações, qualificação e histórico completo do lead.",
+      },
     ],
   }),
   component: LeadDetail,
@@ -88,7 +86,6 @@ function LeadDetail() {
   const [notes, setNotes] = useState("");
   const [editOpen, setEditOpen] = useState(false);
 
-
   const {
     data: lead,
     isLoading: leadLoading,
@@ -102,7 +99,6 @@ function LeadDetail() {
     },
     retry: false,
   });
-
 
   const { data: leadProducts = [] } = useQuery({
     queryKey: ["lead_products", id],
@@ -137,7 +133,12 @@ function LeadDetail() {
         .eq("lead_id", id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as { id: string; event_type: string; description: string | null; created_at: string }[];
+      return data as {
+        id: string;
+        event_type: string;
+        description: string | null;
+        created_at: string;
+      }[];
     },
   });
 
@@ -164,9 +165,11 @@ function LeadDetail() {
     );
   }
 
-
   async function updateLead(patch: Record<string, unknown>, message: string) {
-    const { error } = await supabase.from("leads").update(patch as never).eq("id", id);
+    const { error } = await supabase
+      .from("leads")
+      .update(patch as never)
+      .eq("id", id);
     if (error) {
       toast.error("Não foi possível salvar.");
       return;
@@ -183,7 +186,9 @@ function LeadDetail() {
   }
 
   const segmentName = segments.find((s) => s.id === lead.segment_id)?.name ?? "-";
-  const selectedProducts = products.filter((p) => leadProducts.some((lp) => lp.product_id === p.id));
+  const selectedProducts = products.filter((p) =>
+    leadProducts.some((lp) => lp.product_id === p.id),
+  );
 
   function renderValue(value: unknown) {
     if (typeof value === "boolean") return value ? "Sim" : "Não";
@@ -218,15 +223,25 @@ function LeadDetail() {
           />
           <Info label="Bairro" value={lead.neighborhood_name ?? "-"} />
           <Info label="Captado em" value={formatDateTime(lead.created_at)} />
-          <Info label="Cidade / UF" value={[lead.city, lead.state].filter(Boolean).join(" / ") || "-"} />
+          <Info
+            label="Cidade / UF"
+            value={[lead.city, lead.state].filter(Boolean).join(" / ") || "-"}
+          />
         </dl>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-[220px_auto_auto]">
-          <Select value={lead.status} onValueChange={(v) => updateLead({ status: v }, "Status atualizado.")}>
-            <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+          <Select
+            value={lead.status}
+            onValueChange={(v) => updateLead({ status: v }, "Status atualizado.")}
+          >
+            <SelectTrigger className="h-11">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {LEAD_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -243,21 +258,19 @@ function LeadDetail() {
         </div>
       </div>
 
-
-      <LeadAppointments
-        leadId={lead.id}
-        canEdit={isAdmin || lead.created_by === user?.id}
-      />
+      <LeadAppointments leadId={lead.id} canEdit={isAdmin || lead.created_by === user?.id} />
 
       <LeadCommercialDocs leadId={lead.id} />
-
 
       {selectedProducts.length > 0 && (
         <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)]">
           <h2 className="text-sm font-bold">Soluções de interesse</h2>
           <div className="mt-3 flex flex-wrap gap-2">
             {selectedProducts.map((p) => (
-              <span key={p.id} className="rounded-full border bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              <span
+                key={p.id}
+                className="rounded-full border bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
+              >
                 {p.name}
               </span>
             ))}
@@ -282,7 +295,12 @@ function LeadDetail() {
 
       <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)]">
         <h2 className="text-sm font-bold">Observações da visita</h2>
-        <Textarea className="mt-3" rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <Textarea
+          className="mt-3"
+          rows={4}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
         <Button className="mt-3" onClick={() => updateLead({ notes }, "Observações salvas.")}>
           Salvar observações
         </Button>
@@ -379,7 +397,6 @@ function EditLeadDialog({
   onSaved: () => void;
 }) {
   const { data: segments = [] } = useSegments();
-  const { data: streets = [] } = useStreets();
   const { data: neighborhoods = [] } = useNeighborhoods();
   const { data: products = [] } = useProducts();
   const { data: segmentProducts = [] } = useSegmentProducts();
@@ -389,15 +406,8 @@ function EditLeadDialog({
   const [contact, setContact] = useState(lead.contact_name ?? "");
   const [phone, setPhone] = useState(lead.phone ?? "");
   const [segmentId, setSegmentId] = useState<string | null>(lead.segment_id);
-  const [streetId, setStreetId] = useState<string | null>(lead.street_id);
-  const [streetName, setStreetName] = useState(lead.street_name ?? "");
-  const [number, setNumber] = useState(lead.number ?? "");
-  const [neighborhoodId, setNeighborhoodId] = useState<string | null>(lead.neighborhood_id);
-  const [neighborhoodName, setNeighborhoodName] = useState("");
-  const [cep, setCep] = useState(lead.postal_code ?? "");
-  const [cepLoading, setCepLoading] = useState(false);
-  const [cepMessage, setCepMessage] = useState<string | null>(null);
-  const [cityUf, setCityUf] = useState<{ city: string; state: string } | null>(null);
+  const [address, setAddress] = useState<AddressValue>(() => addressFromLead(lead));
+
   const { data: leadAppointments = [] } = useLeadAppointments(lead.id);
   const nextAppointment = leadAppointments.find((a) => a.status === "agendado") ?? null;
   const [appointment, setAppointment] = useState<AppointmentDraft>(emptyAppointment);
@@ -412,14 +422,8 @@ function EditLeadDialog({
     setContact(lead.contact_name ?? "");
     setPhone(lead.phone ?? "");
     setSegmentId(lead.segment_id);
-    setStreetId(lead.street_id);
-    setStreetName(lead.street_name ?? "");
-    setNumber(lead.number ?? "");
-    setNeighborhoodId(lead.neighborhood_id);
-    setNeighborhoodName("");
-    setCep(lead.postal_code ?? "");
-    setCepMessage(null);
-    setCityUf(null);
+    setAddress(addressFromLead(lead));
+
     setAppointment(
       nextAppointment
         ? {
@@ -436,7 +440,10 @@ function EditLeadDialog({
   }, [open, nextAppointment?.id]);
 
   const fields = useMemo(
-    () => allFields.filter((f) => f.segment_id === segmentId).sort((a, b) => a.sort_order - b.sort_order),
+    () =>
+      allFields
+        .filter((f) => f.segment_id === segmentId)
+        .sort((a, b) => a.sort_order - b.sort_order),
     [allFields, segmentId],
   );
 
@@ -448,57 +455,22 @@ function EditLeadDialog({
     return products.filter((p) => ids.has(p.id) && p.active);
   }, [segmentId, segmentProducts, products]);
 
-  async function handleCep(value: string) {
-    const masked = maskCep(value);
-    setCep(masked);
-    setCepMessage(null);
-    if (!isCepComplete(masked)) return;
-    setCepLoading(true);
-    const result = await lookupCep(masked);
-    setCepLoading(false);
-    if (result.status === "unavailable") {
-      setCepMessage("Busca automática indisponível no momento. Preencha o endereço manualmente.");
-      return;
-    }
-    if (result.status === "not_found") {
-      setCepMessage("CEP não localizado. Você pode preencher o endereço manualmente.");
-      return;
-    }
-    const { street, neighborhood, city, state } = result.address;
-    setCityUf({ city, state });
-    const nb = neighborhood
-      ? neighborhoods.find((n) => normalizePlace(n.name) === normalizePlace(neighborhood))
-      : undefined;
-    setNeighborhoodName(neighborhood);
-    setNeighborhoodId(nb?.id ?? null);
-    const existing = street
-      ? streets.find((st) => normalizePlace(st.name) === normalizePlace(street))
-      : undefined;
-    if (existing) {
-      setStreetId(existing.id);
-      setStreetName(existing.name);
-      if (existing.neighborhood_id) setNeighborhoodId(existing.neighborhood_id);
-      setCepMessage("Endereço preenchido pelo CEP (rua já cadastrada).");
-    } else {
-      setStreetId(null);
-      setStreetName(street);
-      setCepMessage("Endereço preenchido pelo CEP. Esta rua ainda não está cadastrada.");
-    }
-  }
-
   async function save() {
     if (!company.trim()) {
       toast.error("Informe o nome da empresa.");
       return;
     }
     for (const f of fields) {
-      if (f.required && (custom[f.id] === undefined || custom[f.id] === "" || custom[f.id] === null)) {
+      if (
+        f.required &&
+        (custom[f.id] === undefined || custom[f.id] === "" || custom[f.id] === null)
+      ) {
         toast.error(`Preencha o campo "${f.label}".`);
         return;
       }
     }
     setSaving(true);
-    const nb = neighborhoods.find((n) => n.id === neighborhoodId);
+    const nb = neighborhoods.find((n) => n.id === address.neighborhoodId);
     const { error } = await supabase
       .from("leads")
       .update({
@@ -506,14 +478,15 @@ function EditLeadDialog({
         contact_name: contact.trim() || null,
         phone: phone || null,
         segment_id: segmentId,
-        street_id: streetId,
-        street_name: streetName || null,
-        number: number || null,
-        neighborhood_id: neighborhoodId,
-        neighborhood_name: nb?.name ?? (neighborhoodName || null),
-        city: nb?.city || cityUf?.city || null,
-        state: nb?.state || cityUf?.state || null,
-        postal_code: cep || null,
+        street_id: address.streetId,
+        street_name: address.streetName || null,
+        number: address.number || null,
+        neighborhood_id: address.neighborhoodId,
+        neighborhood_name: nb?.name ?? (address.neighborhoodName || null),
+        city: nb?.city || address.city || null,
+        state: nb?.state || address.state || null,
+        postal_code: address.cep || null,
+
         next_contact_date: appointment.date || null,
         notes: notes.trim() || null,
       })
@@ -616,12 +589,22 @@ function EditLeadDialog({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="editCompany">Nome da empresa *</Label>
-            <Input id="editCompany" className="h-11" value={company} onChange={(e) => setCompany(e.target.value)} />
+            <Input
+              id="editCompany"
+              className="h-11"
+              value={company}
+              onChange={(e) => setCompany(e.target.value)}
+            />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="editContact">Nome do contato</Label>
-              <Input id="editContact" className="h-11" value={contact} onChange={(e) => setContact(e.target.value)} />
+              <Input
+                id="editContact"
+                className="h-11"
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="editPhone">Telefone</Label>
@@ -637,7 +620,9 @@ function EditLeadDialog({
           <div className="space-y-2">
             <Label>Segmento</Label>
             <Combobox
-              options={segments.filter((s) => s.active).map((s) => ({ value: s.id, label: s.name }))}
+              options={segments
+                .filter((s) => s.active)
+                .map((s) => ({ value: s.id, label: s.name }))}
               value={segmentId}
               onChange={(v) => {
                 setSegmentId(v);
@@ -649,78 +634,11 @@ function EditLeadDialog({
               placeholder="Selecione o segmento"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="editCep">CEP</Label>
-            <Input
-              id="editCep"
-              className="h-11"
-              inputMode="numeric"
-              placeholder="00000-000"
-              value={cep}
-              onChange={(e) => void handleCep(e.target.value)}
-            />
-            {cepLoading && <p className="text-xs text-muted-foreground">Consultando CEP...</p>}
-            {cepMessage && <p className="text-xs text-muted-foreground">{cepMessage}</p>}
-          </div>
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <div className="space-y-2">
-              <Label>Rua</Label>
-              <Combobox
-                options={streets.map((s) => ({
-                  value: s.id,
-                  label: s.name,
-                  hint: neighborhoods.find((n) => n.id === s.neighborhood_id)?.name,
-                }))}
-                value={streetId}
-                onChange={(v) => {
-                  setStreetId(v);
-                  const st = streets.find((s) => s.id === v);
-                  if (st) {
-                    setStreetName(st.name);
-                    if (st.neighborhood_id) setNeighborhoodId(st.neighborhood_id);
-                  }
-                }}
-                placeholder="Pesquisar rua"
-                searchPlaceholder="Digite o nome da rua"
-                emptyText="Rua não cadastrada."
-              />
-              {!streetId && streetName && (
-                <Input
-                  className="h-11"
-                  aria-label="Nome da rua (não cadastrada)"
-                  value={streetName}
-                  onChange={(e) => setStreetName(e.target.value)}
-                />
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="editNumber">Número</Label>
-              <Input
-                id="editNumber"
-                className="h-11"
-                inputMode="numeric"
-                value={number}
-                onChange={(e) => setNumber(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Bairro</Label>
-            <Combobox
-              options={neighborhoods.map((n) => ({ value: n.id, label: n.name, hint: n.city }))}
-              value={neighborhoodId}
-              onChange={(v) => {
-                setNeighborhoodId(v);
-                setNeighborhoodName(neighborhoods.find((n) => n.id === v)?.name ?? "");
-              }}
-              placeholder="Selecione o bairro"
-            />
-            {!neighborhoodId && neighborhoodName && (
-              <p className="text-xs text-muted-foreground">
-                Bairro informado pelo CEP: {neighborhoodName} (ainda não cadastrado)
-              </p>
-            )}
-          </div>
+          <AddressFields
+            idPrefix="edit"
+            value={address}
+            onChange={(patch) => setAddress((prev) => ({ ...prev, ...patch }))}
+          />
 
           <div className="space-y-2 rounded-xl border p-3">
             <Label className="text-xs font-bold tracking-wide uppercase">Agendamento</Label>
@@ -779,7 +697,12 @@ function EditLeadDialog({
 
           <div className="space-y-2">
             <Label htmlFor="editNotes">Observações da visita</Label>
-            <Textarea id="editNotes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Textarea
+              id="editNotes"
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
           </div>
         </div>
         <DialogFooter>
@@ -793,7 +716,6 @@ function EditLeadDialog({
 }
 
 function Info({ label, value }: { label: string; value: string }) {
-
   return (
     <div className="min-w-0">
       <dt className="text-xs text-muted-foreground">{label}</dt>

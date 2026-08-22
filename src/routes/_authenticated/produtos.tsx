@@ -5,6 +5,7 @@ import { Filter, Pencil, Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,12 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  useMeasurementUnits,
-  useProducts,
-  useSegmentProducts,
-  useSegments,
-} from "@/lib/queries";
+import { useMeasurementUnits, useProducts, useSegmentProducts, useSegments } from "@/lib/queries";
 import { useItemCategories } from "@/lib/commercialQueries";
 import { formatCurrency, toNumber } from "@/lib/commercial";
 import { useAuth } from "@/hooks/useAuth";
@@ -241,26 +237,25 @@ function Produtos() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold tracking-tight">Produtos / Serviços</h1>
-          <p className="text-sm text-muted-foreground">
-            {filtered.length} de {products.length} solução(ões)
-            {incomplete ? ` · ${incomplete} sem preço ou unidade` : ""}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {isAdmin && (
-            <Button variant="outline" onClick={() => setCatOpen(true)}>
-              <Settings2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Categorias</span>
+      <PageHeader
+        title="Produtos / Serviços"
+        description={`${filtered.length} de ${products.length} solução(ões)${
+          incomplete ? ` · ${incomplete} sem preço ou unidade` : ""
+        }`}
+        actions={
+          <>
+            {isAdmin && (
+              <Button variant="outline" className="h-10" onClick={() => setCatOpen(true)}>
+                <Settings2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Categorias</span>
+              </Button>
+            )}
+            <Button className="h-10" onClick={openNew} disabled={!isAdmin}>
+              <Plus className="h-4 w-4" /> Novo
             </Button>
-          )}
-          <Button onClick={openNew} disabled={!isAdmin}>
-            <Plus className="h-4 w-4" /> Novo
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Filtros */}
       <div className="space-y-3 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]">
@@ -277,25 +272,41 @@ function Produtos() {
         </div>
         {more && (
           <div className="grid gap-2 sm:grid-cols-4">
-            <FilterSelect label="Tipo" value={fKind} onChange={setFKind}
-              options={[{ value: "todos", label: "Todos os tipos" }, ...KINDS]} />
-            <FilterSelect label="Categoria" value={fCategory} onChange={setFCategory}
+            <FilterSelect
+              label="Tipo"
+              value={fKind}
+              onChange={setFKind}
+              options={[{ value: "todos", label: "Todos os tipos" }, ...KINDS]}
+            />
+            <FilterSelect
+              label="Categoria"
+              value={fCategory}
+              onChange={setFCategory}
               options={[
                 { value: "todos", label: "Todas as categorias" },
                 { value: "none", label: "Sem categoria" },
                 ...categories.map((c) => ({ value: c.id, label: c.name })),
-              ]} />
-            <FilterSelect label="Segmento" value={fSegment} onChange={setFSegment}
+              ]}
+            />
+            <FilterSelect
+              label="Segmento"
+              value={fSegment}
+              onChange={setFSegment}
               options={[
                 { value: "todos", label: "Todos os segmentos" },
                 ...segments.map((s) => ({ value: s.id, label: s.name })),
-              ]} />
-            <FilterSelect label="Status" value={fStatus} onChange={setFStatus}
+              ]}
+            />
+            <FilterSelect
+              label="Status"
+              value={fStatus}
+              onChange={setFStatus}
               options={[
                 { value: "ativos", label: "Somente ativos" },
                 { value: "inativos", label: "Somente inativos" },
                 { value: "todos", label: "Todos" },
-              ]} />
+              ]}
+            />
           </div>
         )}
       </div>
@@ -321,7 +332,9 @@ function Produtos() {
                 <td className="p-3">
                   <p className="font-semibold">{p.name}</p>
                   {p.description && (
-                    <p className="max-w-xs truncate text-xs text-muted-foreground">{p.description}</p>
+                    <p className="max-w-xs truncate text-xs text-muted-foreground">
+                      {p.description}
+                    </p>
                   )}
                 </td>
                 <td className="p-3">{kindLabel(p.kind)}</td>
@@ -335,7 +348,10 @@ function Produtos() {
                 <td className="p-3">
                   <div className="flex max-w-xs flex-wrap gap-1">
                     {Array.from(new Set(segmentsOf.get(p.id) ?? [])).map((s) => (
-                      <span key={`${p.id}-${s}`} className="rounded-full border bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                      <span
+                        key={`${p.id}-${s}`}
+                        className="rounded-full border bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
+                      >
                         {s}
                       </span>
                     ))}
@@ -353,10 +369,20 @@ function Produtos() {
                   />
                 </td>
                 <td className="p-3 text-right">
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(p.id)} disabled={!isAdmin}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openEdit(p.id)}
+                    disabled={!isAdmin}
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => void remove(p.id)} disabled={!isAdmin}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => void remove(p.id)}
+                    disabled={!isAdmin}
+                  >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </td>
@@ -376,7 +402,10 @@ function Produtos() {
       {/* Mobile: cards */}
       <div className="grid gap-2 md:hidden">
         {filtered.map((p) => (
-          <div key={p.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]">
+          <div
+            key={p.id}
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]"
+          >
             <div className="min-w-0">
               <p className="truncate font-semibold">
                 {p.name}
@@ -398,20 +427,35 @@ function Produtos() {
               </p>
               <div className="mt-2 flex flex-wrap gap-1">
                 {Array.from(new Set(segmentsOf.get(p.id) ?? [])).map((s) => (
-                  <span key={`${p.id}-${s}`} className="rounded-full border bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+                  <span
+                    key={`${p.id}-${s}`}
+                    className="rounded-full border bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary"
+                  >
                     {s}
                   </span>
                 ))}
                 {!(segmentsOf.get(p.id) ?? []).length && (
-                  <span className="text-[11px] text-muted-foreground">Sem segmentos vinculados</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    Sem segmentos vinculados
+                  </span>
                 )}
               </div>
             </div>
             <div className="flex shrink-0 gap-1">
-              <Button variant="ghost" size="icon" onClick={() => openEdit(p.id)} disabled={!isAdmin}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => openEdit(p.id)}
+                disabled={!isAdmin}
+              >
                 <Pencil className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => void remove(p.id)} disabled={!isAdmin}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => void remove(p.id)}
+                disabled={!isAdmin}
+              >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             </div>
@@ -432,22 +476,38 @@ function Produtos() {
           </DialogHeader>
           <div className="space-y-5">
             <section className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Identificação</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Identificação
+              </p>
               <div className="space-y-2">
                 <Label htmlFor="pname">Nome</Label>
-                <Input id="pname" className="h-11" value={name} onChange={(e) => setName(e.target.value)} />
+                <Input
+                  id="pname"
+                  className="h-11"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pdesc">Descrição</Label>
-                <Textarea id="pdesc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+                <Textarea
+                  id="pdesc"
+                  rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Tipo</Label>
                 <Select value={kind} onValueChange={setKind}>
-                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-11">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {KINDS.map((k) => (
-                      <SelectItem key={k.value} value={k.value}>{k.label}</SelectItem>
+                      <SelectItem key={k.value} value={k.value}>
+                        {k.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -455,29 +515,43 @@ function Produtos() {
             </section>
 
             <section className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Classificação</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Classificação
+              </p>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Categoria</Label>
                   <Select value={categoryId} onValueChange={setCategoryId}>
-                    <SelectTrigger className="h-11"><SelectValue placeholder="Categoria" /></SelectTrigger>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Categoria" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Sem categoria</SelectItem>
-                      {categories.filter((c) => c.active).map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                      ))}
+                      {categories
+                        .filter((c) => c.active)
+                        .map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Unidade</Label>
                   <Select value={unit} onValueChange={setUnit}>
-                    <SelectTrigger className="h-11"><SelectValue placeholder="Unidade" /></SelectTrigger>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Unidade" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Não informada</SelectItem>
-                      {units.filter((u) => u.active).map((u) => (
-                        <SelectItem key={u.id} value={u.code}>{u.code} — {u.name}</SelectItem>
-                      ))}
+                      {units
+                        .filter((u) => u.active)
+                        .map((u) => (
+                          <SelectItem key={u.id} value={u.code}>
+                            {u.code} — {u.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -486,11 +560,16 @@ function Produtos() {
                 <Label>Segmentos compatíveis</Label>
                 <div className="grid max-h-56 gap-1 overflow-y-auto rounded-xl border p-2 sm:grid-cols-2">
                   {segments.map((s) => (
-                    <label key={s.id} className="flex cursor-pointer items-center gap-2 rounded-lg p-2 text-sm hover:bg-accent/50">
+                    <label
+                      key={s.id}
+                      className="flex cursor-pointer items-center gap-2 rounded-lg p-2 text-sm hover:bg-accent/50"
+                    >
                       <Checkbox
                         checked={segIds.includes(s.id)}
                         onCheckedChange={(v) =>
-                          setSegIds((prev) => (v ? [...prev, s.id] : prev.filter((x) => x !== s.id)))
+                          setSegIds((prev) =>
+                            v ? [...prev, s.id] : prev.filter((x) => x !== s.id),
+                          )
                         }
                       />
                       <span className="min-w-0 truncate">{s.name}</span>
@@ -501,7 +580,9 @@ function Produtos() {
             </section>
 
             <section className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Comercial</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                Comercial
+              </p>
               <div className="space-y-2">
                 <Label htmlFor="pprice">Preço padrão (R$)</Label>
                 <Input
@@ -513,15 +594,16 @@ function Produtos() {
                   onChange={(e) => setPrice(e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Sugerido automaticamente ao inserir o item em orçamentos, propostas e pedidos. Alterar o
-                  preço dentro do documento não altera este cadastro.
+                  Sugerido automaticamente ao inserir o item em orçamentos, propostas e pedidos.
+                  Alterar o preço dentro do documento não altera este cadastro.
                 </p>
               </div>
               <div className="flex items-center justify-between rounded-xl border p-3">
                 <div>
                   <Label htmlFor="pactive">Ativo</Label>
                   <p className="text-xs text-muted-foreground">
-                    Inativos não aparecem em novas seleções, mas permanecem nos documentos já existentes.
+                    Inativos não aparecem em novas seleções, mas permanecem nos documentos já
+                    existentes.
                   </p>
                 </div>
                 <Switch id="pactive" checked={active} onCheckedChange={setActive} />
@@ -529,7 +611,9 @@ function Produtos() {
             </section>
           </div>
           <DialogFooter>
-            <Button onClick={save} disabled={saving || !isAdmin}>Salvar</Button>
+            <Button onClick={save} disabled={saving || !isAdmin}>
+              Salvar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -555,10 +639,14 @@ function FilterSelect({
     <div className="space-y-1">
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+        <SelectTrigger className="h-11">
+          <SelectValue />
+        </SelectTrigger>
         <SelectContent>
           {options.map((o) => (
-            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+            <SelectItem key={o.value} value={o.value}>
+              {o.label}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -567,7 +655,13 @@ function FilterSelect({
 }
 
 /** Cadastro administrativo de categorias usadas nos itens dos documentos comerciais. */
-function CategoriesDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+function CategoriesDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
   const queryClient = useQueryClient();
   const { data: categories = [] } = useItemCategories();
   const [name, setName] = useState("");
@@ -593,7 +687,10 @@ function CategoriesDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
   }
 
   async function toggle(id: string, active: boolean) {
-    const { error } = await supabase.from("item_categories").update({ active } as never).eq("id", id);
+    const { error } = await supabase
+      .from("item_categories")
+      .update({ active } as never)
+      .eq("id", id);
     if (error) {
       toast.error("Não foi possível alterar a categoria.");
       return;
@@ -609,11 +706,14 @@ function CategoriesDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
         </DialogHeader>
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            As categorias agrupam os itens no documento e no PDF. O tipo define se o valor entra no total
-            de serviços ou de peças.
+            As categorias agrupam os itens no documento e no PDF. O tipo define se o valor entra no
+            total de serviços ou de peças.
           </p>
           {categories.map((c) => (
-            <div key={c.id} className="flex items-center justify-between gap-2 rounded-lg border p-2.5">
+            <div
+              key={c.id}
+              className="flex items-center justify-between gap-2 rounded-lg border p-2.5"
+            >
               <div className="min-w-0">
                 <p className="truncate font-medium">{c.name}</p>
                 <p className="text-xs text-muted-foreground">
@@ -624,15 +724,24 @@ function CategoriesDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
             </div>
           ))}
           <div className="grid gap-2 rounded-lg border p-2.5 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-            <Input className="h-11" placeholder="Nova categoria" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input
+              className="h-11"
+              placeholder="Nova categoria"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
             <Select value={kind} onValueChange={setKind}>
-              <SelectTrigger className="h-11 sm:w-36"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-11 sm:w-36">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="servico">Serviços</SelectItem>
                 <SelectItem value="peca">Peças</SelectItem>
               </SelectContent>
             </Select>
-            <Button className="h-11" onClick={() => void add()} disabled={saving}>Adicionar</Button>
+            <Button className="h-11" onClick={() => void add()} disabled={saving}>
+              Adicionar
+            </Button>
           </div>
         </div>
       </DialogContent>

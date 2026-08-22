@@ -5,6 +5,7 @@ import { Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -89,12 +90,15 @@ function Segmentos() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <h1 className="truncate text-2xl font-extrabold tracking-tight">Segmentos</h1>
-        <Button onClick={openNew}>
-          <Plus className="h-4 w-4" /> Novo
-        </Button>
-      </div>
+      <PageHeader
+        title="Segmentos"
+        description={`${segments.length} registro(s)`}
+        actions={
+          <Button className="h-10" onClick={openNew}>
+            <Plus className="h-4 w-4" /> Novo
+          </Button>
+        }
+      />
 
       <div className="grid gap-2 sm:grid-cols-2">
         {segments.map((s) => (
@@ -111,7 +115,9 @@ function Segmentos() {
                   </span>
                 )}
               </p>
-              {s.description && <p className="truncate text-xs text-muted-foreground">{s.description}</p>}
+              {s.description && (
+                <p className="truncate text-xs text-muted-foreground">{s.description}</p>
+              )}
             </div>
             <div className="flex shrink-0 gap-1">
               <Button
@@ -151,7 +157,12 @@ function Segmentos() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome</Label>
-              <Input id="nome" className="h-11" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input
+                id="nome"
+                className="h-11"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="desc">Descrição</Label>

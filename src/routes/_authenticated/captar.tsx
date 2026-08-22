@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCircle2, Loader2, Save } from "lucide-react";
@@ -10,15 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Combobox } from "@/components/Combobox";
-import { AppointmentFields, emptyAppointment, type AppointmentDraft } from "@/components/AppointmentFields";
+import { PageHeader } from "@/components/PageHeader";
+import { AddressFields, emptyAddress, type AddressValue } from "@/components/AddressFields";
+import {
+  AppointmentFields,
+  emptyAppointment,
+  type AppointmentDraft,
+} from "@/components/AppointmentFields";
 import { fromLocalParts, formatAppointment } from "@/lib/appointments";
 import { DynamicField } from "@/components/DynamicField";
 import {
@@ -27,17 +26,9 @@ import {
   useSegmentFields,
   useSegmentProducts,
   useSegments,
-  useStreets,
   toOptions,
 } from "@/lib/queries";
-import {
-  isCepComplete,
-  lookupCep,
-  maskCep,
-  maskPhone,
-  normalizePlace,
-} from "@/lib/leads";
-
+import { maskPhone } from "@/lib/leads";
 
 export const Route = createFileRoute("/_authenticated/captar")({
   head: () => ({
@@ -45,7 +36,10 @@ export const Route = createFileRoute("/_authenticated/captar")({
       { title: "Captar Lead — IGA TECNOLOGIA" },
       { name: "description", content: "Cadastro rápido de leads durante a visita comercial." },
       { property: "og:title", content: "Captar Lead — IGA TECNOLOGIA" },
-      { property: "og:description", content: "Cadastro rápido de leads durante a visita comercial." },
+      {
+        property: "og:description",
+        content: "Cadastro rápido de leads durante a visita comercial.",
+      },
     ],
   }),
   component: CaptarLead,
@@ -54,10 +48,8 @@ export const Route = createFileRoute("/_authenticated/captar")({
 function CaptarLead() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const numberRef = useRef<HTMLInputElement>(null);
 
   const { data: segments = [] } = useSegments();
-  const { data: streets = [] } = useStreets();
   const { data: neighborhoods = [] } = useNeighborhoods();
   const { data: products = [] } = useProducts();
   const { data: segmentProducts = [] } = useSegmentProducts();
@@ -66,15 +58,8 @@ function CaptarLead() {
   const [company, setCompany] = useState("");
   const [contact, setContact] = useState("");
   const [phone, setPhone] = useState("");
-  const [streetId, setStreetId] = useState<string | null>(null);
-  const [streetName, setStreetName] = useState("");
-  const [number, setNumber] = useState("");
-  const [neighborhoodId, setNeighborhoodId] = useState<string | null>(null);
-  const [neighborhoodName, setNeighborhoodName] = useState("");
-  const [cep, setCep] = useState("");
-  const [cepLoading, setCepLoading] = useState(false);
-  const [cepMessage, setCepMessage] = useState<string | null>(null);
-  const [cityUf, setCityUf] = useState<{ city: string; state: string } | null>(null);
+  const [address, setAddress] = useState<AddressValue>(emptyAddress);
+  const [addressKey, setAddressKey] = useState(0);
   const [appointment, setAppointment] = useState<AppointmentDraft>(emptyAppointment);
   const [productIds, setProductIds] = useState<string[]>([]);
   const [custom, setCustom] = useState<Record<string, unknown>>({});
@@ -82,12 +67,11 @@ function CaptarLead() {
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
 
-  const [newStreetOpen, setNewStreetOpen] = useState(false);
-  const [newStreetName, setNewStreetName] = useState("");
-  const [newStreetNb, setNewStreetNb] = useState<string | null>(null);
-
-
   const { data: fields = [] } = useSegmentFields(segmentId);
+
+  function patchAddress(patch: Partial<AddressValue>) {
+    setAddress((prev) => ({ ...prev, ...patch }));
+  }
 
   // Lembrar o último segmento usado na sessão
   useEffect(() => {
@@ -106,101 +90,18 @@ function CaptarLead() {
     return products.filter((p) => ids.has(p.id) && p.active);
   }, [segmentId, segmentProducts, products]);
 
-  function selectStreet(id: string | null) {
-    setStreetId(id);
-    const street = streets.find((s) => s.id === id);
-    if (street) {
-      setStreetName(street.name);
-      if (street.neighborhood_id) setNeighborhoodId(street.neighborhood_id);
-      setTimeout(() => numberRef.current?.focus(), 60);
-    }
-  }
-
-  async function handleCep(value: string) {
-    const masked = maskCep(value);
-    setCep(masked);
-    setCepMessage(null);
-    if (!isCepComplete(masked)) return;
-    setCepLoading(true);
-    const result = await lookupCep(masked);
-    setCepLoading(false);
-    if (result.status === "unavailable") {
-      setCepMessage("Busca automática indisponível no momento. Preencha o endereço manualmente.");
-      return;
-    }
-    if (result.status === "not_found") {
-      setCepMessage("CEP não localizado. Você pode preencher o endereço manualmente.");
-      return;
-    }
-    const { street, neighborhood, city, state } = result.address;
-    setCityUf({ city, state });
-    // Bairro: reaproveita cadastro existente quando houver
-    const nb = neighborhood
-      ? neighborhoods.find((n) => normalizePlace(n.name) === normalizePlace(neighborhood))
-      : undefined;
-    setNeighborhoodName(neighborhood);
-    setNeighborhoodId(nb?.id ?? null);
-    // Rua: nunca cria automaticamente, apenas reutiliza cadastro existente
-    const existing = street
-      ? streets.find((s) => normalizePlace(s.name) === normalizePlace(street))
-      : undefined;
-    if (existing) {
-      setStreetId(existing.id);
-      setStreetName(existing.name);
-      if (existing.neighborhood_id) setNeighborhoodId(existing.neighborhood_id);
-    } else {
-      setStreetId(null);
-      setStreetName(street);
-    }
-    setCepMessage(
-      existing
-        ? "Endereço preenchido pelo CEP (rua já cadastrada)."
-        : street
-          ? "Endereço preenchido pelo CEP. Esta rua ainda não está cadastrada."
-          : "CEP encontrado, mas sem logradouro. Informe a rua manualmente.",
-    );
-    setTimeout(() => numberRef.current?.focus(), 60);
-  }
-
-  async function createStreet() {
-    if (!newStreetName.trim()) return;
-    const { data, error } = await supabase
-      .from("streets")
-      .insert({ name: newStreetName.trim(), neighborhood_id: newStreetNb })
-      .select()
-      .single();
-    if (error) {
-      toast.error("Não foi possível cadastrar a rua.");
-      return;
-    }
-    await queryClient.invalidateQueries({ queryKey: ["streets"] });
-    setNewStreetOpen(false);
-    setNewStreetName("");
-    setStreetId(data.id);
-    setStreetName(data.name);
-    if (data.neighborhood_id) setNeighborhoodId(data.neighborhood_id);
-    setTimeout(() => numberRef.current?.focus(), 60);
-  }
-
   function resetForm() {
     setCompany("");
     setContact("");
     setPhone("");
-    setStreetId(null);
-    setStreetName("");
-    setNumber("");
-    setNeighborhoodId(null);
-    setNeighborhoodName("");
-    setCep("");
-    setCepMessage(null);
-    setCityUf(null);
+    setAddress(emptyAddress);
+    setAddressKey((k) => k + 1);
     setAppointment(emptyAppointment);
     setProductIds([]);
     setCustom({});
     setNotes("");
     setSavedId(null);
   }
-
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -220,7 +121,7 @@ function CaptarLead() {
     }
     setSaving(true);
     const { data: userData } = await supabase.auth.getUser();
-    const nb = neighborhoods.find((n) => n.id === neighborhoodId);
+    const nb = neighborhoods.find((n) => n.id === address.neighborhoodId);
     const { data: lead, error } = await supabase
       .from("leads")
       .insert({
@@ -228,14 +129,15 @@ function CaptarLead() {
         contact_name: contact.trim() || null,
         phone: phone || null,
         segment_id: segmentId,
-        street_id: streetId,
-        street_name: streetName || null,
-        number: number || null,
-        neighborhood_id: neighborhoodId,
-        neighborhood_name: nb?.name ?? (neighborhoodName || null),
-        city: nb?.city || cityUf?.city || null,
-        state: nb?.state || cityUf?.state || null,
-        postal_code: cep || null,
+        street_id: address.streetId,
+        street_name: address.streetName || null,
+        number: address.number || null,
+        neighborhood_id: address.neighborhoodId,
+        neighborhood_name: nb?.name ?? (address.neighborhoodName || null),
+        city: nb?.city || address.city || null,
+        state: nb?.state || address.state || null,
+        postal_code: address.cep || null,
+
         next_contact_date: appointment.date || null,
         notes: notes.trim() || null,
         created_by: userData.user!.id,
@@ -310,10 +212,10 @@ function CaptarLead() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-2xl font-extrabold tracking-tight">Captar Lead</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Preencha o essencial. O restante pode ser completado depois.
-      </p>
+      <PageHeader
+        title="Captar Lead"
+        description="Preencha o essencial. O restante pode ser completado depois."
+      />
 
       <form className="mt-5 space-y-5" onSubmit={save}>
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
@@ -323,23 +225,40 @@ function CaptarLead() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="company">Nome da empresa *</Label>
-              <Input id="company" className="h-11" value={company} autoFocus
-                onChange={(e) => setCompany(e.target.value)} />
+              <Input
+                id="company"
+                className="h-11"
+                value={company}
+                autoFocus
+                onChange={(e) => setCompany(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="contact">Nome do contato</Label>
-              <Input id="contact" className="h-11" value={contact}
-                onChange={(e) => setContact(e.target.value)} />
+              <Input
+                id="contact"
+                className="h-11"
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Telefone</Label>
-              <Input id="phone" className="h-11" inputMode="tel" placeholder="(11) 99999-9999"
-                value={phone} onChange={(e) => setPhone(maskPhone(e.target.value))} />
+              <Input
+                id="phone"
+                className="h-11"
+                inputMode="tel"
+                placeholder="(11) 99999-9999"
+                value={phone}
+                onChange={(e) => setPhone(maskPhone(e.target.value))}
+              />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Segmento</Label>
               <Combobox
-                options={segments.filter((s) => s.active).map((s) => ({ value: s.id, label: s.name }))}
+                options={segments
+                  .filter((s) => s.active)
+                  .map((s) => ({ value: s.id, label: s.name }))}
                 value={segmentId}
                 onChange={(v) => {
                   setSegmentId(v);
@@ -353,7 +272,6 @@ function CaptarLead() {
                 placeholder="Selecione o segmento"
               />
             </div>
-
           </div>
         </section>
 
@@ -361,81 +279,12 @@ function CaptarLead() {
           <h2 className="mb-4 text-sm font-bold tracking-wide text-muted-foreground uppercase">
             Endereço
           </h2>
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="cep">CEP</Label>
-              <div className="relative">
-                <Input
-                  id="cep"
-                  className="h-11"
-                  inputMode="numeric"
-                  placeholder="00000-000"
-                  value={cep}
-                  onChange={(e) => void handleCep(e.target.value)}
-                />
-                {cepLoading && (
-                  <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                )}
-              </div>
-              {cepMessage && <p className="text-xs text-muted-foreground">{cepMessage}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label>Rua</Label>
-              <Combobox
-                options={streets.map((s) => ({
-                  value: s.id,
-                  label: s.name,
-                  hint: neighborhoods.find((n) => n.id === s.neighborhood_id)?.name,
-                }))}
-                value={streetId}
-                onChange={selectStreet}
-                placeholder="Pesquisar rua"
-                searchPlaceholder="Digite o nome da rua"
-                emptyText="Rua não cadastrada."
-                onCreate={(search) => {
-                  setNewStreetName(search || streetName);
-                  setNewStreetNb(neighborhoodId);
-                  setNewStreetOpen(true);
-                }}
-                createLabel="Cadastrar nova rua"
-              />
-              {!streetId && streetName && (
-                <Input
-                  className="h-11"
-                  aria-label="Nome da rua (não cadastrada)"
-                  value={streetName}
-                  onChange={(e) => setStreetName(e.target.value)}
-                />
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="number">Número</Label>
-              <Input id="number" ref={numberRef} className="h-11" inputMode="numeric"
-                value={number} onChange={(e) => setNumber(e.target.value)} />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Bairro</Label>
-              <Combobox
-                options={neighborhoods.map((n) => ({
-                  value: n.id,
-                  label: n.name,
-                  hint: n.city,
-                }))}
-                value={neighborhoodId}
-                onChange={(v) => {
-                  setNeighborhoodId(v);
-                  setNeighborhoodName(neighborhoods.find((n) => n.id === v)?.name ?? "");
-                }}
-                placeholder="Selecione o bairro"
-              />
-              {!neighborhoodId && neighborhoodName && (
-                <p className="text-xs text-muted-foreground">
-                  Bairro informado pelo CEP: {neighborhoodName} (ainda não cadastrado)
-                </p>
-              )}
-            </div>
-          </div>
+          <AddressFields
+            key={addressKey}
+            value={address}
+            onChange={patchAddress}
+            allowCreateStreet
+          />
         </section>
 
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
@@ -454,7 +303,6 @@ function CaptarLead() {
             />
           </div>
         </section>
-
 
         {segmentId && compatibleProducts.length > 0 && (
           <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
@@ -510,12 +358,20 @@ function CaptarLead() {
         )}
 
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
-          <Label htmlFor="notes" className="text-sm font-bold tracking-wide text-muted-foreground uppercase">
+          <Label
+            htmlFor="notes"
+            className="text-sm font-bold tracking-wide text-muted-foreground uppercase"
+          >
             Observações da visita
           </Label>
-          <Textarea id="notes" rows={4} className="mt-3" value={notes}
+          <Textarea
+            id="notes"
+            rows={4}
+            className="mt-3"
+            value={notes}
             placeholder="Ex.: Proprietário interessado em sistema de estoque."
-            onChange={(e) => setNotes(e.target.value)} />
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </section>
 
         <Button type="submit" className="h-12 w-full text-base font-semibold" disabled={saving}>
@@ -524,58 +380,6 @@ function CaptarLead() {
         </Button>
         <div className="h-14 md:hidden" />
       </form>
-
-      <Dialog open={newStreetOpen} onOpenChange={setNewStreetOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Cadastrar nova rua</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="newStreet">Nome da rua</Label>
-              <Input id="newStreet" className="h-11" value={newStreetName}
-                onChange={(e) => setNewStreetName(e.target.value)} />
-              {(() => {
-                const dup = newStreetName.trim()
-                  ? streets.find(
-                      (s) => normalizePlace(s.name) === normalizePlace(newStreetName),
-                    )
-                  : undefined;
-                if (!dup) return null;
-                return (
-                  <div className="rounded-lg border border-warning/40 bg-warning/10 p-2 text-xs">
-                    Já existe uma rua parecida cadastrada: <strong>{dup.name}</strong>.{" "}
-                    <button
-                      type="button"
-                      className="font-semibold underline"
-                      onClick={() => {
-                        setNewStreetOpen(false);
-                        selectStreet(dup.id);
-                      }}
-                    >
-                      Usar a rua existente
-                    </button>
-                  </div>
-                );
-              })()}
-            </div>
-
-            <div className="space-y-2">
-              <Label>Bairro</Label>
-              <Combobox
-                options={neighborhoods.map((n) => ({ value: n.id, label: n.name, hint: n.city }))}
-                value={newStreetNb}
-                onChange={setNewStreetNb}
-                placeholder="Selecione o bairro"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button onClick={createStreet}>Salvar rua</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
-

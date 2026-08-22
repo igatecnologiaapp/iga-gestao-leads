@@ -1,17 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import {
-  CalendarClock,
-  ChevronDown,
-  Layers,
-  UserRound,
-  Users2,
-} from "lucide-react";
+import { CalendarClock, ChevronDown, Layers, UserRound, Users2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { statusLabel } from "@/lib/leads";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -46,12 +41,14 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
       { title: "Dashboard — IGA TECNOLOGIA" },
       {
         name: "description",
-        content: "Painel operacional: total de leads, agendamentos, segmentos e captação por vendedor.",
+        content:
+          "Painel operacional: total de leads, agendamentos, segmentos e captação por vendedor.",
       },
       { property: "og:title", content: "Dashboard — IGA TECNOLOGIA" },
       {
         property: "og:description",
-        content: "Painel operacional: total de leads, agendamentos, segmentos e captação por vendedor.",
+        content:
+          "Painel operacional: total de leads, agendamentos, segmentos e captação por vendedor.",
       },
     ],
   }),
@@ -133,7 +130,8 @@ function Dashboard() {
   });
 
   const leadById = useMemo(() => new Map(leads.map((l) => [l.id, l])), [leads]);
-  const segmentName = (id: string | null) => segments.find((s) => s.id === id)?.name ?? "Sem segmento";
+  const segmentName = (id: string | null) =>
+    segments.find((s) => s.id === id)?.name ?? "Sem segmento";
   const sellerName = (id: string | null) =>
     profiles.find((p) => p.id === id)?.full_name?.trim() || (id ? "Usuário" : "Sem vendedor");
   const typeName = (id: string | null) =>
@@ -163,12 +161,10 @@ function Dashboard() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Painel operacional da captação. Toque em um quadro para expandir.
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Painel operacional da captação. Toque em um quadro para expandir."
+      />
 
       <div className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
         <div className="grid gap-3 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)_minmax(0,1fr)]">
@@ -333,7 +329,10 @@ function StatCard({
       <div className="mt-1 flex items-center justify-between gap-2">
         <span className="truncate text-[11px] text-muted-foreground">{hint ?? "Ver detalhes"}</span>
         <ChevronDown
-          className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", expanded && "rotate-180")}
+          className={cn(
+            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            expanded && "rotate-180",
+          )}
         />
       </div>
     </button>
@@ -376,7 +375,8 @@ function LeadList({
                 {[l.contact_name, l.phone, segmentName(l.segment_id)].filter(Boolean).join(" · ")}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                {[l.street_name, l.neighborhood_name, l.city].filter(Boolean).join(", ") || "Sem endereço"}
+                {[l.street_name, l.neighborhood_name, l.city].filter(Boolean).join(", ") ||
+                  "Sem endereço"}
                 {" · "}
                 {sellerName(l.created_by)}
               </p>
@@ -420,7 +420,9 @@ function AppointmentsPanel({
   }, [appointments, period, status]);
 
   const overdue = filtered.filter((a) => isOverdue(a.scheduled_at, a.status));
-  const today = filtered.filter((a) => isToday(a.scheduled_at) && !isOverdue(a.scheduled_at, a.status));
+  const today = filtered.filter(
+    (a) => isToday(a.scheduled_at) && !isOverdue(a.scheduled_at, a.status),
+  );
   const upcoming = filtered.filter(
     (a) => !isToday(a.scheduled_at) && !isOverdue(a.scheduled_at, a.status),
   );
@@ -584,7 +586,8 @@ function SegmentsPanel({
       .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
   }
 
-  if (!groups.length) return <p className="text-sm text-muted-foreground">Nenhum lead no período.</p>;
+  if (!groups.length)
+    return <p className="text-sm text-muted-foreground">Nenhum lead no período.</p>;
 
   return (
     <ul className="space-y-2">
@@ -610,11 +613,7 @@ function SegmentsPanel({
                 const next = nextFor(l.id);
                 return (
                   <li key={l.id}>
-                    <Link
-                      to="/leads/$id"
-                      params={{ id: l.id }}
-                      className="block px-3 py-2.5"
-                    >
+                    <Link to="/leads/$id" params={{ id: l.id }} className="block px-3 py-2.5">
                       <p className="truncate text-sm font-semibold">{l.company_name}</p>
                       <p className="truncate text-xs text-muted-foreground">
                         {next
@@ -659,7 +658,8 @@ function SellersPanel({
       .sort((a, b) => b.items.length - a.items.length);
   }, [leads, sellerName]);
 
-  if (!groups.length) return <p className="text-sm text-muted-foreground">Nenhum lead no período.</p>;
+  if (!groups.length)
+    return <p className="text-sm text-muted-foreground">Nenhum lead no período.</p>;
 
   return (
     <ul className="space-y-2">
@@ -686,7 +686,9 @@ function SellersPanel({
                   <Link to="/leads/$id" params={{ id: l.id }} className="block px-3 py-2.5">
                     <p className="truncate text-sm font-semibold">{l.company_name}</p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {[segmentName(l.segment_id), l.contact_name, l.phone].filter(Boolean).join(" · ")}
+                      {[segmentName(l.segment_id), l.contact_name, l.phone]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </p>
                   </Link>
                 </li>

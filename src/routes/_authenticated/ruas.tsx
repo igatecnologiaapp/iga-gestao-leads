@@ -5,6 +5,8 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { SearchField } from "@/components/SearchField";
+import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,7 +25,10 @@ export const Route = createFileRoute("/_authenticated/ruas")({
       { title: "Ruas — IGA TECNOLOGIA" },
       { name: "description", content: "Pré-cadastro de ruas com bairro, CEP, cidade e estado." },
       { property: "og:title", content: "Ruas — IGA TECNOLOGIA" },
-      { property: "og:description", content: "Pré-cadastro de ruas com bairro, CEP, cidade e estado." },
+      {
+        property: "og:description",
+        content: "Pré-cadastro de ruas com bairro, CEP, cidade e estado.",
+      },
     ],
   }),
   component: Ruas,
@@ -43,7 +48,8 @@ function Ruas() {
   const [search, setSearch] = useState("");
 
   const list = streets.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()));
-  const nbName = (id: string | null) => neighborhoods.find((n) => n.id === id)?.name ?? "Sem bairro";
+  const nbName = (id: string | null) =>
+    neighborhoods.find((n) => n.id === id)?.name ?? "Sem bairro";
 
   async function save() {
     if (!name.trim()) return;
@@ -77,22 +83,40 @@ function Ruas() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <h1 className="truncate text-2xl font-extrabold tracking-tight">Ruas</h1>
-        <Button onClick={() => {
-          setEditing(null); setName(""); setNbId(null); setZip(""); setCity(""); setState(""); setOpen(true);
-        }}>
-          <Plus className="h-4 w-4" /> Nova
-        </Button>
-      </div>
+      <PageHeader
+        title="Ruas"
+        description={`${list.length} registro(s)`}
+        actions={
+          <Button
+            className="h-10"
+            onClick={() => {
+              setEditing(null);
+              setName("");
+              setNbId(null);
+              setZip("");
+              setCity("");
+              setState("");
+              setOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" /> Nova
+          </Button>
+        }
+      />
 
-      <Input className="h-11" placeholder="Pesquisar rua" value={search}
-        onChange={(e) => setSearch(e.target.value)} />
+      <SearchField
+        value={search}
+        onChange={setSearch}
+        label="Pesquisar rua"
+        placeholder="Pesquisar rua"
+      />
 
       <div className="grid gap-2 sm:grid-cols-2">
         {list.map((s) => (
-          <div key={s.id}
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]">
+          <div
+            key={s.id}
+            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]"
+          >
             <div className="min-w-0">
               <p className="truncate font-semibold">{s.name}</p>
               <p className="truncate text-xs text-muted-foreground">
@@ -101,10 +125,19 @@ function Ruas() {
               </p>
             </div>
             <div className="flex shrink-0 gap-1">
-              <Button variant="ghost" size="icon" onClick={() => {
-                setEditing(s.id); setName(s.name); setNbId(s.neighborhood_id);
-                setZip(s.zip_code ?? ""); setCity(s.city); setState(s.state); setOpen(true);
-              }}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setEditing(s.id);
+                  setName(s.name);
+                  setNbId(s.neighborhood_id);
+                  setZip(s.zip_code ?? "");
+                  setCity(s.city);
+                  setState(s.state);
+                  setOpen(true);
+                }}
+              >
                 <Pencil className="h-4 w-4" />
               </Button>
               <Button variant="ghost" size="icon" onClick={() => remove(s.id)}>
@@ -123,7 +156,12 @@ function Ruas() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="rua">Nome da rua</Label>
-              <Input id="rua" className="h-11" value={name} onChange={(e) => setName(e.target.value)} />
+              <Input
+                id="rua"
+                className="h-11"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Bairro</Label>
@@ -137,16 +175,31 @@ function Ruas() {
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="cep">CEP</Label>
-                <Input id="cep" className="h-11" value={zip} onChange={(e) => setZip(e.target.value)} />
+                <Input
+                  id="cep"
+                  className="h-11"
+                  value={zip}
+                  onChange={(e) => setZip(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cidade">Cidade</Label>
-                <Input id="cidade" className="h-11" value={city} onChange={(e) => setCity(e.target.value)} />
+                <Input
+                  id="cidade"
+                  className="h-11"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="estado">Estado</Label>
-                <Input id="estado" className="h-11" maxLength={2} value={state}
-                  onChange={(e) => setState(e.target.value)} />
+                <Input
+                  id="estado"
+                  className="h-11"
+                  maxLength={2}
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                />
               </div>
             </div>
           </div>
