@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -22,8 +22,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/StatusBadge";
+import { PageHeader } from "@/components/PageHeader";
+import { SearchField } from "@/components/SearchField";
+import { LoadingState, EmptyState } from "@/components/DataState";
+import { PendingBadge } from "@/components/PendingBadge";
+import { leadPending } from "@/lib/pendings";
 import { LEAD_STATUSES, formatDate, formatDateOnly } from "@/lib/leads";
-import { useAllLeadProducts, useProducts, useSegments } from "@/lib/queries";
+import { useAllLeadProducts, useAppointments, useProducts, useSegments } from "@/lib/queries";
 
 
 export const Route = createFileRoute("/_authenticated/leads/")({
@@ -65,10 +70,12 @@ function LeadsList() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [moreFilters, setMoreFilters] = useState(false);
+  const [pendingFilter, setPendingFilter] = useState("todos");
 
   const { data: segments = [] } = useSegments();
   const { data: products = [] } = useProducts();
   const { data: leadProducts = [] } = useAllLeadProducts();
+  const { data: appointments = [] } = useAppointments();
 
   const { data: leads = [], isLoading } = useQuery({
     queryKey: ["leads", "list"],
@@ -109,6 +116,20 @@ function LeadsList() {
     [leads],
   );
 
+  const pendingByLead = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof leadPending>>();
+    for (const l of leads) {
+      map.set(
+        l.id,
+        leadPending(
+          l,
+          appointments.filter((a) => a.lead_id === l.id),
+        ),
+      );
+    }
+    return map;
+  }, [leads, appointments]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return leads.filter((l) => {
@@ -117,6 +138,7 @@ function LeadsList() {
       if (neighborhood !== "todos" && l.neighborhood_name !== neighborhood) return false;
       if (street !== "todos" && l.street_name !== street) return false;
       if (owner !== "todos" && l.created_by !== owner) return false;
+      if (pendingFilter !== "todos" && pendingByLead.get(l.id)?.tone !== pendingFilter) return false;
       if (
         product !== "todos" &&
         !leadProducts.some((lp) => lp.lead_id === l.id && lp.product_id === product)
@@ -146,6 +168,8 @@ function LeadsList() {
     street,
     product,
     owner,
+    pendingFilter,
+    pendingByLead,
     from,
     to,
     leadProducts,
@@ -174,29 +198,30 @@ function LeadsList() {
     setStreet("todos");
     setProduct("todos");
     setOwner("todos");
+    setPendingFilter("todos");
     setFrom("");
     setTo("");
   }
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold tracking-tight">Leads</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} registro(s)</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Leads"
+        description={`${filtered.length} registro(s)`}
+        actions={
+          <Button asChild className="h-10">
+            <Link to="/captar">Captar lead</Link>
+          </Button>
+        }
+      />
 
       <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_180px_180px]">
-        <div className="relative">
-          <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="h-11 pl-9"
-            placeholder="Pesquisar empresa, contato, telefone, rua..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          label="Pesquisar leads"
+          placeholder="Pesquisar empresa, contato, telefone, rua..."
+        />
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="h-11"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
@@ -255,6 +280,18 @@ function LeadsList() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={pendingFilter} onValueChange={setPendingFilter}>
+            <SelectTrigger className="h-11">
+              <SelectValue placeholder="Próxima ação" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas as pendências</SelectItem>
+              <SelectItem value="atrasado">Atrasados</SelectItem>
+              <SelectItem value="hoje">Para hoje</SelectItem>
+              <SelectItem value="agendado">Agendados</SelectItem>
+              <SelectItem value="sem_acao">Sem próxima ação</SelectItem>
+            </SelectContent>
+          </Select>
           <Select value={owner} onValueChange={setOwner}>
             <SelectTrigger className="h-11"><SelectValue placeholder="Responsável" /></SelectTrigger>
             <SelectContent>
@@ -294,11 +331,9 @@ function LeadsList() {
                 {segmentName(l.segment_id)} · {l.street_name ?? "-"}
                 {l.number ? `, ${l.number}` : ""} · {l.neighborhood_name ?? "-"}
               </p>
-              {l.next_contact_date && (
-                <p className="mt-1 text-xs font-semibold text-primary">
-                  Retorno: {formatDateOnly(l.next_contact_date)}
-                </p>
-              )}
+              <div className="mt-2">
+                <PendingBadge pending={pendingByLead.get(l.id)!} />
+              </div>
             </Link>
             <div className="mt-3">
               <Select value={l.status} onValueChange={(v) => changeStatus(l.id, v)}>
@@ -312,8 +347,12 @@ function LeadsList() {
             </div>
           </div>
         ))}
+        {isLoading && <LoadingState label="Carregando leads..." />}
         {!filtered.length && !isLoading && (
-          <p className="py-10 text-center text-sm text-muted-foreground">Nenhum lead encontrado.</p>
+          <EmptyState
+            title="Nenhum lead encontrado"
+            description="Ajuste os filtros ou capte um novo lead."
+          />
         )}
       </div>
 
@@ -327,7 +366,7 @@ function LeadsList() {
               <TableHead>Segmento</TableHead>
               <TableHead>Endereço</TableHead>
               <TableHead>Captado em</TableHead>
-              <TableHead>Retorno</TableHead>
+              <TableHead>Próxima ação</TableHead>
               <TableHead>Responsável</TableHead>
               <TableHead className="w-[190px]">Status</TableHead>
             </TableRow>
@@ -351,7 +390,9 @@ function LeadsList() {
                   <div className="text-xs text-muted-foreground">{l.neighborhood_name ?? "-"}</div>
                 </TableCell>
                 <TableCell className="text-sm">{formatDate(l.created_at)}</TableCell>
-                <TableCell className="text-sm">{formatDateOnly(l.next_contact_date)}</TableCell>
+                <TableCell className="text-sm">
+                  <PendingBadge pending={pendingByLead.get(l.id)!} />
+                </TableCell>
                 <TableCell className="text-sm">{ownerName(l.created_by)}</TableCell>
                 <TableCell>
                   <Select value={l.status} onValueChange={(v) => changeStatus(l.id, v)}>
@@ -367,8 +408,15 @@ function LeadsList() {
             ))}
             {!filtered.length && (
               <TableRow>
-                <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
-                  Nenhum lead encontrado.
+                <TableCell colSpan={8} className="p-0">
+                  {isLoading ? (
+                    <LoadingState label="Carregando leads..." />
+                  ) : (
+                    <EmptyState
+                      title="Nenhum lead encontrado"
+                      description="Ajuste os filtros ou capte um novo lead."
+                    />
+                  )}
                 </TableCell>
               </TableRow>
             )}
