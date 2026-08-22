@@ -212,10 +212,10 @@ function CaptarLead() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="text-2xl font-extrabold tracking-tight">Captar Lead</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Preencha o essencial. O restante pode ser completado depois.
-      </p>
+      <PageHeader
+        title="Captar Lead"
+        description="Preencha o essencial. O restante pode ser completado depois."
+      />
 
       <form className="mt-5 space-y-5" onSubmit={save}>
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">

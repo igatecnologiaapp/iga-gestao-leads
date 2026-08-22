@@ -5,6 +5,7 @@ import { Filter, Pencil, Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -241,26 +242,25 @@ function Produtos() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold tracking-tight">Produtos / Serviços</h1>
-          <p className="text-sm text-muted-foreground">
-            {filtered.length} de {products.length} solução(ões)
-            {incomplete ? ` · ${incomplete} sem preço ou unidade` : ""}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {isAdmin && (
-            <Button variant="outline" onClick={() => setCatOpen(true)}>
-              <Settings2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Categorias</span>
+      <PageHeader
+        title="Produtos / Serviços"
+        description={`${filtered.length} de ${products.length} solução(ões)${
+          incomplete ? ` · ${incomplete} sem preço ou unidade` : ""
+        }`}
+        actions={
+          <>
+            {isAdmin && (
+              <Button variant="outline" className="h-10" onClick={() => setCatOpen(true)}>
+                <Settings2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Categorias</span>
+              </Button>
+            )}
+            <Button className="h-10" onClick={openNew} disabled={!isAdmin}>
+              <Plus className="h-4 w-4" /> Novo
             </Button>
-          )}
-          <Button onClick={openNew} disabled={!isAdmin}>
-            <Plus className="h-4 w-4" /> Novo
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Filtros */}
       <div className="space-y-3 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]">

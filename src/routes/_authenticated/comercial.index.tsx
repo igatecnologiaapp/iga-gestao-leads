@@ -5,6 +5,8 @@ import { FileText, Filter, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { SearchField } from "@/components/SearchField";
+import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -96,25 +98,23 @@ function ComercialList() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-2xl font-extrabold tracking-tight">Documentos Comerciais</h1>
-          <p className="text-sm text-muted-foreground">
-            {filtered.length} documento(s) · {formatCurrency(totalValue)}
-          </p>
-        </div>
-        <Button onClick={() => setNewOpen(true)}>
-          <Plus className="h-4 w-4" /> Novo
-        </Button>
-      </div>
+      <PageHeader
+        title="Documentos Comerciais"
+        description={`${filtered.length} documento(s) · ${formatCurrency(totalValue)}`}
+        actions={
+          <Button className="h-10" onClick={() => setNewOpen(true)}>
+            <Plus className="h-4 w-4" /> Novo
+          </Button>
+        }
+      />
 
       <div className="space-y-3 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]">
         <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-          <Input
-            className="h-11"
-            placeholder="Buscar por número, cliente ou contato"
+          <SearchField
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={setSearch}
+            label="Buscar documentos"
+            placeholder="Buscar por número, cliente ou contato"
           />
           <Button variant="outline" className="h-11" onClick={() => setMore((v) => !v)}>
             <Filter className="h-4 w-4" /> Mais filtros

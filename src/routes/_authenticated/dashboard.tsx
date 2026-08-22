@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { statusLabel } from "@/lib/leads";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -163,12 +164,10 @@ function Dashboard() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Painel operacional da captação. Toque em um quadro para expandir.
-        </p>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Painel operacional da captação. Toque em um quadro para expandir."
+      />
 
       <div className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
         <div className="grid gap-3 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)_minmax(0,1fr)]">

@@ -5,6 +5,8 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { SearchField } from "@/components/SearchField";
+import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -77,17 +79,22 @@ function Ruas() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <h1 className="truncate text-2xl font-extrabold tracking-tight">Ruas</h1>
-        <Button onClick={() => {
-          setEditing(null); setName(""); setNbId(null); setZip(""); setCity(""); setState(""); setOpen(true);
-        }}>
-          <Plus className="h-4 w-4" /> Nova
-        </Button>
-      </div>
+      <PageHeader
+        title="Ruas"
+        description={`${list.length} registro(s)`}
+        actions={
+          <Button
+            className="h-10"
+            onClick={() => {
+              setEditing(null); setName(""); setNbId(null); setZip(""); setCity(""); setState(""); setOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4" /> Nova
+          </Button>
+        }
+      />
 
-      <Input className="h-11" placeholder="Pesquisar rua" value={search}
-        onChange={(e) => setSearch(e.target.value)} />
+      <SearchField value={search} onChange={setSearch} label="Pesquisar rua" placeholder="Pesquisar rua" />
 
       <div className="grid gap-2 sm:grid-cols-2">
         {list.map((s) => (

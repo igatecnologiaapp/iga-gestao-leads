@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,12 +60,10 @@ function Empresa() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight">Empresa emissora</h1>
-        <p className="text-sm text-muted-foreground">
-          Usados no cabeçalho e rodapé dos documentos comerciais em PDF.
-        </p>
-      </div>
+      <PageHeader
+        title="Empresa emissora"
+        description="Usados no cabeçalho e rodapé dos documentos comerciais em PDF."
+      />
 
       <div className="grid gap-3 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)] sm:grid-cols-2">
         <Field label="Nome" value={current.name} onChange={(v) => set("name", v)} />

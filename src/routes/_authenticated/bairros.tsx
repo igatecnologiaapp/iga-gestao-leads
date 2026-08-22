@@ -5,6 +5,8 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { SearchField } from "@/components/SearchField";
+import { PageHeader } from "@/components/PageHeader";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -68,15 +70,20 @@ function Bairros() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <h1 className="truncate text-2xl font-extrabold tracking-tight">Bairros</h1>
-        <Button onClick={() => { setEditing(null); setName(""); setCity(""); setState(""); setOpen(true); }}>
-          <Plus className="h-4 w-4" /> Novo
-        </Button>
-      </div>
+      <PageHeader
+        title="Bairros"
+        description={`${list.length} registro(s)`}
+        actions={
+          <Button
+            className="h-10"
+            onClick={() => { setEditing(null); setName(""); setCity(""); setState(""); setOpen(true); }}
+          >
+            <Plus className="h-4 w-4" /> Novo
+          </Button>
+        }
+      />
 
-      <Input className="h-11" placeholder="Pesquisar bairro" value={search}
-        onChange={(e) => setSearch(e.target.value)} />
+      <SearchField value={search} onChange={setSearch} label="Pesquisar bairro" placeholder="Pesquisar bairro" />
 
       <div className="grid gap-2 sm:grid-cols-2">
         {list.map((n) => (
