@@ -264,82 +264,14 @@ function CaptarLead() {
           <h2 className="mb-4 text-sm font-bold tracking-wide text-muted-foreground uppercase">
             Endereço
           </h2>
-          <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="cep">CEP</Label>
-              <div className="relative">
-                <Input
-                  id="cep"
-                  className="h-11"
-                  inputMode="numeric"
-                  placeholder="00000-000"
-                  value={cep}
-                  onChange={(e) => void handleCep(e.target.value)}
-                />
-                {cepLoading && (
-                  <Loader2 className="absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                )}
-              </div>
-              {cepMessage && <p className="text-xs text-muted-foreground">{cepMessage}</p>}
-            </div>
-            <div className="space-y-2">
-              <Label>Rua</Label>
-              <Combobox
-                options={streets.map((s) => ({
-                  value: s.id,
-                  label: s.name,
-                  hint: neighborhoods.find((n) => n.id === s.neighborhood_id)?.name,
-                }))}
-                value={streetId}
-                onChange={selectStreet}
-                placeholder="Pesquisar rua"
-                searchPlaceholder="Digite o nome da rua"
-                emptyText="Rua não cadastrada."
-                onCreate={(search) => {
-                  setNewStreetName(search || streetName);
-                  setNewStreetNb(neighborhoodId);
-                  setNewStreetOpen(true);
-                }}
-                createLabel="Cadastrar nova rua"
-              />
-              {!streetId && streetName && (
-                <Input
-                  className="h-11"
-                  aria-label="Nome da rua (não cadastrada)"
-                  value={streetName}
-                  onChange={(e) => setStreetName(e.target.value)}
-                />
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="number">Número</Label>
-              <Input id="number" ref={numberRef} className="h-11" inputMode="numeric"
-                value={number} onChange={(e) => setNumber(e.target.value)} />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Bairro</Label>
-              <Combobox
-                options={neighborhoods.map((n) => ({
-                  value: n.id,
-                  label: n.name,
-                  hint: n.city,
-                }))}
-                value={neighborhoodId}
-                onChange={(v) => {
-                  setNeighborhoodId(v);
-                  setNeighborhoodName(neighborhoods.find((n) => n.id === v)?.name ?? "");
-                }}
-                placeholder="Selecione o bairro"
-              />
-              {!neighborhoodId && neighborhoodName && (
-                <p className="text-xs text-muted-foreground">
-                  Bairro informado pelo CEP: {neighborhoodName} (ainda não cadastrado)
-                </p>
-              )}
-            </div>
-          </div>
+          <AddressFields
+            key={addressKey}
+            value={address}
+            onChange={patchAddress}
+            allowCreateStreet
+          />
         </section>
+
 
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
           <h2 className="text-sm font-bold tracking-wide text-muted-foreground uppercase">
