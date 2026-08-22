@@ -438,7 +438,12 @@ function LeadsList() {
                 </TableCell>
                 <TableCell className="text-sm">{formatDate(l.created_at)}</TableCell>
                 <TableCell className="text-sm">
-                  <PendingBadge pending={pendingByLead.get(l.id)!} />
+                  <PendingBadge compact pending={pendingByLead.get(l.id)!} />
+                  {pendingByLead.get(l.id)!.date ? (
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {pendingByLead.get(l.id)!.detail}
+                    </div>
+                  ) : null}
                 </TableCell>
                 <TableCell className="text-sm">{ownerName(l.created_by)}</TableCell>
                 <TableCell>
