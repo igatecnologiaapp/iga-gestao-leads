@@ -233,3 +233,27 @@ export function useProfiles() {
     },
   });
 }
+
+export type JobRole = {
+  id: string;
+  name: string;
+  description: string | null;
+  active: boolean;
+  sort_order: number;
+};
+
+/** Funções/cargos operacionais (não alteram permissões de acesso). */
+export function useJobRoles() {
+  return useQuery({
+    queryKey: ["job_roles"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("job_roles")
+        .select("id, name, description, active, sort_order")
+        .order("sort_order")
+        .order("name");
+      if (error) throw error;
+      return data as JobRole[];
+    },
+  });
+}
