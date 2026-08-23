@@ -8,6 +8,9 @@ const createSchema = z.object({
   role: z.enum(["admin", "captador"]),
   canViewAllLeads: z.boolean(),
   canDeleteDocuments: z.boolean(),
+  phone: z.string().trim().max(30).optional().nullable(),
+  jobRoleId: z.string().uuid().optional().nullable(),
+  active: z.boolean().optional(),
   redirectTo: z.string().url().max(500),
 });
 
@@ -18,6 +21,8 @@ const updateSchema = z.object({
   active: z.boolean(),
   canViewAllLeads: z.boolean(),
   canDeleteDocuments: z.boolean(),
+  phone: z.string().trim().max(30).optional().nullable(),
+  jobRoleId: z.string().uuid().optional().nullable(),
 });
 
 /** Lista usuários (perfis + papéis). Apenas administradores. */
@@ -33,7 +38,7 @@ export const listSystemUsers = createServerFn({ method: "GET" })
     const [{ data: profiles, error }, { data: roles }] = await Promise.all([
       context.supabase
         .from("profiles")
-        .select("id, full_name, email, active, can_view_all_leads, can_delete_documents, created_at")
+        .select("id, full_name, email, phone, job_role_id, active, can_view_all_leads, can_delete_documents, created_at")
         .order("full_name"),
       context.supabase.from("user_roles").select("user_id, role"),
     ]);
@@ -73,12 +78,18 @@ export const createSystemUser = createServerFn({ method: "POST" })
         email: data.email,
         can_view_all_leads: data.canViewAllLeads,
         can_delete_documents: data.canDeleteDocuments,
-        active: true,
+        phone: data.phone ?? null,
+        job_role_id: data.jobRoleId ?? null,
+        active: data.active ?? true,
       })
       .eq("id", newId);
 
     await supabaseAdmin.from("user_roles").delete().eq("user_id", newId);
     await supabaseAdmin.from("user_roles").insert({ user_id: newId, role: data.role });
+
+    if (data.active === false) {
+      await supabaseAdmin.auth.admin.updateUserById(newId, { ban_duration: "876000h" });
+    }
 
     return { id: newId };
   });
@@ -108,6 +119,8 @@ export const updateSystemUser = createServerFn({ method: "POST" })
         active: data.active,
         can_view_all_leads: data.canViewAllLeads,
         can_delete_documents: data.canDeleteDocuments,
+        phone: data.phone ?? null,
+        job_role_id: data.jobRoleId ?? null,
       })
       .eq("id", data.userId);
     if (error) throw new Error(error.message);
