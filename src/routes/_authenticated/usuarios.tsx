@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Mail, Plus, ShieldCheck, UserCog } from "lucide-react";
 
@@ -24,7 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { PageHeader } from "@/components/PageHeader";
+import { SearchField } from "@/components/SearchField";
+import { EmptyState, LoadingState } from "@/components/DataState";
 import { useAuth } from "@/hooks/useAuth";
+import { useJobRoles } from "@/lib/queries";
+import { maskPhone } from "@/lib/leads";
 import {
   createSystemUser,
   listSystemUsers,
@@ -42,6 +47,8 @@ export const Route = createFileRoute("/_authenticated/usuarios")({
         property: "og:description",
         content: "Administração de usuários e permissões do sistema.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: UsuariosPage,
@@ -51,16 +58,23 @@ type Row = {
   id: string;
   full_name: string;
   email: string | null;
+  phone: string | null;
+  job_role_id: string | null;
   active: boolean;
   can_view_all_leads: boolean;
   can_delete_documents: boolean;
   role: "admin" | "captador";
 };
 
+const NONE = "__none__";
+
 const emptyForm = {
   fullName: "",
   email: "",
+  phone: "",
   role: "captador" as "admin" | "captador",
+  jobRoleId: NONE,
+  active: true,
   canViewAllLeads: false,
   canDeleteDocuments: false,
 };
@@ -72,10 +86,15 @@ function UsuariosPage() {
   const create = useServerFn(createSystemUser);
   const update = useServerFn(updateSystemUser);
   const resend = useServerFn(resendUserInvite);
+  const { data: jobRoles = [] } = useJobRoles();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState<Row | null>(null);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("todos");
+  const [roleFilter, setRoleFilter] = useState("todos");
+  const [jobFilter, setJobFilter] = useState("todos");
 
   const usersQuery = useQuery({
     queryKey: ["system-users"],
@@ -83,10 +102,25 @@ function UsuariosPage() {
     enabled: isAdmin,
   });
 
+  const jobRoleName = useMemo(
+    () => new Map(jobRoles.map((r) => [r.id, r.name])),
+    [jobRoles],
+  );
+
   const createMutation = useMutation({
     mutationFn: () =>
       create({
-        data: { ...form, redirectTo: `${window.location.origin}/reset-password` },
+        data: {
+          fullName: form.fullName,
+          email: form.email,
+          role: form.role,
+          canViewAllLeads: form.canViewAllLeads,
+          canDeleteDocuments: form.canDeleteDocuments,
+          phone: form.phone || null,
+          jobRoleId: form.jobRoleId === NONE ? null : form.jobRoleId,
+          active: form.active,
+          redirectTo: `${window.location.origin}/reset-password`,
+        },
       }),
     onSuccess: () => {
       toast.success("Usuário criado. Um convite foi enviado por e-mail.");
@@ -107,6 +141,8 @@ function UsuariosPage() {
           active: row.active,
           canViewAllLeads: row.can_view_all_leads,
           canDeleteDocuments: row.can_delete_documents,
+          phone: row.phone || null,
+          jobRoleId: row.job_role_id,
         },
       }),
     onSuccess: () => {
@@ -124,18 +160,28 @@ function UsuariosPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (authLoading) {
-    return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const users = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return users.filter((u) => {
+      if (term && !`${u.full_name} ${u.email ?? ""}`.toLowerCase().includes(term)) return false;
+      if (statusFilter === "ativos" && !u.active) return false;
+      if (statusFilter === "inativos" && u.active) return false;
+      if (roleFilter !== "todos" && u.role !== roleFilter) return false;
+      if (jobFilter !== "todos") {
+        if (jobFilter === NONE ? !!u.job_role_id : u.job_role_id !== jobFilter) return false;
+      }
+      return true;
+    });
+  }, [users, search, statusFilter, roleFilter, jobFilter]);
+
+  if (authLoading) return <LoadingState />;
 
   if (!isAdmin) {
     return (
       <div className="mx-auto max-w-md rounded-2xl border bg-card p-6 text-center">
-        <ShieldCheck className="mx-auto h-8 w-8 text-muted-foreground" />
+        <ShieldCheck className="mx-auto h-8 w-8 text-muted-foreground" aria-hidden="true" />
         <h1 className="mt-3 text-lg font-bold">Acesso restrito</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Somente administradores podem acessar a administração de usuários.
@@ -144,31 +190,78 @@ function UsuariosPage() {
     );
   }
 
-  const users = usersQuery.data ?? [];
+  const activeJobRoles = jobRoles.filter((r) => r.active);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Usuários</h1>
-          <p className="text-sm text-muted-foreground">Crie e administre os acessos ao sistema.</p>
-        </div>
-        <Button onClick={() => setCreateOpen(true)} className="h-11">
-          <Plus className="mr-2 h-4 w-4" /> Novo usuário
-        </Button>
+      <PageHeader
+        title="Usuários"
+        description={`${users.length} usuário(s) — perfil de acesso define permissões; função/cargo é organizacional.`}
+        actions={
+          <Button onClick={() => setCreateOpen(true)} className="h-10">
+            <Plus className="h-4 w-4" /> Novo
+          </Button>
+        }
+      />
+
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          placeholder="Nome ou e-mail..."
+          label="Pesquisar usuários"
+          className="sm:col-span-2 lg:col-span-1"
+        />
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-11" aria-label="Filtrar por situação">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas as situações</SelectItem>
+            <SelectItem value="ativos">Ativos</SelectItem>
+            <SelectItem value="inativos">Inativos</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="h-11" aria-label="Filtrar por perfil de acesso">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os perfis</SelectItem>
+            <SelectItem value="admin">Administrador</SelectItem>
+            <SelectItem value="captador">Captador</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={jobFilter} onValueChange={setJobFilter}>
+          <SelectTrigger className="h-11" aria-label="Filtrar por função ou cargo">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas as funções</SelectItem>
+            <SelectItem value={NONE}>Sem função definida</SelectItem>
+            {jobRoles.map((r) => (
+              <SelectItem key={r.id} value={r.id}>
+                {r.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {usersQuery.isLoading ? (
-        <div className="flex justify-center py-16">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
+        <LoadingState label="Carregando usuários..." />
       ) : usersQuery.isError ? (
         <p className="rounded-xl border bg-card p-4 text-sm text-destructive">
           {(usersQuery.error as Error).message}
         </p>
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          title="Nenhum usuário encontrado"
+          description="Ajuste a pesquisa ou os filtros aplicados."
+        />
       ) : (
         <div className="grid gap-3">
-          {users.map((u) => (
+          {filtered.map((u) => (
             <div
               key={u.id}
               className="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:flex-row sm:items-center sm:justify-between"
@@ -179,9 +272,17 @@ function UsuariosPage() {
                   <Badge variant={u.role === "admin" ? "default" : "secondary"}>
                     {u.role === "admin" ? "Administrador" : "Captador"}
                   </Badge>
+                  {u.job_role_id && (
+                    <Badge variant="outline">
+                      {jobRoleName.get(u.job_role_id) ?? "Função removida"}
+                    </Badge>
+                  )}
                   {!u.active && <Badge variant="destructive">Inativo</Badge>}
                 </div>
-                <p className="truncate text-sm text-muted-foreground">{u.email}</p>
+                <p className="truncate text-sm text-muted-foreground">
+                  {u.email}
+                  {u.phone ? ` · ${u.phone}` : ""}
+                </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 {u.email && (
@@ -211,7 +312,7 @@ function UsuariosPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="nu-nome">Nome</Label>
+              <Label htmlFor="nu-nome">Nome completo</Label>
               <Input
                 id="nu-nome"
                 className="h-11"
@@ -230,7 +331,17 @@ function UsuariosPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Perfil</Label>
+              <Label htmlFor="nu-fone">Telefone</Label>
+              <Input
+                id="nu-fone"
+                inputMode="tel"
+                className="h-11"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: maskPhone(e.target.value) })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Perfil de acesso</Label>
               <Select
                 value={form.role}
                 onValueChange={(v) => setForm({ ...form, role: v as "admin" | "captador" })}
@@ -243,6 +354,35 @@ function UsuariosPage() {
                   <SelectItem value="admin">Administrador</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Função / Cargo</Label>
+              <Select
+                value={form.jobRoleId}
+                onValueChange={(v) => setForm({ ...form, jobRoleId: v })}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NONE}>Sem função definida</SelectItem>
+                  {activeJobRoles.map((r) => (
+                    <SelectItem key={r.id} value={r.id}>
+                      {r.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between rounded-xl border p-3">
+              <Label htmlFor="nu-active" className="text-sm">
+                Usuário ativo
+              </Label>
+              <Switch
+                id="nu-active"
+                checked={form.active}
+                onCheckedChange={(v) => setForm({ ...form, active: v })}
+              />
             </div>
             <PermSwitches
               canViewAllLeads={form.canViewAllLeads}
@@ -278,7 +418,7 @@ function UsuariosPage() {
           {editing && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="eu-nome">Nome</Label>
+                <Label htmlFor="eu-nome">Nome completo</Label>
                 <Input
                   id="eu-nome"
                   className="h-11"
@@ -291,7 +431,17 @@ function UsuariosPage() {
                 <Input className="h-11" value={editing.email ?? ""} disabled />
               </div>
               <div className="space-y-2">
-                <Label>Perfil</Label>
+                <Label htmlFor="eu-fone">Telefone</Label>
+                <Input
+                  id="eu-fone"
+                  inputMode="tel"
+                  className="h-11"
+                  value={editing.phone ?? ""}
+                  onChange={(e) => setEditing({ ...editing, phone: maskPhone(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Perfil de acesso</Label>
                 <Select
                   value={editing.role}
                   onValueChange={(v) => setEditing({ ...editing, role: v as "admin" | "captador" })}
@@ -302,6 +452,30 @@ function UsuariosPage() {
                   <SelectContent>
                     <SelectItem value="captador">Captador</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Função / Cargo</Label>
+                <Select
+                  value={editing.job_role_id ?? NONE}
+                  onValueChange={(v) =>
+                    setEditing({ ...editing, job_role_id: v === NONE ? null : v })
+                  }
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NONE}>Sem função definida</SelectItem>
+                    {jobRoles
+                      .filter((r) => r.active || r.id === editing.job_role_id)
+                      .map((r) => (
+                        <SelectItem key={r.id} value={r.id}>
+                          {r.name}
+                          {!r.active ? " (inativa)" : ""}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

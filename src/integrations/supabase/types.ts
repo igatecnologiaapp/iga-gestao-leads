@@ -411,6 +411,36 @@ export type Database = {
         }
         Relationships: []
       }
+      job_roles: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lead_appointments: {
         Row: {
           contact_type_id: string | null
@@ -829,6 +859,7 @@ export type Database = {
           email: string | null
           full_name: string
           id: string
+          job_role_id: string | null
           phone: string | null
           updated_at: string
         }
@@ -840,6 +871,7 @@ export type Database = {
           email?: string | null
           full_name?: string
           id: string
+          job_role_id?: string | null
           phone?: string | null
           updated_at?: string
         }
@@ -851,10 +883,19 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+          job_role_id?: string | null
           phone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_job_role_id_fkey"
+            columns: ["job_role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       segment_fields: {
         Row: {
