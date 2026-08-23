@@ -58,7 +58,9 @@ const groups = [
     adminOnly: true,
     items: [
       { title: "Segmentos", url: "/segmentos", icon: Tags },
+      { title: "Funções / Cargos", url: "/funcoes", icon: BadgeCheck },
       { title: "Produtos / Serviços", url: "/produtos", icon: Package },
+
       { title: "Ruas", url: "/ruas", icon: Signpost },
       { title: "Bairros", url: "/bairros", icon: Building2 },
       { title: "Empresa emissora", url: "/empresa", icon: Briefcase },
