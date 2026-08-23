@@ -17,6 +17,7 @@ import { Route as AuthenticatedBairrosRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedCaptarRouteImport } from './routes/_authenticated/captar'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEmpresaRouteImport } from './routes/_authenticated/empresa'
+import { Route as AuthenticatedFuncoesRouteImport } from './routes/_authenticated/funcoes'
 import { Route as AuthenticatedProdutosRouteImport } from './routes/_authenticated/produtos'
 import { Route as AuthenticatedRuasRouteImport } from './routes/_authenticated/ruas'
 import { Route as AuthenticatedSegmentosRouteImport } from './routes/_authenticated/segmentos'
@@ -63,6 +64,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
 const AuthenticatedEmpresaRoute = AuthenticatedEmpresaRouteImport.update({
   id: '/empresa',
   path: '/empresa',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFuncoesRoute = AuthenticatedFuncoesRouteImport.update({
+  id: '/funcoes',
+  path: '/funcoes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedProdutosRoute = AuthenticatedProdutosRouteImport.update({
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/captar': typeof AuthenticatedCaptarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/empresa': typeof AuthenticatedEmpresaRoute
+  '/funcoes': typeof AuthenticatedFuncoesRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/ruas': typeof AuthenticatedRuasRoute
   '/segmentos': typeof AuthenticatedSegmentosRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/captar': typeof AuthenticatedCaptarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/empresa': typeof AuthenticatedEmpresaRoute
+  '/funcoes': typeof AuthenticatedFuncoesRoute
   '/produtos': typeof AuthenticatedProdutosRoute
   '/ruas': typeof AuthenticatedRuasRoute
   '/segmentos': typeof AuthenticatedSegmentosRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/_authenticated/captar': typeof AuthenticatedCaptarRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/empresa': typeof AuthenticatedEmpresaRoute
+  '/_authenticated/funcoes': typeof AuthenticatedFuncoesRoute
   '/_authenticated/produtos': typeof AuthenticatedProdutosRoute
   '/_authenticated/ruas': typeof AuthenticatedRuasRoute
   '/_authenticated/segmentos': typeof AuthenticatedSegmentosRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/captar'
     | '/dashboard'
     | '/empresa'
+    | '/funcoes'
     | '/produtos'
     | '/ruas'
     | '/segmentos'
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/captar'
     | '/dashboard'
     | '/empresa'
+    | '/funcoes'
     | '/produtos'
     | '/ruas'
     | '/segmentos'
@@ -206,6 +217,7 @@ export interface FileRouteTypes {
     | '/_authenticated/captar'
     | '/_authenticated/dashboard'
     | '/_authenticated/empresa'
+    | '/_authenticated/funcoes'
     | '/_authenticated/produtos'
     | '/_authenticated/ruas'
     | '/_authenticated/segmentos'
@@ -281,6 +293,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEmpresaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/funcoes': {
+      id: '/_authenticated/funcoes'
+      path: '/funcoes'
+      fullPath: '/funcoes'
+      preLoaderRoute: typeof AuthenticatedFuncoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/produtos': {
       id: '/_authenticated/produtos'
       path: '/produtos'
@@ -345,6 +364,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCaptarRoute: typeof AuthenticatedCaptarRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEmpresaRoute: typeof AuthenticatedEmpresaRoute
+  AuthenticatedFuncoesRoute: typeof AuthenticatedFuncoesRoute
   AuthenticatedProdutosRoute: typeof AuthenticatedProdutosRoute
   AuthenticatedRuasRoute: typeof AuthenticatedRuasRoute
   AuthenticatedSegmentosRoute: typeof AuthenticatedSegmentosRoute
@@ -360,6 +380,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCaptarRoute: AuthenticatedCaptarRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEmpresaRoute: AuthenticatedEmpresaRoute,
+  AuthenticatedFuncoesRoute: AuthenticatedFuncoesRoute,
   AuthenticatedProdutosRoute: AuthenticatedProdutosRoute,
   AuthenticatedRuasRoute: AuthenticatedRuasRoute,
   AuthenticatedSegmentosRoute: AuthenticatedSegmentosRoute,
