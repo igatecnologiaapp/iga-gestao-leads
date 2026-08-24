@@ -270,11 +270,11 @@ function UsuariosPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="truncate font-semibold">{u.full_name || "(sem nome)"}</p>
                   <Badge variant={u.role === "admin" ? "default" : "secondary"}>
-                    {u.role === "admin" ? "Administrador" : "Colaborador"}
+                    Perfil: {u.role === "admin" ? "Administrador" : "Colaborador"}
                   </Badge>
                   {u.job_role_id && (
                     <Badge variant="outline">
-                      {jobRoleName.get(u.job_role_id) ?? "Função removida"}
+                      Cargo: {jobRoleName.get(u.job_role_id) ?? "Função removida"}
                     </Badge>
                   )}
                   {!u.active && <Badge variant="destructive">Inativo</Badge>}
