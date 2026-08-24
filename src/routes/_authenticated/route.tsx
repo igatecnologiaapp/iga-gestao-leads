@@ -70,7 +70,7 @@ function TopBar() {
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold">{profile?.full_name || "Bem-vindo"}</p>
         <p className="truncate text-[11px] text-muted-foreground">
-          {isAdmin ? "Administrador" : "Captador"}
+          {isAdmin ? "Administrador" : "Colaborador"}
         </p>
       </div>
       <div className="flex items-center gap-1">
