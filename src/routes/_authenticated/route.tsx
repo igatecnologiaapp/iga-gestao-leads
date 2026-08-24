@@ -41,7 +41,7 @@ function AuthenticatedLayout() {
 function TopBar() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { profile, isAdmin } = useAuth();
+  const { profile, isAdmin, loading: authLoading } = useAuth();
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
@@ -68,9 +68,11 @@ function TopBar() {
     <header className="sticky top-0 z-30 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b bg-background/85 px-3 py-2 backdrop-blur sm:px-6">
       <SidebarTrigger />
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold">{profile?.full_name || "Bem-vindo"}</p>
+        <p className="truncate text-sm font-semibold">
+          {authLoading ? "Carregando..." : profile?.full_name || "Bem-vindo"}
+        </p>
         <p className="truncate text-[11px] text-muted-foreground">
-          {isAdmin ? "Administrador" : "Colaborador"}
+          {authLoading ? "" : isAdmin ? "Administrador" : "Colaborador"}
         </p>
       </div>
       <div className="flex items-center gap-1">
