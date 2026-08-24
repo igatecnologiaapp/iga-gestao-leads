@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AdminOnly } from "@/components/AdminOnly";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Pencil, Plus, SlidersHorizontal, Trash2 } from "lucide-react";
@@ -43,8 +44,16 @@ export const Route = createFileRoute("/_authenticated/segmentos")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Segmentos,
+  component: SegmentosPage,
 });
+
+function SegmentosPage() {
+  return (
+    <AdminOnly message="Somente administradores podem gerenciar os segmentos e seus campos.">
+      <Segmentos />
+    </AdminOnly>
+  );
+}
 
 function Segmentos() {
   const queryClient = useQueryClient();

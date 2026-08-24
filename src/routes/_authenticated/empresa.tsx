@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AdminOnly } from "@/components/AdminOnly";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -30,8 +31,16 @@ export const Route = createFileRoute("/_authenticated/empresa")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Empresa,
+  component: EmpresaPage,
 });
+
+function EmpresaPage() {
+  return (
+    <AdminOnly message="Somente administradores podem alterar os dados da empresa emissora.">
+      <Empresa />
+    </AdminOnly>
+  );
+}
 
 function Empresa() {
   const queryClient = useQueryClient();

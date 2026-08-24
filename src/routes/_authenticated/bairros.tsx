@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AdminOnly } from "@/components/AdminOnly";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
@@ -27,8 +28,16 @@ export const Route = createFileRoute("/_authenticated/bairros")({
       { property: "og:description", content: "Cadastro prévio de bairros com cidade e estado." },
     ],
   }),
-  component: Bairros,
+  component: BairrosPage,
 });
+
+function BairrosPage() {
+  return (
+    <AdminOnly message="Somente administradores podem gerenciar o cadastro de bairros.">
+      <Bairros />
+    </AdminOnly>
+  );
+}
 
 function Bairros() {
   const queryClient = useQueryClient();
