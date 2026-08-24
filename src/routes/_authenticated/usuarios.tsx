@@ -229,7 +229,7 @@ function UsuariosPage() {
           <SelectContent>
             <SelectItem value="todos">Todos os perfis</SelectItem>
             <SelectItem value="admin">Administrador</SelectItem>
-            <SelectItem value="captador">Captador</SelectItem>
+            <SelectItem value="captador">Colaborador</SelectItem>
           </SelectContent>
         </Select>
         <Select value={jobFilter} onValueChange={setJobFilter}>
@@ -270,7 +270,7 @@ function UsuariosPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="truncate font-semibold">{u.full_name || "(sem nome)"}</p>
                   <Badge variant={u.role === "admin" ? "default" : "secondary"}>
-                    {u.role === "admin" ? "Administrador" : "Captador"}
+                    {u.role === "admin" ? "Administrador" : "Colaborador"}
                   </Badge>
                   {u.job_role_id && (
                     <Badge variant="outline">
@@ -350,7 +350,7 @@ function UsuariosPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="captador">Captador</SelectItem>
+                  <SelectItem value="captador">Colaborador</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
                 </SelectContent>
               </Select>
@@ -450,7 +450,7 @@ function UsuariosPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="captador">Captador</SelectItem>
+                    <SelectItem value="captador">Colaborador</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
