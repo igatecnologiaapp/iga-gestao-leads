@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AdminOnly } from "@/components/AdminOnly";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
@@ -31,8 +32,16 @@ export const Route = createFileRoute("/_authenticated/ruas")({
       },
     ],
   }),
-  component: Ruas,
+  component: RuasPage,
 });
+
+function RuasPage() {
+  return (
+    <AdminOnly message="Somente administradores podem gerenciar o cadastro de ruas.">
+      <Ruas />
+    </AdminOnly>
+  );
+}
 
 function Ruas() {
   const queryClient = useQueryClient();
