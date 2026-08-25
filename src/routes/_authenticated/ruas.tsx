@@ -126,42 +126,77 @@ function Ruas() {
         placeholder="Pesquisar rua"
       />
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        {list.map((s) => (
-          <div
-            key={s.id}
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]"
-          >
-            <div className="min-w-0">
-              <p className="truncate font-semibold">{s.name}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {nbName(s.neighborhood_id)}
-                {s.zip_code ? ` · ${s.zip_code}` : ""}
-              </p>
-            </div>
-            <div className="flex shrink-0 gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setEditing(s.id);
-                  setName(s.name);
-                  setNbId(s.neighborhood_id);
-                  setZip(s.zip_code ?? "");
-                  setCity(s.city);
-                  setState(s.state);
-                  setOpen(true);
-                }}
+      {isLoading ? (
+        <LoadingState label="Carregando ruas..." />
+      ) : !list.length ? (
+        <div className="rounded-xl border bg-card">
+          <EmptyState
+            title={search ? "Nenhuma rua encontrada" : "Nenhuma rua cadastrada"}
+            description={
+              search
+                ? "Revise a pesquisa ou cadastre a rua com o botão “Nova”."
+                : "Cadastre as ruas para agilizar o preenchimento do endereço na captação."
+            }
+          />
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {paged.pageItems.map((s) => (
+              <div
+                key={s.id}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]"
               >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => remove(s.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{s.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {nbName(s.neighborhood_id)}
+                    {s.zip_code ? ` · ${s.zip_code}` : ""}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Editar ${s.name}`}
+                    onClick={() => {
+                      setEditing(s.id);
+                      setName(s.name);
+                      setNbId(s.neighborhood_id);
+                      setZip(s.zip_code ?? "");
+                      setCity(s.city);
+                      setState(s.state);
+                      setOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Excluir ${s.name}`}
+                    onClick={() => remove(s.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+
+          <PaginationBar
+            page={paged.page}
+            pageCount={paged.pageCount}
+            from={paged.from}
+            to={paged.to}
+            total={paged.total}
+            onPrev={paged.prev}
+            onNext={paged.next}
+            label="rua(s)"
+          />
+        </>
+      )}
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
