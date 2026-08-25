@@ -67,7 +67,16 @@ type LeadRow = {
   neighborhood_name: string | null;
   street_name: string | null;
   city: string | null;
+  next_contact_date: string | null;
 };
+
+/** Atalhos operacionais: abrem a listagem de Leads já filtrada pela situação. */
+const PENDING_SHORTCUTS: { tone: PendingTone; label: string; hint: string }[] = [
+  { tone: "atrasado", label: "Atrasados", hint: "Agendamento ou retorno vencido" },
+  { tone: "hoje", label: "Para hoje", hint: "Contato previsto para hoje" },
+  { tone: "agendado", label: "Próximas ações", hint: "Agendamento futuro" },
+  { tone: "sem_acao", label: "Sem próxima ação", hint: "Nenhum retorno definido" },
+];
 
 const PERIOD_PRESETS = [
   { value: "hoje", label: "Hoje" },
