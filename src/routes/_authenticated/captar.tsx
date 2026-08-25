@@ -76,6 +76,7 @@ function CaptarLead() {
   const [savedId, setSavedId] = useState<string | null>(null);
 
   const { data: fields = [] } = useSegmentFields(segmentId);
+  const { resolveCep, matchPlaces } = useAddressResolver();
 
   function patchAddress(patch: Partial<AddressValue>) {
     setAddress((prev) => ({ ...prev, ...patch }));
