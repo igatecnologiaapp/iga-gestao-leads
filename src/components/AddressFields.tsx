@@ -149,6 +149,7 @@ export function AddressFields({
   const { data: streets = [] } = useStreets();
   const { data: neighborhoods = [] } = useNeighborhoods();
   const numberRef = useRef<HTMLInputElement>(null);
+  const { resolveCep } = useAddressResolver();
 
   const [cepLoading, setCepLoading] = useState(false);
   const [cepMessage, setCepMessage] = useState<string | null>(null);
