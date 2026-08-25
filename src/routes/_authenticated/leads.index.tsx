@@ -39,7 +39,16 @@ import {
 } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
+const PENDING_TONES: PendingTone[] = ["atrasado", "hoje", "agendado", "sem_acao"];
+
 export const Route = createFileRoute("/_authenticated/leads/")({
+  /** Permite abrir a listagem já filtrada por pendência (atalhos do Dashboard). */
+  validateSearch: (search: Record<string, unknown>): { pendencia?: PendingTone } => {
+    const value = search.pendencia;
+    return typeof value === "string" && (PENDING_TONES as string[]).includes(value)
+      ? { pendencia: value as PendingTone }
+      : {};
+  },
   head: () => ({
     meta: [
       { title: "Leads — IGA TECNOLOGIA" },
