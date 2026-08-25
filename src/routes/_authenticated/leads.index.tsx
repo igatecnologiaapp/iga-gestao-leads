@@ -209,6 +209,17 @@ function LeadsList() {
     setTo("");
   }
 
+  /** Contadores por situação da próxima ação, para atalhos rápidos de filtro. */
+  const pendingCounts = useMemo(() => {
+    const acc: Record<PendingTone, number> = { atrasado: 0, hoje: 0, agendado: 0, sem_acao: 0 };
+    for (const p of pendingByLead.values()) acc[p.tone] += 1;
+    return acc;
+  }, [pendingByLead]);
+
+  const paged = usePagedList(filtered, 25);
+
+
+
   return (
     <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader
