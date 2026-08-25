@@ -60,6 +60,80 @@ export function addressFromLead(lead: {
   };
 }
 
+/**
+ * Resolve dados de endereço (CEP ou nomes soltos) contra os cadastros de
+ * Ruas e Bairros. Compartilhado pelo formulário de endereço e pela leitura
+ * de cartão de visita, evitando duplicar as regras.
+ */
+export function useAddressResolver() {
+  const { data: streets = [] } = useStreets();
+  const { data: neighborhoods = [] } = useNeighborhoods();
+
+  /** Casa nomes de rua/bairro com os cadastros existentes (nunca cria registros). */
+  function matchPlaces(input: {
+    street?: string | null;
+    neighborhood?: string | null;
+    city?: string | null;
+    state?: string | null;
+  }): Partial<AddressValue> {
+    const nb = input.neighborhood
+      ? neighborhoods.find((n) => normalizePlace(n.name) === normalizePlace(input.neighborhood!))
+      : undefined;
+    const existing = input.street
+      ? streets.find((s) => normalizePlace(s.name) === normalizePlace(input.street!))
+      : undefined;
+    return {
+      ...(input.city ? { city: input.city } : {}),
+      ...(input.state ? { state: input.state } : {}),
+      ...(input.neighborhood ? { neighborhoodName: input.neighborhood } : {}),
+      ...(existing?.neighborhood_id || nb?.id
+        ? { neighborhoodId: existing?.neighborhood_id ?? nb?.id ?? null }
+        : {}),
+      ...(input.street ? { streetId: existing?.id ?? null, streetName: existing?.name ?? input.street } : {}),
+    };
+  }
+
+  /** Consulta o CEP (ViaCEP) e devolve o patch já casado com os cadastros. */
+  async function resolveCep(
+    cep: string,
+  ): Promise<{ patch: Partial<AddressValue>; message: string; found: boolean }> {
+    const result = await lookupCep(cep);
+    if (result.status === "unavailable")
+      return {
+        patch: {},
+        found: false,
+        message: "Busca automática indisponível no momento. Preencha o endereço manualmente.",
+      };
+    if (result.status === "not_found")
+      return {
+        patch: {},
+        found: false,
+        message: "CEP não localizado. Você pode preencher o endereço manualmente.",
+      };
+    const { street, neighborhood, city, state } = result.address;
+    const patch = {
+      city,
+      state,
+      neighborhoodName: neighborhood,
+      ...matchPlaces({ street, neighborhood, city, state }),
+    } satisfies Partial<AddressValue>;
+    const known = street
+      ? streets.some((s) => normalizePlace(s.name) === normalizePlace(street))
+      : false;
+    return {
+      patch,
+      found: true,
+      message: known
+        ? "Endereço preenchido pelo CEP (rua já cadastrada)."
+        : street
+          ? "Endereço preenchido pelo CEP. Esta rua ainda não está cadastrada."
+          : "CEP encontrado, mas sem logradouro. Informe a rua manualmente.",
+    };
+  }
+
+  return { matchPlaces, resolveCep };
+}
+
 export function AddressFields({
   value,
   onChange,
@@ -75,6 +149,7 @@ export function AddressFields({
   const { data: streets = [] } = useStreets();
   const { data: neighborhoods = [] } = useNeighborhoods();
   const numberRef = useRef<HTMLInputElement>(null);
+  const { resolveCep } = useAddressResolver();
 
   const [cepLoading, setCepLoading] = useState(false);
   const [cepMessage, setCepMessage] = useState<string | null>(null);
@@ -107,40 +182,11 @@ export function AddressFields({
     setCepMessage(null);
     if (!isCepComplete(masked)) return;
     setCepLoading(true);
-    const result = await lookupCep(masked);
+    const { patch, message, found } = await resolveCep(masked);
     setCepLoading(false);
-    if (result.status === "unavailable") {
-      setCepMessage("Busca automática indisponível no momento. Preencha o endereço manualmente.");
-      return;
-    }
-    if (result.status === "not_found") {
-      setCepMessage("CEP não localizado. Você pode preencher o endereço manualmente.");
-      return;
-    }
-    const { street, neighborhood, city, state } = result.address;
-    const nb = neighborhood
-      ? neighborhoods.find((n) => normalizePlace(n.name) === normalizePlace(neighborhood))
-      : undefined;
-    const existing = street
-      ? streets.find((s) => normalizePlace(s.name) === normalizePlace(street))
-      : undefined;
-
-    onChange({
-      city,
-      state,
-      neighborhoodName: neighborhood,
-      neighborhoodId: existing?.neighborhood_id ?? nb?.id ?? null,
-      streetId: existing?.id ?? null,
-      streetName: existing?.name ?? street,
-    });
-
-    setCepMessage(
-      existing
-        ? "Endereço preenchido pelo CEP (rua já cadastrada)."
-        : street
-          ? "Endereço preenchido pelo CEP. Esta rua ainda não está cadastrada."
-          : "CEP encontrado, mas sem logradouro. Informe a rua manualmente.",
-    );
+    setCepMessage(message);
+    if (!found) return;
+    onChange(patch);
     focusNumber();
   }
 

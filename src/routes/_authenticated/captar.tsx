@@ -12,7 +12,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 import { Combobox } from "@/components/Combobox";
 import { PageHeader } from "@/components/PageHeader";
-import { AddressFields, emptyAddress, type AddressValue } from "@/components/AddressFields";
+import {
+  AddressFields,
+  emptyAddress,
+  useAddressResolver,
+  type AddressValue,
+} from "@/components/AddressFields";
+import { BusinessCardScanner } from "@/components/BusinessCardScanner";
+import type { BusinessCardData } from "@/lib/businessCard.functions";
+import { maskCep, isCepComplete, normalizePlace } from "@/lib/leads";
 import {
   AppointmentFields,
   emptyAppointment,
@@ -68,9 +76,62 @@ function CaptarLead() {
   const [savedId, setSavedId] = useState<string | null>(null);
 
   const { data: fields = [] } = useSegmentFields(segmentId);
+  const { resolveCep, matchPlaces } = useAddressResolver();
 
   function patchAddress(patch: Partial<AddressValue>) {
     setAddress((prev) => ({ ...prev, ...patch }));
+  }
+
+  /** Aplica ao formulário os dados sugeridos pela leitura do cartão de visita. */
+  async function applyCard(card: BusinessCardData) {
+    if (card.company) setCompany(card.company);
+    if (card.contact) setContact(card.contact);
+    if (card.phone) setPhone(maskPhone(card.phone));
+
+    if (card.segment) {
+      const match = segments.find(
+        (s) => s.active && normalizePlace(s.name) === normalizePlace(card.segment!),
+      );
+      if (match) {
+        setSegmentId(match.id);
+        setCustom({});
+        const allowed = new Set(
+          segmentProducts.filter((sp) => sp.segment_id === match.id).map((sp) => sp.product_id),
+        );
+        setProductIds((prev) => prev.filter((id) => allowed.has(id)));
+      }
+    }
+
+    const extras = [card.email ? `E-mail: ${card.email}` : null, card.notes]
+      .filter(Boolean)
+      .join(" • ");
+    if (extras) setNotes((prev) => (prev ? `${prev}\n${extras}` : extras));
+
+    // Endereço: reaproveita o fluxo existente de CEP e o casamento com Ruas/Bairros.
+    const cep = card.cep ? maskCep(card.cep) : "";
+    let patch: Partial<AddressValue> = {
+      ...(cep ? { cep } : {}),
+      ...(card.number ? { number: card.number } : {}),
+    };
+    if (cep && isCepComplete(cep)) {
+      const { patch: cepPatch, found } = await resolveCep(cep);
+      if (found) patch = { ...patch, ...cepPatch };
+    }
+    if (!patch.streetName && (card.street || card.neighborhood)) {
+      patch = {
+        ...patch,
+        ...matchPlaces({
+          street: card.street,
+          neighborhood: card.neighborhood,
+          city: card.city,
+          state: card.state,
+        }),
+      };
+    }
+    if (Object.keys(patch).length) {
+      patchAddress(patch);
+      setAddressKey((k) => k + 1);
+    }
   }
 
   // Lembrar o último segmento usado na sessão
@@ -216,6 +277,20 @@ function CaptarLead() {
         title="Captar Lead"
         description="Preencha o essencial. O restante pode ser completado depois."
       />
+
+      <div className="mt-4 rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:flex sm:items-center sm:justify-between sm:gap-4">
+        <div className="mb-3 sm:mb-0">
+          <p className="text-sm font-semibold">📷 Ler Cartão de Visita</p>
+          <p className="text-xs text-muted-foreground">
+            Use a câmera ou envie uma imagem para preencher o formulário automaticamente. Você
+            revisa tudo antes de salvar.
+          </p>
+        </div>
+        <BusinessCardScanner
+          segmentNames={segments.filter((s) => s.active).map((s) => s.name)}
+          onApply={(card) => void applyCard(card)}
+        />
+      </div>
 
       <form className="mt-5 space-y-5" onSubmit={save}>
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
