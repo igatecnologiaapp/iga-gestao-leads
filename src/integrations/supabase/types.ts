@@ -445,7 +445,7 @@ export type Database = {
         Row: {
           contact_type_id: string | null
           created_at: string
-          created_by: string | null
+          created_by: string
           id: string
           lead_id: string
           notes: string | null
@@ -456,7 +456,7 @@ export type Database = {
         Insert: {
           contact_type_id?: string | null
           created_at?: string
-          created_by?: string | null
+          created_by?: string
           id?: string
           lead_id: string
           notes?: string | null
@@ -467,7 +467,7 @@ export type Database = {
         Update: {
           contact_type_id?: string | null
           created_at?: string
-          created_by?: string | null
+          created_by?: string
           id?: string
           lead_id?: string
           notes?: string | null
