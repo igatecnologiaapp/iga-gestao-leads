@@ -103,14 +103,7 @@ function LeadsList() {
     },
   });
 
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, full_name, email");
-      if (error) throw error;
-      return data as { id: string; full_name: string; email: string | null }[];
-    },
-  });
+  const { data: profiles = [] } = useProfiles();
 
   const segmentName = (id: string | null) => segments.find((s) => s.id === id)?.name ?? "-";
   const ownerName = (id: string) => {
