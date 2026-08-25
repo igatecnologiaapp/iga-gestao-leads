@@ -109,39 +109,74 @@ function Bairros() {
         placeholder="Pesquisar bairro"
       />
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        {list.map((n) => (
-          <div
-            key={n.id}
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]"
-          >
-            <div className="min-w-0">
-              <p className="truncate font-semibold">{n.name}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {[n.city, n.state].filter(Boolean).join(" / ") || "Sem cidade"}
-              </p>
-            </div>
-            <div className="flex shrink-0 gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setEditing(n.id);
-                  setName(n.name);
-                  setCity(n.city);
-                  setState(n.state);
-                  setOpen(true);
-                }}
+      {isLoading ? (
+        <LoadingState label="Carregando bairros..." />
+      ) : !list.length ? (
+        <div className="rounded-xl border bg-card">
+          <EmptyState
+            title={search ? "Nenhum bairro encontrado" : "Nenhum bairro cadastrado"}
+            description={
+              search
+                ? "Revise a pesquisa ou cadastre o bairro com o botão “Novo”."
+                : "Cadastre os bairros para organizar as ruas e o endereço dos leads."
+            }
+          />
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {paged.pageItems.map((n) => (
+              <div
+                key={n.id}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]"
               >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => remove(n.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{n.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {[n.city, n.state].filter(Boolean).join(" / ") || "Sem cidade"}
+                  </p>
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Editar ${n.name}`}
+                    onClick={() => {
+                      setEditing(n.id);
+                      setName(n.name);
+                      setCity(n.city);
+                      setState(n.state);
+                      setOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Excluir ${n.name}`}
+                    onClick={() => remove(n.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+
+          <PaginationBar
+            page={paged.page}
+            pageCount={paged.pageCount}
+            from={paged.from}
+            to={paged.to}
+            total={paged.total}
+            onPrev={paged.prev}
+            onNext={paged.next}
+            label="bairro(s)"
+          />
+        </>
+      )}
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
