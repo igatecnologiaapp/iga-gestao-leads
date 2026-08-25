@@ -33,6 +33,7 @@ import {
   isToday,
   toLocalParts,
 } from "@/lib/appointments";
+import { leadPending, pendingClass, type PendingTone } from "@/lib/pendings";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
