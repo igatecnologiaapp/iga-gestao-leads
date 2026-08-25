@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
 import { SearchField } from "@/components/SearchField";
 import { PaginationBar } from "@/components/PaginationBar";
+import { EmptyState, LoadingState } from "@/components/DataState";
 import { usePagedList } from "@/hooks/usePagedList";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -476,10 +477,14 @@ function Produtos() {
             </div>
           </div>
         ))}
-        {!filtered.length && (
-          <p className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
-            {isLoading ? "Carregando..." : "Nenhum produto/serviço encontrado."}
-          </p>
+        {isLoading && <LoadingState label="Carregando soluções..." />}
+        {!isLoading && !filtered.length && (
+          <div className="rounded-xl border bg-card">
+            <EmptyState
+              title="Nenhum produto/serviço encontrado"
+              description="Ajuste a busca ou os filtros para ver outras soluções cadastradas."
+            />
+          </div>
         )}
       </div>
 

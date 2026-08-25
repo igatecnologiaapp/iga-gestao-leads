@@ -132,7 +132,7 @@ export function LeadAppointments({ leadId, canEdit }: { leadId: string; canEdit:
         scheduled_at: scheduledAt,
         contact_type_id: draft.contactTypeId,
         status: "agendado",
-        created_by: userData.user?.id ?? null,
+        // Autoria preenchida pelo banco (auth.uid()) — impede atribuição a outro usuário.
       });
       if (error) {
         setSaving(false);
