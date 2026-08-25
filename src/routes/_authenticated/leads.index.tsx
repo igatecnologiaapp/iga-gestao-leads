@@ -218,8 +218,6 @@ function LeadsList() {
 
   const paged = usePagedList(filtered, 25);
 
-
-
   return (
     <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader
@@ -296,7 +294,6 @@ function LeadsList() {
           );
         })}
       </div>
-
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" className="h-10" onClick={() => setMoreFilters((v) => !v)}>
@@ -534,7 +531,6 @@ function LeadsList() {
         onNext={paged.next}
         label="lead(s)"
       />
-
     </div>
   );
 }
