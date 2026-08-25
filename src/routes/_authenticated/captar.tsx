@@ -290,6 +290,7 @@ function CaptarLead() {
           segmentNames={segments.filter((s) => s.active).map((s) => s.name)}
           onApply={(card) => void applyCard(card)}
         />
+      </div>
 
       <form className="mt-5 space-y-5" onSubmit={save}>
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
