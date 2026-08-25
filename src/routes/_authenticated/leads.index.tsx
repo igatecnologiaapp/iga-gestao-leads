@@ -26,9 +26,18 @@ import { PageHeader } from "@/components/PageHeader";
 import { SearchField } from "@/components/SearchField";
 import { LoadingState, EmptyState } from "@/components/DataState";
 import { PendingBadge } from "@/components/PendingBadge";
-import { leadPending } from "@/lib/pendings";
+import { PaginationBar } from "@/components/PaginationBar";
+import { usePagedList } from "@/hooks/usePagedList";
+import { leadPending, pendingClass, type PendingTone } from "@/lib/pendings";
 import { LEAD_STATUSES, formatDate } from "@/lib/leads";
-import { useAllLeadProducts, useAppointments, useProducts, useSegments } from "@/lib/queries";
+import {
+  useAllLeadProducts,
+  useAppointments,
+  useProducts,
+  useProfiles,
+  useSegments,
+} from "@/lib/queries";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/leads/")({
   head: () => ({
@@ -94,14 +103,7 @@ function LeadsList() {
     },
   });
 
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, full_name, email");
-      if (error) throw error;
-      return data as { id: string; full_name: string; email: string | null }[];
-    },
-  });
+  const { data: profiles = [] } = useProfiles();
 
   const segmentName = (id: string | null) => segments.find((s) => s.id === id)?.name ?? "-";
   const ownerName = (id: string) => {
@@ -207,6 +209,15 @@ function LeadsList() {
     setTo("");
   }
 
+  /** Contadores por situação da próxima ação, para atalhos rápidos de filtro. */
+  const pendingCounts = useMemo(() => {
+    const acc: Record<PendingTone, number> = { atrasado: 0, hoje: 0, agendado: 0, sem_acao: 0 };
+    for (const p of pendingByLead.values()) acc[p.tone] += 1;
+    return acc;
+  }, [pendingByLead]);
+
+  const paged = usePagedList(filtered, 25);
+
   return (
     <div className="mx-auto max-w-6xl space-y-5">
       <PageHeader
@@ -252,6 +263,36 @@ function LeadsList() {
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Atalhos de pendência: identificação rápida de quem precisa de atenção. */}
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        {(
+          [
+            ["atrasado", "Atrasados"],
+            ["hoje", "Para hoje"],
+            ["agendado", "Agendados"],
+            ["sem_acao", "Sem próxima ação"],
+          ] as [PendingTone, string][]
+        ).map(([tone, label]) => {
+          const activeChip = pendingFilter === tone;
+          return (
+            <button
+              key={tone}
+              type="button"
+              aria-pressed={activeChip}
+              onClick={() => setPendingFilter(activeChip ? "todos" : tone)}
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition",
+                pendingClass(tone),
+                activeChip ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : "opacity-90",
+              )}
+            >
+              {label}
+              <span className="rounded-full bg-background/60 px-1.5">{pendingCounts[tone]}</span>
+            </button>
+          );
+        })}
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -358,7 +399,7 @@ function LeadsList() {
 
       {/* Mobile: cards */}
       <div className="space-y-3 lg:hidden">
-        {filtered.map((l) => (
+        {paged.pageItems.map((l) => (
           <div key={l.id} className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
             <Link to="/leads/$id" params={{ id: l.id }} className="block">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
@@ -419,7 +460,7 @@ function LeadsList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((l) => (
+            {paged.pageItems.map((l) => (
               <TableRow key={l.id}>
                 <TableCell className="font-semibold">
                   <Link to="/leads/$id" params={{ id: l.id }} className="hover:text-primary">
@@ -479,6 +520,17 @@ function LeadsList() {
           </TableBody>
         </Table>
       </div>
+
+      <PaginationBar
+        page={paged.page}
+        pageCount={paged.pageCount}
+        from={paged.from}
+        to={paged.to}
+        total={paged.total}
+        onPrev={paged.prev}
+        onNext={paged.next}
+        label="lead(s)"
+      />
     </div>
   );
 }

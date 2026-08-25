@@ -38,6 +38,8 @@ import { formatDateOnly } from "@/lib/leads";
 import { useCommercialDocuments } from "@/lib/commercialQueries";
 import { createCommercialDocument } from "@/lib/commercialActions";
 import { useProfiles, useSegments } from "@/lib/queries";
+import { PaginationBar } from "@/components/PaginationBar";
+import { usePagedList } from "@/hooks/usePagedList";
 
 export const Route = createFileRoute("/_authenticated/comercial/")({
   head: () => ({
@@ -106,6 +108,7 @@ function ComercialList() {
   );
 
   const totalValue = filtered.reduce((acc, d) => acc + Number(d.total_general), 0);
+  const paged = usePagedList(filtered, 25);
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -229,7 +232,7 @@ function ComercialList() {
         <>
           {/* Mobile: cards */}
           <div className="grid gap-2 md:hidden">
-            {filtered.map((d) => (
+            {paged.pageItems.map((d) => (
               <Link
                 key={d.id}
                 to="/comercial/$id"
@@ -274,7 +277,7 @@ function ComercialList() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((d) => (
+                {paged.pageItems.map((d) => (
                   <tr key={d.id} className="border-t hover:bg-accent/40">
                     <td className="px-3 py-2 font-medium">{d.number_label}</td>
                     <td className="px-3 py-2">{docTypeLabel(d.doc_type)}</td>
@@ -305,6 +308,17 @@ function ComercialList() {
               </tbody>
             </table>
           </div>
+
+          <PaginationBar
+            page={paged.page}
+            pageCount={paged.pageCount}
+            from={paged.from}
+            to={paged.to}
+            total={paged.total}
+            onPrev={paged.prev}
+            onNext={paged.next}
+            label="documento(s)"
+          />
         </>
       )}
 
