@@ -26,9 +26,18 @@ import { PageHeader } from "@/components/PageHeader";
 import { SearchField } from "@/components/SearchField";
 import { LoadingState, EmptyState } from "@/components/DataState";
 import { PendingBadge } from "@/components/PendingBadge";
-import { leadPending } from "@/lib/pendings";
+import { PaginationBar } from "@/components/PaginationBar";
+import { usePagedList } from "@/hooks/usePagedList";
+import { leadPending, pendingClass, type PendingTone } from "@/lib/pendings";
 import { LEAD_STATUSES, formatDate } from "@/lib/leads";
-import { useAllLeadProducts, useAppointments, useProducts, useSegments } from "@/lib/queries";
+import {
+  useAllLeadProducts,
+  useAppointments,
+  useProducts,
+  useProfiles,
+  useSegments,
+} from "@/lib/queries";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/leads/")({
   head: () => ({
