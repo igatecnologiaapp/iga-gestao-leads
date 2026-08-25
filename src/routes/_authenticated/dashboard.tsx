@@ -33,6 +33,7 @@ import {
   isToday,
   toLocalParts,
 } from "@/lib/appointments";
+import { leadPending, pendingClass, type PendingTone } from "@/lib/pendings";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -67,7 +68,16 @@ type LeadRow = {
   neighborhood_name: string | null;
   street_name: string | null;
   city: string | null;
+  next_contact_date: string | null;
 };
+
+/** Atalhos operacionais: abrem a listagem de Leads já filtrada pela situação. */
+const PENDING_SHORTCUTS: { tone: PendingTone; label: string; hint: string }[] = [
+  { tone: "atrasado", label: "Atrasados", hint: "Agendamento ou retorno vencido" },
+  { tone: "hoje", label: "Para hoje", hint: "Contato previsto para hoje" },
+  { tone: "agendado", label: "Próximas ações", hint: "Agendamento futuro" },
+  { tone: "sem_acao", label: "Sem próxima ação", hint: "Nenhum retorno definido" },
+];
 
 const PERIOD_PRESETS = [
   { value: "hoje", label: "Hoje" },
@@ -120,7 +130,7 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("leads")
         .select(
-          "id, company_name, contact_name, phone, status, segment_id, created_at, created_by, neighborhood_name, street_name, city",
+          "id, company_name, contact_name, phone, status, segment_id, created_at, created_by, neighborhood_name, street_name, city, next_contact_date",
         )
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -153,6 +163,22 @@ function Dashboard() {
   );
   const activeAppointments = validAppointments.filter((a) => a.status === "agendado");
   const scheduledLeadIds = new Set(activeAppointments.map((a) => a.lead_id));
+
+  /**
+   * Contagem por situação da próxima ação, usando a mesma regra da listagem
+   * (`leadPending`). Só considera leads visíveis ao usuário (RLS) e ativos.
+   */
+  const pendingCounts = useMemo(() => {
+    const acc: Record<PendingTone, number> = { atrasado: 0, hoje: 0, agendado: 0, sem_acao: 0 };
+    for (const lead of leads) {
+      const tone = leadPending(
+        lead,
+        validAppointments.filter((a) => a.lead_id === lead.id),
+      ).tone;
+      acc[tone] += 1;
+    }
+    return acc;
+  }, [leads, validAppointments]);
 
   function applyPreset(v: string) {
     setPreset(v);
@@ -215,6 +241,35 @@ function Dashboard() {
           considera todos os leads ativos e “Leads agendados” usa a data do agendamento.
         </p>
       </div>
+
+      {/* Atalhos de pendências: levam à listagem de Leads já filtrada. */}
+      <section aria-labelledby="pendencias-title" className="space-y-2">
+        <h2 id="pendencias-title" className="text-sm font-bold tracking-wide uppercase">
+          Precisa de atenção
+        </h2>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {PENDING_SHORTCUTS.map((s) => (
+            <Link
+              key={s.tone}
+              to="/leads"
+              search={{ pendencia: s.tone }}
+              aria-label={`${s.label}: ${pendingCounts[s.tone]} lead(s)`}
+              className={cn(
+                "flex min-h-[72px] items-center justify-between gap-3 rounded-xl border px-4 py-3 transition hover:brightness-110",
+                pendingClass(s.tone),
+              )}
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-bold">{s.label}</span>
+                <span className="block truncate text-xs opacity-80">{s.hint}</span>
+              </span>
+              <span className="shrink-0 text-2xl font-extrabold">{pendingCounts[s.tone]}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard

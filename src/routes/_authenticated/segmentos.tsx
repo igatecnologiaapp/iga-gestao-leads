@@ -7,6 +7,10 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
+import { SearchField } from "@/components/SearchField";
+import { EmptyState, LoadingState } from "@/components/DataState";
+import { PaginationBar } from "@/components/PaginationBar";
+import { usePagedList } from "@/hooks/usePagedList";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -57,13 +61,24 @@ function SegmentosPage() {
 
 function Segmentos() {
   const queryClient = useQueryClient();
-  const { data: segments = [] } = useSegments();
+  const { data: segments = [], isLoading } = useSegments();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [active, setActive] = useState(true);
   const [fieldsFor, setFieldsFor] = useState<{ id: string; name: string } | null>(null);
+  const [search, setSearch] = useState("");
+
+  const list = useMemo(
+    () =>
+      segments.filter((s) =>
+        `${s.name} ${s.description ?? ""}`.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [segments, search],
+  );
+  const paged = usePagedList(list, 24);
+
 
   function openNew() {
     setEditing(null);
@@ -101,7 +116,7 @@ function Segmentos() {
     <div className="mx-auto max-w-4xl space-y-5">
       <PageHeader
         title="Segmentos"
-        description={`${segments.length} registro(s)`}
+        description={`${list.length} de ${segments.length} registro(s)`}
         actions={
           <Button className="h-10" onClick={openNew}>
             <Plus className="h-4 w-4" /> Novo
@@ -109,54 +124,96 @@ function Segmentos() {
         }
       />
 
-      <div className="grid gap-2 sm:grid-cols-2">
-        {segments.map((s) => (
-          <div
-            key={s.id}
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]"
-          >
-            <div className="min-w-0">
-              <p className="truncate font-semibold">
-                {s.name}
-                {!s.active && (
-                  <span className="ml-2 rounded-full border px-2 py-0.5 text-[10px] text-muted-foreground">
-                    Inativo
-                  </span>
-                )}
-              </p>
-              {s.description && (
-                <p className="truncate text-xs text-muted-foreground">{s.description}</p>
-              )}
-            </div>
-            <div className="flex shrink-0 gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                title="Campos de qualificação"
-                onClick={() => setFieldsFor({ id: s.id, name: s.name })}
+      <SearchField
+        value={search}
+        onChange={setSearch}
+        label="Pesquisar segmento"
+        placeholder="Pesquisar segmento"
+      />
+
+      {isLoading ? (
+        <LoadingState label="Carregando segmentos..." />
+      ) : !list.length ? (
+        <div className="rounded-xl border bg-card">
+          <EmptyState
+            title={search ? "Nenhum segmento encontrado" : "Nenhum segmento cadastrado"}
+            description={
+              search
+                ? "Revise a pesquisa ou cadastre o segmento com o botão “Novo”."
+                : "Os segmentos definem os campos de qualificação e as soluções sugeridas na captação."
+            }
+          />
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {paged.pageItems.map((s) => (
+              <div
+                key={s.id}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]"
               >
-                <SlidersHorizontal className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setEditing(s.id);
-                  setName(s.name);
-                  setDescription(s.description ?? "");
-                  setActive(s.active);
-                  setOpen(true);
-                }}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => remove(s.id)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">
+                    {s.name}
+                    {!s.active && (
+                      <span className="ml-2 rounded-full border px-2 py-0.5 text-[10px] text-muted-foreground">
+                        Inativo
+                      </span>
+                    )}
+                  </p>
+                  {s.description && (
+                    <p className="truncate text-xs text-muted-foreground">{s.description}</p>
+                  )}
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title="Campos de qualificação"
+                    aria-label={`Campos de qualificação de ${s.name}`}
+                    onClick={() => setFieldsFor({ id: s.id, name: s.name })}
+                  >
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Editar ${s.name}`}
+                    onClick={() => {
+                      setEditing(s.id);
+                      setName(s.name);
+                      setDescription(s.description ?? "");
+                      setActive(s.active);
+                      setOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`Excluir ${s.name}`}
+                    onClick={() => remove(s.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+
+          <PaginationBar
+            page={paged.page}
+            pageCount={paged.pageCount}
+            from={paged.from}
+            to={paged.to}
+            total={paged.total}
+            onPrev={paged.prev}
+            onNext={paged.next}
+            label="segmento(s)"
+          />
+        </>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

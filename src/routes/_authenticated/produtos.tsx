@@ -7,6 +7,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
+import { SearchField } from "@/components/SearchField";
+import { PaginationBar } from "@/components/PaginationBar";
+import { usePagedList } from "@/hooks/usePagedList";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -73,7 +76,7 @@ function ProdutosPage() {
 function Produtos() {
   const queryClient = useQueryClient();
   const { isAdmin } = useAuth();
-  const { data: products = [] } = useProducts();
+  const { data: products = [], isLoading } = useProducts();
   const { data: segments = [] } = useSegments();
   const { data: segmentProducts = [] } = useSegmentProducts();
   const { data: categories = [] } = useItemCategories();
@@ -133,6 +136,7 @@ function Produtos() {
     });
   }, [products, search, fKind, fCategory, fSegment, fStatus, segmentProducts, segmentsOf]);
 
+  const paged = usePagedList(filtered, 25);
   const incomplete = products.filter((p) => p.default_price == null || !p.unit).length;
 
   function openNew() {
@@ -269,11 +273,11 @@ function Produtos() {
       {/* Filtros */}
       <div className="space-y-3 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]">
         <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-          <Input
-            className="h-11"
-            placeholder="Pesquisar por nome, descrição ou segmento"
+          <SearchField
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={setSearch}
+            label="Pesquisar produto ou serviço"
+            placeholder="Pesquisar por nome, descrição ou segmento"
           />
           <Button variant="outline" className="h-11" onClick={() => setMore((v) => !v)}>
             <Filter className="h-4 w-4" /> Mais filtros
@@ -336,7 +340,7 @@ function Produtos() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p) => (
+            {paged.pageItems.map((p) => (
               <tr key={p.id} className="border-t align-top">
                 <td className="p-3">
                   <p className="font-semibold">{p.name}</p>
@@ -400,7 +404,9 @@ function Produtos() {
             {!filtered.length && (
               <tr>
                 <td colSpan={8} className="p-6 text-center text-sm text-muted-foreground">
-                  Nenhum produto/serviço encontrado com os filtros atuais.
+                  {isLoading
+                    ? "Carregando produtos e serviços..."
+                    : "Nenhum produto/serviço encontrado com os filtros atuais."}
                 </td>
               </tr>
             )}
@@ -410,7 +416,7 @@ function Produtos() {
 
       {/* Mobile: cards */}
       <div className="grid gap-2 md:hidden">
-        {filtered.map((p) => (
+        {paged.pageItems.map((p) => (
           <div
             key={p.id}
             className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 rounded-xl border bg-card p-3 shadow-[var(--shadow-card)]"
@@ -472,10 +478,22 @@ function Produtos() {
         ))}
         {!filtered.length && (
           <p className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
-            Nenhum produto/serviço encontrado.
+            {isLoading ? "Carregando..." : "Nenhum produto/serviço encontrado."}
           </p>
         )}
       </div>
+
+      <PaginationBar
+        page={paged.page}
+        pageCount={paged.pageCount}
+        from={paged.from}
+        to={paged.to}
+        total={paged.total}
+        onPrev={paged.prev}
+        onNext={paged.next}
+        label="solução(ões)"
+      />
+
 
       {/* Cadastro / edição */}
       <Dialog open={open} onOpenChange={setOpen}>

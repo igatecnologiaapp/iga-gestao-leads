@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,7 +39,16 @@ import {
 } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
+const PENDING_TONES: PendingTone[] = ["atrasado", "hoje", "agendado", "sem_acao"];
+
 export const Route = createFileRoute("/_authenticated/leads/")({
+  /** Permite abrir a listagem já filtrada por pendência (atalhos do Dashboard). */
+  validateSearch: (search: Record<string, unknown>): { pendencia?: PendingTone } => {
+    const value = search["pendencia"];
+    return typeof value === "string" && (PENDING_TONES as string[]).includes(value)
+      ? { pendencia: value as PendingTone }
+      : {};
+  },
   head: () => ({
     meta: [
       { title: "Leads — IGA TECNOLOGIA" },
@@ -71,6 +80,7 @@ type Lead = {
 
 function LeadsList() {
   const queryClient = useQueryClient();
+  const { pendencia } = Route.useSearch();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("todos");
   const [segment, setSegment] = useState("todos");
@@ -81,7 +91,12 @@ function LeadsList() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [moreFilters, setMoreFilters] = useState(false);
-  const [pendingFilter, setPendingFilter] = useState("todos");
+  const [pendingFilter, setPendingFilter] = useState<string>(pendencia ?? "todos");
+
+  // Mantém o filtro alinhado quando o usuário chega por um atalho do Dashboard.
+  useEffect(() => {
+    if (pendencia) setPendingFilter(pendencia);
+  }, [pendencia]);
 
   const { data: segments = [] } = useSegments();
   const { data: products = [] } = useProducts();

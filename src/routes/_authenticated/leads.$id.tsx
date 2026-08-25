@@ -634,10 +634,13 @@ function EditLeadDialog({
               placeholder="Selecione o segmento"
             />
           </div>
+          {/* Mesmas regras da Captação: permite cadastrar rua nova, sempre com
+              alerta de duplicidade e vínculo de bairro (nunca cadastro automático). */}
           <AddressFields
             idPrefix="edit"
             value={address}
             onChange={(patch) => setAddress((prev) => ({ ...prev, ...patch }))}
+            allowCreateStreet
           />
 
           <div className="space-y-2 rounded-xl border p-3">
