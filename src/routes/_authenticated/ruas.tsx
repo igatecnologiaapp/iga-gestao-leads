@@ -48,7 +48,7 @@ function RuasPage() {
 
 function Ruas() {
   const queryClient = useQueryClient();
-  const { data: streets = [] } = useStreets();
+  const { data: streets = [], isLoading } = useStreets();
   const { data: neighborhoods = [] } = useNeighborhoods();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
@@ -59,7 +59,10 @@ function Ruas() {
   const [state, setState] = useState("");
   const [search, setSearch] = useState("");
 
-  const list = streets.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()));
+  const list = streets.filter((s) =>
+    `${s.name} ${s.zip_code ?? ""}`.toLowerCase().includes(search.toLowerCase()),
+  );
+  const paged = usePagedList(list, 24);
   const nbName = (id: string | null) =>
     neighborhoods.find((n) => n.id === id)?.name ?? "Sem bairro";
 
