@@ -242,6 +242,35 @@ function Dashboard() {
         </p>
       </div>
 
+      {/* Atalhos de pendências: levam à listagem de Leads já filtrada. */}
+      <section aria-labelledby="pendencias-title" className="space-y-2">
+        <h2 id="pendencias-title" className="text-sm font-bold tracking-wide uppercase">
+          Precisa de atenção
+        </h2>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          {PENDING_SHORTCUTS.map((s) => (
+            <Link
+              key={s.tone}
+              to="/leads"
+              search={{ pendencia: s.tone }}
+              aria-label={`${s.label}: ${pendingCounts[s.tone]} lead(s)`}
+              className={cn(
+                "flex min-h-[72px] items-center justify-between gap-3 rounded-xl border px-4 py-3 transition hover:brightness-110",
+                pendingClass(s.tone),
+              )}
+            >
+              <span className="min-w-0">
+                <span className="block text-sm font-bold">{s.label}</span>
+                <span className="block truncate text-xs opacity-80">{s.hint}</span>
+              </span>
+              <span className="shrink-0 text-2xl font-extrabold">{pendingCounts[s.tone]}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+
+
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           id="total"
