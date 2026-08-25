@@ -181,40 +181,11 @@ export function AddressFields({
     setCepMessage(null);
     if (!isCepComplete(masked)) return;
     setCepLoading(true);
-    const result = await lookupCep(masked);
+    const { patch, message, found } = await resolveCep(masked);
     setCepLoading(false);
-    if (result.status === "unavailable") {
-      setCepMessage("Busca automática indisponível no momento. Preencha o endereço manualmente.");
-      return;
-    }
-    if (result.status === "not_found") {
-      setCepMessage("CEP não localizado. Você pode preencher o endereço manualmente.");
-      return;
-    }
-    const { street, neighborhood, city, state } = result.address;
-    const nb = neighborhood
-      ? neighborhoods.find((n) => normalizePlace(n.name) === normalizePlace(neighborhood))
-      : undefined;
-    const existing = street
-      ? streets.find((s) => normalizePlace(s.name) === normalizePlace(street))
-      : undefined;
-
-    onChange({
-      city,
-      state,
-      neighborhoodName: neighborhood,
-      neighborhoodId: existing?.neighborhood_id ?? nb?.id ?? null,
-      streetId: existing?.id ?? null,
-      streetName: existing?.name ?? street,
-    });
-
-    setCepMessage(
-      existing
-        ? "Endereço preenchido pelo CEP (rua já cadastrada)."
-        : street
-          ? "Endereço preenchido pelo CEP. Esta rua ainda não está cadastrada."
-          : "CEP encontrado, mas sem logradouro. Informe a rua manualmente.",
-    );
+    setCepMessage(message);
+    if (!found) return;
+    onChange(patch);
     focusNumber();
   }
 
