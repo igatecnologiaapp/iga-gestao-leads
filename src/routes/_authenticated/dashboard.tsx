@@ -164,6 +164,22 @@ function Dashboard() {
   const activeAppointments = validAppointments.filter((a) => a.status === "agendado");
   const scheduledLeadIds = new Set(activeAppointments.map((a) => a.lead_id));
 
+  /**
+   * Contagem por situação da próxima ação, usando a mesma regra da listagem
+   * (`leadPending`). Só considera leads visíveis ao usuário (RLS) e ativos.
+   */
+  const pendingCounts = useMemo(() => {
+    const acc: Record<PendingTone, number> = { atrasado: 0, hoje: 0, agendado: 0, sem_acao: 0 };
+    for (const lead of leads) {
+      const tone = leadPending(
+        lead,
+        validAppointments.filter((a) => a.lead_id === lead.id),
+      ).tone;
+      acc[tone] += 1;
+    }
+    return acc;
+  }, [leads, validAppointments]);
+
   function applyPreset(v: string) {
     setPreset(v);
     if (v !== "custom") setRange(presetRange(v));
