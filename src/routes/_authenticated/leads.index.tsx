@@ -267,6 +267,37 @@ function LeadsList() {
         </Select>
       </div>
 
+      {/* Atalhos de pendência: identificação rápida de quem precisa de atenção. */}
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        {(
+          [
+            ["atrasado", "Atrasados"],
+            ["hoje", "Para hoje"],
+            ["agendado", "Agendados"],
+            ["sem_acao", "Sem próxima ação"],
+          ] as [PendingTone, string][]
+        ).map(([tone, label]) => {
+          const activeChip = pendingFilter === tone;
+          return (
+            <button
+              key={tone}
+              type="button"
+              aria-pressed={activeChip}
+              onClick={() => setPendingFilter(activeChip ? "todos" : tone)}
+              className={cn(
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition",
+                pendingClass(tone),
+                activeChip ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : "opacity-90",
+              )}
+            >
+              {label}
+              <span className="rounded-full bg-background/60 px-1.5">{pendingCounts[tone]}</span>
+            </button>
+          );
+        })}
+      </div>
+
+
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" className="h-10" onClick={() => setMoreFilters((v) => !v)}>
           <SlidersHorizontal className="h-4 w-4" /> {moreFilters ? "Menos filtros" : "Mais filtros"}
