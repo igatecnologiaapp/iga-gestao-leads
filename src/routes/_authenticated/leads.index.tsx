@@ -402,7 +402,7 @@ function LeadsList() {
 
       {/* Mobile: cards */}
       <div className="space-y-3 lg:hidden">
-        {filtered.map((l) => (
+        {paged.pageItems.map((l) => (
           <div key={l.id} className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
             <Link to="/leads/$id" params={{ id: l.id }} className="block">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
@@ -463,7 +463,7 @@ function LeadsList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((l) => (
+            {paged.pageItems.map((l) => (
               <TableRow key={l.id}>
                 <TableCell className="font-semibold">
                   <Link to="/leads/$id" params={{ id: l.id }} className="hover:text-primary">
