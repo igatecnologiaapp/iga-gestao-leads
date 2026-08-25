@@ -57,13 +57,24 @@ function SegmentosPage() {
 
 function Segmentos() {
   const queryClient = useQueryClient();
-  const { data: segments = [] } = useSegments();
+  const { data: segments = [], isLoading } = useSegments();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [active, setActive] = useState(true);
   const [fieldsFor, setFieldsFor] = useState<{ id: string; name: string } | null>(null);
+  const [search, setSearch] = useState("");
+
+  const list = useMemo(
+    () =>
+      segments.filter((s) =>
+        `${s.name} ${s.description ?? ""}`.toLowerCase().includes(search.toLowerCase()),
+      ),
+    [segments, search],
+  );
+  const paged = usePagedList(list, 24);
+
 
   function openNew() {
     setEditing(null);
