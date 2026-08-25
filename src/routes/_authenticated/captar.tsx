@@ -278,6 +278,19 @@ function CaptarLead() {
         description="Preencha o essencial. O restante pode ser completado depois."
       />
 
+      <div className="mt-4 rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:flex sm:items-center sm:justify-between sm:gap-4">
+        <div className="mb-3 sm:mb-0">
+          <p className="text-sm font-semibold">📷 Ler Cartão de Visita</p>
+          <p className="text-xs text-muted-foreground">
+            Use a câmera ou envie uma imagem para preencher o formulário automaticamente. Você
+            revisa tudo antes de salvar.
+          </p>
+        </div>
+        <BusinessCardScanner
+          segmentNames={segments.filter((s) => s.active).map((s) => s.name)}
+          onApply={(card) => void applyCard(card)}
+        />
+
       <form className="mt-5 space-y-5" onSubmit={save}>
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
           <h2 className="mb-4 text-sm font-bold tracking-wide text-muted-foreground uppercase">
