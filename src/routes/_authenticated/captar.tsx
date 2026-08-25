@@ -12,7 +12,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 import { Combobox } from "@/components/Combobox";
 import { PageHeader } from "@/components/PageHeader";
-import { AddressFields, emptyAddress, type AddressValue } from "@/components/AddressFields";
+import {
+  AddressFields,
+  emptyAddress,
+  useAddressResolver,
+  type AddressValue,
+} from "@/components/AddressFields";
+import { BusinessCardScanner } from "@/components/BusinessCardScanner";
+import type { BusinessCardData } from "@/lib/businessCard.functions";
+import { maskCep, isCepComplete, normalizePlace } from "@/lib/leads";
 import {
   AppointmentFields,
   emptyAppointment,
