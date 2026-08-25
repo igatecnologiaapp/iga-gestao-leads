@@ -523,6 +523,18 @@ function LeadsList() {
           </TableBody>
         </Table>
       </div>
+
+      <PaginationBar
+        page={paged.page}
+        pageCount={paged.pageCount}
+        from={paged.from}
+        to={paged.to}
+        total={paged.total}
+        onPrev={paged.prev}
+        onNext={paged.next}
+        label="lead(s)"
+      />
+
     </div>
   );
 }
