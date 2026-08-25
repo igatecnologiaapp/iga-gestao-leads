@@ -131,7 +131,6 @@ function CaptarLead() {
     if (Object.keys(patch).length) {
       patchAddress(patch);
       setAddressKey((k) => k + 1);
-      setAddress((prev) => ({ ...prev, ...patch }));
     }
   }
 
