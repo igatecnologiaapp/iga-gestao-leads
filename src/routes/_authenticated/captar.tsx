@@ -81,6 +81,59 @@ function CaptarLead() {
     setAddress((prev) => ({ ...prev, ...patch }));
   }
 
+  /** Aplica ao formulário os dados sugeridos pela leitura do cartão de visita. */
+  async function applyCard(card: BusinessCardData) {
+    if (card.company) setCompany(card.company);
+    if (card.contact) setContact(card.contact);
+    if (card.phone) setPhone(maskPhone(card.phone));
+
+    if (card.segment) {
+      const match = segments.find(
+        (s) => s.active && normalizePlace(s.name) === normalizePlace(card.segment!),
+      );
+      if (match) {
+        setSegmentId(match.id);
+        setCustom({});
+        const allowed = new Set(
+          segmentProducts.filter((sp) => sp.segment_id === match.id).map((sp) => sp.product_id),
+        );
+        setProductIds((prev) => prev.filter((id) => allowed.has(id)));
+      }
+    }
+
+    const extras = [card.email ? `E-mail: ${card.email}` : null, card.notes]
+      .filter(Boolean)
+      .join(" • ");
+    if (extras) setNotes((prev) => (prev ? `${prev}\n${extras}` : extras));
+
+    // Endereço: reaproveita o fluxo existente de CEP e o casamento com Ruas/Bairros.
+    const cep = card.cep ? maskCep(card.cep) : "";
+    let patch: Partial<AddressValue> = {
+      ...(cep ? { cep } : {}),
+      ...(card.number ? { number: card.number } : {}),
+    };
+    if (cep && isCepComplete(cep)) {
+      const { patch: cepPatch, found } = await resolveCep(cep);
+      if (found) patch = { ...patch, ...cepPatch };
+    }
+    if (!patch.streetName && (card.street || card.neighborhood)) {
+      patch = {
+        ...patch,
+        ...matchPlaces({
+          street: card.street,
+          neighborhood: card.neighborhood,
+          city: card.city,
+          state: card.state,
+        }),
+      };
+    }
+    if (Object.keys(patch).length) {
+      patchAddress(patch);
+      setAddressKey((k) => k + 1);
+      setAddress((prev) => ({ ...prev, ...patch }));
+    }
+  }
+
   // Lembrar o último segmento usado na sessão
   useEffect(() => {
     const last = sessionStorage.getItem("lastSegment");
