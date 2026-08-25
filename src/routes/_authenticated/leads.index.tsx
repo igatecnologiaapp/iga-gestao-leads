@@ -80,6 +80,7 @@ type Lead = {
 
 function LeadsList() {
   const queryClient = useQueryClient();
+  const { pendencia } = Route.useSearch();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("todos");
   const [segment, setSegment] = useState("todos");
@@ -90,7 +91,12 @@ function LeadsList() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [moreFilters, setMoreFilters] = useState(false);
-  const [pendingFilter, setPendingFilter] = useState("todos");
+  const [pendingFilter, setPendingFilter] = useState<string>(pendencia ?? "todos");
+
+  // Mantém o filtro alinhado quando o usuário chega por um atalho do Dashboard.
+  useEffect(() => {
+    if (pendencia) setPendingFilter(pendencia);
+  }, [pendencia]);
 
   const { data: segments = [] } = useSegments();
   const { data: products = [] } = useProducts();
