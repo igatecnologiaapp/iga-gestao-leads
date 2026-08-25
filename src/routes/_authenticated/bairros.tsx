@@ -44,7 +44,7 @@ function BairrosPage() {
 
 function Bairros() {
   const queryClient = useQueryClient();
-  const { data: neighborhoods = [] } = useNeighborhoods();
+  const { data: neighborhoods = [], isLoading } = useNeighborhoods();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -55,6 +55,7 @@ function Bairros() {
   const list = neighborhoods.filter((n) =>
     `${n.name} ${n.city} ${n.state}`.toLowerCase().includes(search.toLowerCase()),
   );
+  const paged = usePagedList(list, 24);
 
   async function save() {
     if (!name.trim()) return;
