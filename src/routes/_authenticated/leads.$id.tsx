@@ -552,7 +552,7 @@ function EditLeadDialog({
           scheduled_at: scheduledAt,
           contact_type_id: appointment.contactTypeId,
           status: "agendado",
-          created_by: userData.user?.id ?? null,
+          // Autoria preenchida pelo banco (auth.uid()) — garante histórico confiável.
         });
         historyRows.push({
           lead_id: lead.id,
