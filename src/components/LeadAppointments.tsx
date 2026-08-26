@@ -43,7 +43,16 @@ async function syncNextContactDate(leadId: string) {
     .eq("id", leadId);
 }
 
-export function LeadAppointments({ leadId, canEdit }: { leadId: string; canEdit: boolean }) {
+export function LeadAppointments({
+  leadId,
+  canEdit,
+  createSignal = 0,
+}: {
+  leadId: string;
+  canEdit: boolean;
+  /** Incrementar para abrir o formulário de novo agendamento a partir de fora. */
+  createSignal?: number;
+}) {
   const queryClient = useQueryClient();
   const { data: appointments = [] } = useLeadAppointments(leadId);
   const { data: contactTypes = [] } = useContactTypes();
@@ -51,6 +60,13 @@ export function LeadAppointments({ leadId, canEdit }: { leadId: string; canEdit:
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [draft, setDraft] = useState<AppointmentDraft>(emptyAppointment);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!createSignal || !canEdit) return;
+    setEditing(null);
+    setDraft(emptyAppointment);
+    setOpen(true);
+  }, [createSignal, canEdit]);
 
   const active = appointments.filter((a) => a.status === "agendado");
   const next = active[0] ?? null;
