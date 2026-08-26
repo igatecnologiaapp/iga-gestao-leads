@@ -24,6 +24,9 @@ export type BusinessCardData = {
   state: string | null;
   cep: string | null;
   segment: string | null;
+  website: string | null;
+  instagram: string | null;
+  facebook: string | null;
   notes: string | null;
 };
 
@@ -44,6 +47,9 @@ const cardSchema = z.object({
   state: z.string().nullable().optional(),
   cep: z.string().nullable().optional(),
   segment: z.string().nullable().optional(),
+  website: z.string().nullable().optional(),
+  instagram: z.string().nullable().optional(),
+  facebook: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
 
@@ -67,13 +73,16 @@ export const readBusinessCard = createServerFn({ method: "POST" })
     const prompt = [
       "Você extrai dados de cartões de visita brasileiros.",
       "Responda SOMENTE com um JSON válido, sem markdown, com as chaves:",
-      "company, contact, phone, email, street, number, neighborhood, city, state, cep, segment, notes.",
+      "company, contact, phone, email, street, number, neighborhood, city, state, cep, segment, website, instagram, facebook, notes.",
       "Use null quando a informação não estiver claramente legível no cartão. Nunca invente dados.",
       "phone: apenas um telefone principal, com DDD. cep: formato 00000-000. state: sigla UF.",
       "street: apenas o nome do logradouro (sem número). number: apenas o número.",
       segmentList.length
         ? `segment: escolha EXATAMENTE um destes valores se tiver certeza, senão null: ${segmentList.join(" | ")}`
         : "segment: null",
+      "website: endereço do site da empresa, se houver (ex.: https://www.empresa.com.br), senão null.",
+      "instagram: perfil do Instagram como @usuario ou a URL impressa no cartão, senão null.",
+      "facebook: página do Facebook como URL ou nome da página, senão null.",
       "notes: outras informações relevantes do cartão (site, cargo, redes sociais) em uma linha, ou null.",
       "Se a imagem não for um cartão de visita legível, responda {\"unreadable\": true}.",
     ].join("\n");
@@ -156,6 +165,9 @@ export const readBusinessCard = createServerFn({ method: "POST" })
         segment && segmentList.some((s) => s.toLowerCase() === segment.toLowerCase())
           ? segmentList.find((s) => s.toLowerCase() === segment.toLowerCase())!
           : null,
+      website: clean(c.website),
+      instagram: clean(c.instagram),
+      facebook: clean(c.facebook),
       notes: clean(c.notes),
     };
 
