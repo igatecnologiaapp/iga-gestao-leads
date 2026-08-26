@@ -73,6 +73,29 @@ export function LeadDataTab({ lead, segmentName }: { lead: LeadDataView; segment
         />
         <LeadInfo label="Captado em" value={formatDateTime(lead.created_at)} />
       </dl>
+
+      <h3 className="mt-6 text-sm font-bold">Informações de contato</h3>
+      <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+        <LeadInfo label="Telefone" value={lead.phone ?? "-"} />
+        <LinkItem
+          icon={Globe}
+          label="Site"
+          value={lead.website}
+          href={websiteUrl(lead.website)}
+        />
+        <LinkItem
+          icon={Instagram}
+          label="Instagram"
+          value={lead.instagram}
+          href={instagramUrl(lead.instagram)}
+        />
+        <LinkItem
+          icon={Facebook}
+          label="Facebook"
+          value={lead.facebook}
+          href={facebookUrl(lead.facebook)}
+        />
+      </dl>
     </section>
   );
 }
