@@ -19,6 +19,12 @@ import {
   type AddressValue,
 } from "@/components/AddressFields";
 import { BusinessCardScanner } from "@/components/BusinessCardScanner";
+import {
+  ContactLinksFields,
+  contactLinksError,
+  emptyContactLinks,
+  type ContactLinks,
+} from "@/components/lead/ContactLinksFields";
 import type { BusinessCardData } from "@/lib/businessCard.functions";
 import { maskCep, isCepComplete, normalizePlace } from "@/lib/leads";
 import {
@@ -66,6 +72,7 @@ function CaptarLead() {
   const [company, setCompany] = useState("");
   const [contact, setContact] = useState("");
   const [phone, setPhone] = useState("");
+  const [links, setLinks] = useState<ContactLinks>(emptyContactLinks);
   const [address, setAddress] = useState<AddressValue>(emptyAddress);
   const [addressKey, setAddressKey] = useState(0);
   const [appointment, setAppointment] = useState<AppointmentDraft>(emptyAppointment);
@@ -87,6 +94,27 @@ function CaptarLead() {
     if (card.company) setCompany(card.company);
     if (card.contact) setContact(card.contact);
     if (card.phone) setPhone(maskPhone(card.phone));
+
+    // Site/redes: preenche apenas o que estiver vazio; divergências são apresentadas
+    // para conferência, sem sobrescrever o que o usuário já informou.
+    const divergences: string[] = [];
+    setLinks((prev) => {
+      const next = { ...prev };
+      const apply = (key: keyof ContactLinks, found: string | null, label: string) => {
+        if (!found) return;
+        if (!prev[key]) next[key] = found;
+        else if (prev[key].trim().toLowerCase() !== found.trim().toLowerCase())
+          divergences.push(`${label}: ${found}`);
+      };
+      apply("website", card.website ?? null, "Site");
+      apply("instagram", card.instagram ?? null, "Instagram");
+      apply("facebook", card.facebook ?? null, "Facebook");
+      return next;
+    });
+    if (divergences.length)
+      toast.info(`Confira as informações do cartão: ${divergences.join(" • ")}`, {
+        duration: 8000,
+      });
 
     if (card.segment) {
       const match = segments.find(
@@ -155,6 +183,7 @@ function CaptarLead() {
     setCompany("");
     setContact("");
     setPhone("");
+    setLinks(emptyContactLinks);
     setAddress(emptyAddress);
     setAddressKey((k) => k + 1);
     setAppointment(emptyAppointment);
@@ -175,6 +204,11 @@ function CaptarLead() {
         toast.error(`Preencha o campo "${f.label}".`);
         return;
       }
+    }
+    const linkError = contactLinksError(links);
+    if (linkError) {
+      toast.error(linkError);
+      return;
     }
     if ((appointment.date && !appointment.time) || (!appointment.date && appointment.time)) {
       toast.error("Informe data e hora do agendamento.");
@@ -198,6 +232,9 @@ function CaptarLead() {
         city: nb?.city || address.city || null,
         state: nb?.state || address.state || null,
         postal_code: address.cep || null,
+        website: links.website.trim() || null,
+        instagram: links.instagram.trim() || null,
+        facebook: links.facebook.trim() || null,
 
         next_contact_date: appointment.date || null,
         notes: notes.trim() || null,
@@ -348,6 +385,17 @@ function CaptarLead() {
               />
             </div>
           </div>
+        </section>
+
+        <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
+          <h2 className="mb-4 text-sm font-bold tracking-wide text-muted-foreground uppercase">
+            Informações de contato
+          </h2>
+          <ContactLinksFields
+            idPrefix="novo"
+            value={links}
+            onChange={(patch) => setLinks((prev) => ({ ...prev, ...patch }))}
+          />
         </section>
 
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
