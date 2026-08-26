@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/Combobox";
+import { NewDocumentDialog } from "@/components/NewDocumentDialog";
 import {
   DOC_TYPES,
   docStatusClass,
