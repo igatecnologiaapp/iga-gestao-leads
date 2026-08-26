@@ -26,22 +26,13 @@ import {
 } from "@/lib/appointments";
 import { useContactTypes, useLeadAppointments, type Appointment } from "@/lib/queries";
 import { cn } from "@/lib/utils";
+import {
+  createAppointment,
+  logAppointmentHistory,
+  setAppointmentStatus,
+  syncNextContactDate,
+} from "@/lib/appointmentActions";
 
-/** Mantém leads.next_contact_date alinhado ao próximo agendamento ativo. */
-async function syncNextContactDate(leadId: string) {
-  const { data } = await supabase
-    .from("lead_appointments")
-    .select("scheduled_at")
-    .eq("lead_id", leadId)
-    .eq("status", "agendado")
-    .order("scheduled_at")
-    .limit(1);
-  const next = data?.[0]?.scheduled_at ?? null;
-  await supabase
-    .from("leads")
-    .update({ next_contact_date: next ? toLocalParts(next).date : null })
-    .eq("id", leadId);
-}
 
 export function LeadAppointments({
   leadId,
