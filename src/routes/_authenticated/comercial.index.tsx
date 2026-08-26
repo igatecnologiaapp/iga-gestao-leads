@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { FileText, Filter, Plus } from "lucide-react";
 import { toast } from "sonner";
