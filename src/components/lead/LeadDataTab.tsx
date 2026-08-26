@@ -1,5 +1,6 @@
+import { Facebook, Globe, Instagram } from "lucide-react";
 import { LeadInfo } from "@/components/lead/LeadInfo";
-import { formatDateTime } from "@/lib/leads";
+import { formatDateTime, facebookUrl, instagramUrl, websiteUrl } from "@/lib/leads";
 
 export type LeadDataView = {
   contact_name: string | null;
@@ -10,8 +11,46 @@ export type LeadDataView = {
   neighborhood_name: string | null;
   city: string | null;
   state: string | null;
+  website: string | null;
+  instagram: string | null;
+  facebook: string | null;
   created_at: string;
 };
+
+/** Link de contato digital com rótulo acessível. */
+function LinkItem({
+  icon: Icon,
+  label,
+  value,
+  href,
+}: {
+  icon: typeof Globe;
+  label: string;
+  value: string | null;
+  href: string | null;
+}) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="truncate text-sm font-semibold">
+        {href && value ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex max-w-full items-center gap-2 text-primary underline-offset-4 hover:underline"
+            title={value}
+          >
+            <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">{value}</span>
+          </a>
+        ) : (
+          "-"
+        )}
+      </dd>
+    </div>
+  );
+}
 
 /** Área DADOS: informações cadastrais do lead (edição pelo diálogo já existente). */
 export function LeadDataTab({ lead, segmentName }: { lead: LeadDataView; segmentName: string }) {
