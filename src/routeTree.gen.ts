@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as AuthenticatedAgendaRouteImport } from './routes/_authenticated/agenda'
 import { Route as AuthenticatedBairrosRouteImport } from './routes/_authenticated/bairros'
 import { Route as AuthenticatedCaptarRouteImport } from './routes/_authenticated/captar'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -45,6 +46,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAgendaRoute = AuthenticatedAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBairrosRoute = AuthenticatedBairrosRouteImport.update({
   id: '/bairros',
@@ -118,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/agenda': typeof AuthenticatedAgendaRoute
   '/bairros': typeof AuthenticatedBairrosRoute
   '/captar': typeof AuthenticatedCaptarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/agenda': typeof AuthenticatedAgendaRoute
   '/bairros': typeof AuthenticatedBairrosRoute
   '/captar': typeof AuthenticatedCaptarRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/agenda': typeof AuthenticatedAgendaRoute
   '/_authenticated/bairros': typeof AuthenticatedBairrosRoute
   '/_authenticated/captar': typeof AuthenticatedCaptarRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
@@ -176,6 +185,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/agenda'
     | '/bairros'
     | '/captar'
     | '/dashboard'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/agenda'
     | '/bairros'
     | '/captar'
     | '/dashboard'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/agenda'
     | '/_authenticated/bairros'
     | '/_authenticated/captar'
     | '/_authenticated/dashboard'
@@ -264,6 +276,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/agenda': {
+      id: '/_authenticated/agenda'
+      path: '/agenda'
+      fullPath: '/agenda'
+      preLoaderRoute: typeof AuthenticatedAgendaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/bairros': {
       id: '/_authenticated/bairros'
@@ -360,6 +379,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAgendaRoute: typeof AuthenticatedAgendaRoute
   AuthenticatedBairrosRoute: typeof AuthenticatedBairrosRoute
   AuthenticatedCaptarRoute: typeof AuthenticatedCaptarRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
@@ -376,6 +396,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAgendaRoute: AuthenticatedAgendaRoute,
   AuthenticatedBairrosRoute: AuthenticatedBairrosRoute,
   AuthenticatedCaptarRoute: AuthenticatedCaptarRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
