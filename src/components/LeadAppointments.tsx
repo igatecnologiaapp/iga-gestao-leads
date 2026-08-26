@@ -74,14 +74,9 @@ export function LeadAppointments({
   }
 
   async function logHistory(description: string) {
-    const { data: userData } = await supabase.auth.getUser();
-    await supabase.from("lead_history").insert({
-      lead_id: leadId,
-      user_id: userData.user?.id ?? null,
-      event_type: "agendamento",
-      description,
-    });
+    await logAppointmentHistory(leadId, description);
   }
+
 
   function startCreate() {
     setEditing(null);
