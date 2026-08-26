@@ -189,12 +189,23 @@ function LeadDetail() {
       />
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full grid-cols-5 gap-1">
-          <TabsTrigger value="dados">Dados</TabsTrigger>
-          <TabsTrigger value="qualificacao">Qualif.</TabsTrigger>
-          <TabsTrigger value="agenda">Agenda</TabsTrigger>
-          <TabsTrigger value="comercial">Comercial</TabsTrigger>
-          <TabsTrigger value="historico">Histórico</TabsTrigger>
+        {/* Mobile: duas linhas de abas (sem rolagem horizontal). Desktop: uma linha. */}
+        <TabsList className="grid h-auto w-full grid-cols-3 gap-1 sm:grid-cols-5">
+          <TabsTrigger value="dados" className="h-10">
+            Dados
+          </TabsTrigger>
+          <TabsTrigger value="qualificacao" className="h-10">
+            Qualificação
+          </TabsTrigger>
+          <TabsTrigger value="agenda" className="h-10">
+            Agenda
+          </TabsTrigger>
+          <TabsTrigger value="comercial" className="h-10">
+            Comercial
+          </TabsTrigger>
+          <TabsTrigger value="historico" className="h-10">
+            Histórico
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="dados" className="mt-4">
