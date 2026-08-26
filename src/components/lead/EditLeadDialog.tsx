@@ -17,6 +17,11 @@ import { Combobox } from "@/components/Combobox";
 import { AddressFields, addressFromLead, type AddressValue } from "@/components/AddressFields";
 import { DynamicField } from "@/components/DynamicField";
 import {
+  ContactLinksFields,
+  contactLinksError,
+  type ContactLinks,
+} from "@/components/lead/ContactLinksFields";
+import {
   AppointmentFields,
   emptyAppointment,
   type AppointmentDraft,
@@ -44,6 +49,9 @@ export type LeadRow = {
   number: string | null;
   neighborhood_id: string | null;
   postal_code: string | null;
+  website: string | null;
+  instagram: string | null;
+  facebook: string | null;
   next_contact_date: string | null;
   notes: string | null;
 };
@@ -73,6 +81,11 @@ export function EditLeadDialog({
   const [contact, setContact] = useState(lead.contact_name ?? "");
   const [phone, setPhone] = useState(lead.phone ?? "");
   const [segmentId, setSegmentId] = useState<string | null>(lead.segment_id);
+  const [links, setLinks] = useState<ContactLinks>({
+    website: lead.website ?? "",
+    instagram: lead.instagram ?? "",
+    facebook: lead.facebook ?? "",
+  });
   const [address, setAddress] = useState<AddressValue>(() => addressFromLead(lead));
 
   const { data: leadAppointments = [] } = useLeadAppointments(lead.id);
@@ -89,6 +102,11 @@ export function EditLeadDialog({
     setContact(lead.contact_name ?? "");
     setPhone(lead.phone ?? "");
     setSegmentId(lead.segment_id);
+    setLinks({
+      website: lead.website ?? "",
+      instagram: lead.instagram ?? "",
+      facebook: lead.facebook ?? "",
+    });
     setAddress(addressFromLead(lead));
 
     setAppointment(
@@ -136,6 +154,11 @@ export function EditLeadDialog({
         return;
       }
     }
+    const linkError = contactLinksError(links);
+    if (linkError) {
+      toast.error(linkError);
+      return;
+    }
     setSaving(true);
     const nb = neighborhoods.find((n) => n.id === address.neighborhoodId);
     const { error } = await supabase
@@ -153,6 +176,9 @@ export function EditLeadDialog({
         city: nb?.city || address.city || null,
         state: nb?.state || address.state || null,
         postal_code: address.cep || null,
+        website: links.website.trim() || null,
+        instagram: links.instagram.trim() || null,
+        facebook: links.facebook.trim() || null,
 
         next_contact_date: appointment.date || null,
         notes: notes.trim() || null,
@@ -284,6 +310,11 @@ export function EditLeadDialog({
               />
             </div>
           </div>
+          <ContactLinksFields
+            idPrefix="edit"
+            value={links}
+            onChange={(patch) => setLinks((prev) => ({ ...prev, ...patch }))}
+          />
           <div className="space-y-2">
             <Label>Segmento</Label>
             <Combobox

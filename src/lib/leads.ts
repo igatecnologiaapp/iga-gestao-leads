@@ -142,3 +142,58 @@ export function formatDateTime(value: string | null | undefined): string {
     minute: "2-digit",
   });
 }
+
+/* ---------------------------------------------------------------------------
+ * Presença digital do lead (Site, Instagram, Facebook)
+ * ------------------------------------------------------------------------- */
+
+/** Remove espaços e devolve null quando vazio. */
+export function cleanSocial(value: string | null | undefined): string | null {
+  const v = (value ?? "").trim();
+  return v ? v : null;
+}
+
+/** Valida formato básico de endereço web (aceita com ou sem protocolo). */
+export function isValidWebsite(value: string): boolean {
+  const v = value.trim();
+  if (!v) return true;
+  return /^(https?:\/\/)?([\w-]+\.)+[a-z]{2,}(\/\S*)?$/i.test(v);
+}
+
+/** Aceita URL completa, URL simplificada ou @usuario. */
+export function isValidHandle(value: string): boolean {
+  const v = value.trim();
+  if (!v) return true;
+  if (/^@?[\w.\-]{1,60}$/.test(v)) return true;
+  return isValidWebsite(v);
+}
+
+/** Extrai o usuário de uma URL de rede social ou de um @usuario. */
+function handleOf(value: string, domain: string): string | null {
+  const v = value.trim().replace(/^@/, "");
+  const match = v.match(new RegExp(`${domain}\\.com(?:\\.br)?\\/([\\w.\\-]+)`, "i"));
+  if (match) return match[1]!;
+  if (/^[\w.\-]+$/.test(v)) return v;
+  return null;
+}
+
+/** Link navegável para o site informado. */
+export function websiteUrl(value: string | null | undefined): string | null {
+  const v = cleanSocial(value);
+  if (!v) return null;
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
+}
+
+export function instagramUrl(value: string | null | undefined): string | null {
+  const v = cleanSocial(value);
+  if (!v) return null;
+  const handle = handleOf(v, "instagram");
+  return handle ? `https://www.instagram.com/${handle}` : websiteUrl(v);
+}
+
+export function facebookUrl(value: string | null | undefined): string | null {
+  const v = cleanSocial(value);
+  if (!v) return null;
+  const handle = handleOf(v, "facebook");
+  return handle ? `https://www.facebook.com/${handle}` : websiteUrl(v);
+}

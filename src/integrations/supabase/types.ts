@@ -636,7 +636,9 @@ export type Database = {
           created_at: string
           created_by: string
           deleted_at: string | null
+          facebook: string | null
           id: string
+          instagram: string | null
           latitude: number | null
           longitude: number | null
           neighborhood_id: string | null
@@ -652,6 +654,7 @@ export type Database = {
           street_id: string | null
           street_name: string | null
           updated_at: string
+          website: string | null
         }
         Insert: {
           city?: string | null
@@ -660,7 +663,9 @@ export type Database = {
           created_at?: string
           created_by: string
           deleted_at?: string | null
+          facebook?: string | null
           id?: string
+          instagram?: string | null
           latitude?: number | null
           longitude?: number | null
           neighborhood_id?: string | null
@@ -676,6 +681,7 @@ export type Database = {
           street_id?: string | null
           street_name?: string | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
           city?: string | null
@@ -684,7 +690,9 @@ export type Database = {
           created_at?: string
           created_by?: string
           deleted_at?: string | null
+          facebook?: string | null
           id?: string
+          instagram?: string | null
           latitude?: number | null
           longitude?: number | null
           neighborhood_id?: string | null
@@ -700,6 +708,7 @@ export type Database = {
           street_id?: string | null
           street_name?: string | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: [
           {
@@ -856,6 +865,8 @@ export type Database = {
           can_delete_documents: boolean
           can_view_all_leads: boolean
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           email: string | null
           full_name: string
           id: string
@@ -868,6 +879,8 @@ export type Database = {
           can_delete_documents?: boolean
           can_view_all_leads?: boolean
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string | null
           full_name?: string
           id: string
@@ -880,6 +893,8 @@ export type Database = {
           can_delete_documents?: boolean
           can_view_all_leads?: boolean
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           email?: string | null
           full_name?: string
           id?: string
@@ -1038,6 +1053,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_admin_events: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          id: string
+          reason: string | null
+          target_email: string | null
+          target_user_id: string
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          target_email?: string | null
+          target_user_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          target_email?: string | null
+          target_user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

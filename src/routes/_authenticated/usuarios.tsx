@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Mail, Plus, ShieldCheck, UserCog } from "lucide-react";
+import { Loader2, Mail, Plus, ShieldCheck, Trash2, UserCog } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,7 @@ import { useJobRoles } from "@/lib/queries";
 import { maskPhone } from "@/lib/leads";
 import {
   createSystemUser,
+  deleteSystemUser,
   listSystemUsers,
   resendUserInvite,
   updateSystemUser,
@@ -86,11 +87,15 @@ function UsuariosPage() {
   const create = useServerFn(createSystemUser);
   const update = useServerFn(updateSystemUser);
   const resend = useServerFn(resendUserInvite);
+  const removeUser = useServerFn(deleteSystemUser);
   const { data: jobRoles = [] } = useJobRoles();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState<Row | null>(null);
+  const [removing, setRemoving] = useState<Row | null>(null);
+  const [removeReason, setRemoveReason] = useState("");
+  const [removeConfirm, setRemoveConfirm] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("todos");
   const [roleFilter, setRoleFilter] = useState("todos");
@@ -148,6 +153,23 @@ function UsuariosPage() {
     onSuccess: () => {
       toast.success("Usuário atualizado.");
       setEditing(null);
+      void queryClient.invalidateQueries({ queryKey: ["system-users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (row: Row) =>
+      removeUser({ data: { userId: row.id, reason: removeReason.trim() || undefined } }),
+    onSuccess: (res: { mode: "logica" | "definitiva" }) => {
+      toast.success(
+        res.mode === "definitiva"
+          ? "Usuário excluído definitivamente."
+          : "Acesso revogado. Os registros históricos do usuário foram preservados.",
+      );
+      setRemoving(null);
+      setRemoveReason("");
+      setRemoveConfirm("");
       void queryClient.invalidateQueries({ queryKey: ["system-users"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -298,11 +320,80 @@ function UsuariosPage() {
                 <Button variant="outline" className="h-10" onClick={() => setEditing({ ...u })}>
                   <UserCog className="mr-2 h-4 w-4" /> Editar
                 </Button>
+                <Button
+                  variant="outline"
+                  className="h-10 text-destructive hover:text-destructive"
+                  onClick={() => {
+                    setRemoving({ ...u });
+                    setRemoveReason("");
+                    setRemoveConfirm("");
+                  }}
+                  aria-label={`Excluir usuário ${u.full_name}`}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                </Button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Excluir usuário */}
+      <Dialog
+        open={!!removing}
+        onOpenChange={(v) => {
+          if (!v) setRemoving(null);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Excluir usuário?</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Esta ação impedirá o acesso de <strong>{removing?.full_name}</strong> ao sistema. Os
+              registros históricos vinculados ao usuário (leads, agendamentos, documentos e
+              históricos) serão preservados conforme as regras de segurança e auditoria.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="del-motivo">Motivo (opcional)</Label>
+              <Input
+                id="del-motivo"
+                className="h-11"
+                value={removeReason}
+                onChange={(e) => setRemoveReason(e.target.value)}
+                placeholder="Ex.: desligamento da equipe"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="del-confirma">
+                Para confirmar, digite <strong>EXCLUIR</strong>
+              </Label>
+              <Input
+                id="del-confirma"
+                className="h-11"
+                value={removeConfirm}
+                onChange={(e) => setRemoveConfirm(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="h-11" onClick={() => setRemoving(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              className="h-11"
+              disabled={removeConfirm.trim().toUpperCase() !== "EXCLUIR" || removeMutation.isPending}
+              onClick={() => removing && removeMutation.mutate(removing)}
+            >
+              {removeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Excluir usuário
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Criar usuário */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>

@@ -39,6 +39,7 @@ export const listSystemUsers = createServerFn({ method: "GET" })
       context.supabase
         .from("profiles")
         .select("id, full_name, email, phone, job_role_id, active, can_view_all_leads, can_delete_documents, created_at")
+        .is("deleted_at", null)
         .order("full_name"),
       context.supabase.from("user_roles").select("user_id, role"),
     ]);
@@ -155,4 +156,93 @@ export const resendUserInvite = createServerFn({ method: "POST" })
     });
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+
+/**
+ * Exclui um usuário do sistema. Apenas administradores.
+ *
+ * Estratégia: preserva a integridade histórica.
+ * - Quando o usuário NÃO possui registros vinculados (leads, agendamentos,
+ *   documentos ou históricos), a exclusão é definitiva.
+ * - Quando existem registros vinculados, aplica exclusão lógica: o perfil é
+ *   marcado como excluído, inativado e o acesso é revogado no provedor de
+ *   autenticação, mantendo intactos todos os históricos e a autoria.
+ * Em ambos os casos a operação é registrada em user_admin_events.
+ */
+export const deleteSystemUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({ userId: z.string().uuid(), reason: z.string().trim().max(300).optional() })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Acesso restrito a administradores.");
+    if (data.userId === context.userId)
+      throw new Error("Você não pode excluir o seu próprio usuário.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Protege o último administrador ativo do sistema.
+    const { data: admins } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+    const adminIds = (admins ?? []).map((a) => a.user_id);
+    if (adminIds.includes(data.userId)) {
+      const { data: activeAdmins } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .in("id", adminIds)
+        .eq("active", true)
+        .is("deleted_at", null);
+      if ((activeAdmins ?? []).length <= 1)
+        throw new Error("É necessário manter ao menos um administrador ativo no sistema.");
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, email, deleted_at")
+      .eq("id", data.userId)
+      .maybeSingle();
+    if (!profile) throw new Error("Usuário não encontrado.");
+
+    // Verifica vínculos históricos.
+    const counts = await Promise.all([
+      supabaseAdmin.from("leads").select("id", { count: "exact", head: true }).eq("created_by", data.userId),
+      supabaseAdmin.from("lead_appointments").select("id", { count: "exact", head: true }).eq("created_by", data.userId),
+      supabaseAdmin.from("lead_history").select("id", { count: "exact", head: true }).eq("user_id", data.userId),
+      supabaseAdmin.from("lead_status_history").select("id", { count: "exact", head: true }).eq("user_id", data.userId),
+      supabaseAdmin.from("commercial_documents").select("id", { count: "exact", head: true }).eq("created_by", data.userId),
+      supabaseAdmin.from("commercial_documents").select("id", { count: "exact", head: true }).eq("owner_id", data.userId),
+      supabaseAdmin.from("commercial_document_history").select("id", { count: "exact", head: true }).eq("created_by", data.userId),
+    ]);
+    const hasHistory = counts.some((c) => (c.count ?? 0) > 0);
+
+    if (hasHistory) {
+      const { error } = await supabaseAdmin
+        .from("profiles")
+        .update({ active: false, deleted_at: new Date().toISOString(), deleted_by: context.userId })
+        .eq("id", data.userId);
+      if (error) throw new Error(error.message);
+      await supabaseAdmin.auth.admin.updateUserById(data.userId, { ban_duration: "876000h" });
+    } else {
+      const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+      if (error) throw new Error(error.message);
+    }
+
+    await supabaseAdmin.from("user_admin_events").insert({
+      target_user_id: data.userId,
+      target_email: profile.email,
+      actor_id: context.userId,
+      action: hasHistory ? "exclusao_logica" : "exclusao_definitiva",
+      reason: data.reason ?? null,
+    });
+
+    return { mode: hasHistory ? ("logica" as const) : ("definitiva" as const) };
   });
