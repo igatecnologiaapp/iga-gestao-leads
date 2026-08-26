@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   PlusCircle,
   Users2,
+  CalendarDays,
   Tags,
   Signpost,
   Building2,
@@ -49,6 +50,7 @@ const groups = [
     items: [
       { title: "Captar Lead", url: "/captar", icon: PlusCircle },
       { title: "Leads", url: "/leads", icon: Users2 },
+      { title: "Agenda", url: "/agenda", icon: CalendarDays },
     ],
   },
   {

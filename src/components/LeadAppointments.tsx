@@ -26,22 +26,13 @@ import {
 } from "@/lib/appointments";
 import { useContactTypes, useLeadAppointments, type Appointment } from "@/lib/queries";
 import { cn } from "@/lib/utils";
+import {
+  createAppointment,
+  logAppointmentHistory,
+  setAppointmentStatus,
+  syncNextContactDate,
+} from "@/lib/appointmentActions";
 
-/** Mantém leads.next_contact_date alinhado ao próximo agendamento ativo. */
-async function syncNextContactDate(leadId: string) {
-  const { data } = await supabase
-    .from("lead_appointments")
-    .select("scheduled_at")
-    .eq("lead_id", leadId)
-    .eq("status", "agendado")
-    .order("scheduled_at")
-    .limit(1);
-  const next = data?.[0]?.scheduled_at ?? null;
-  await supabase
-    .from("leads")
-    .update({ next_contact_date: next ? toLocalParts(next).date : null })
-    .eq("id", leadId);
-}
 
 export function LeadAppointments({
   leadId,
@@ -83,14 +74,9 @@ export function LeadAppointments({
   }
 
   async function logHistory(description: string) {
-    const { data: userData } = await supabase.auth.getUser();
-    await supabase.from("lead_history").insert({
-      lead_id: leadId,
-      user_id: userData.user?.id ?? null,
-      event_type: "agendamento",
-      description,
-    });
+    await logAppointmentHistory(leadId, description);
   }
+
 
   function startCreate() {
     setEditing(null);
@@ -117,7 +103,6 @@ export function LeadAppointments({
       return;
     }
     setSaving(true);
-    const { data: userData } = await supabase.auth.getUser();
     if (editing) {
       const { error } = await supabase
         .from("lead_appointments")
@@ -142,24 +127,21 @@ export function LeadAppointments({
           `Agendamento de ${formatAppointment(scheduledAt)} marcado como ${appointmentStatusLabel(draft.status).toLowerCase()}.`,
         );
       }
+      await syncNextContactDate(leadId);
     } else {
-      const { error } = await supabase.from("lead_appointments").insert({
-        lead_id: leadId,
-        scheduled_at: scheduledAt,
-        contact_type_id: draft.contactTypeId,
-        status: "agendado",
-        // Autoria preenchida pelo banco (auth.uid()) — impede atribuição a outro usuário.
+      // Autoria preenchida pelo banco (auth.uid()) — impede atribuição a outro usuário.
+      const { ok } = await createAppointment({
+        leadId,
+        scheduledAt,
+        contactTypeId: draft.contactTypeId,
+        typeLabel: typeName(draft.contactTypeId),
       });
-      if (error) {
+      if (!ok) {
         setSaving(false);
         toast.error("Não foi possível criar o agendamento.");
         return;
       }
-      await logHistory(
-        `Agendamento criado para ${formatAppointment(scheduledAt)} — ${typeName(draft.contactTypeId)}.`,
-      );
     }
-    await syncNextContactDate(leadId);
     setSaving(false);
     setOpen(false);
     refresh();
@@ -167,21 +149,15 @@ export function LeadAppointments({
   }
 
   async function changeStatus(a: Appointment, status: string) {
-    const { error } = await supabase
-      .from("lead_appointments")
-      .update({ status: status as never })
-      .eq("id", a.id);
-    if (error) {
+    const { ok } = await setAppointmentStatus(a, status);
+    if (!ok) {
       toast.error("Não foi possível atualizar o agendamento.");
       return;
     }
-    await logHistory(
-      `Agendamento de ${formatAppointment(a.scheduled_at)} marcado como ${appointmentStatusLabel(status).toLowerCase()}.`,
-    );
-    await syncNextContactDate(leadId);
     refresh();
     toast.success("Agendamento atualizado.");
   }
+
 
   return (
     <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)]">
