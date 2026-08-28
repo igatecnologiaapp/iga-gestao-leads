@@ -1,9 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import {
-  appointmentStatusLabel,
-  formatAppointment,
-  toLocalParts,
-} from "@/lib/appointments";
+import { appointmentStatusLabel, formatAppointment, toLocalParts } from "@/lib/appointments";
 
 /**
  * Regras compartilhadas de agendamento (Central do Lead e Agenda Operacional).

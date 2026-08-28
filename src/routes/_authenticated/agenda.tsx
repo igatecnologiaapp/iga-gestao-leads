@@ -84,7 +84,6 @@ type LeadLite = {
   created_by: string | null;
 };
 
-
 type ViewMode = "dia" | "semana" | "mes";
 
 const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -229,7 +228,6 @@ function AgendaPage() {
   const upcoming = visible.filter(
     (a) => toLocalParts(a.scheduled_at).date > today && a.status === "agendado",
   ).length;
-
 
   const weekStart = startOfWeek(cursor);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -421,7 +419,6 @@ function AgendaPage() {
           <p className="text-xs font-semibold text-muted-foreground">⏰ Próximos</p>
           <p className="text-lg font-extrabold">{upcoming} agendado(s)</p>
         </button>
-
       </div>
 
       {/* Navegação e visualização */}
@@ -476,7 +473,6 @@ function AgendaPage() {
             Voltar para a visão {view}
           </Button>
         )}
-
       </div>
 
       {/* Filtros */}
@@ -559,7 +555,6 @@ function AgendaPage() {
           )}
         </section>
       ) : view === "dia" ? (
-
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
           <h2 className="mb-3 text-sm font-bold">Compromissos do dia</h2>
           <DayList dayKey={cursor} />
@@ -611,9 +606,7 @@ function AgendaPage() {
             <div className="mt-1 grid grid-cols-7 gap-1">
               {monthDays.map((k) => {
                 const count = (byDay.get(k) ?? []).length;
-                const late = (byDay.get(k) ?? []).some((a) =>
-                  isOverdue(a.scheduled_at, a.status),
-                );
+                const late = (byDay.get(k) ?? []).some((a) => isOverdue(a.scheduled_at, a.status));
                 const otherMonth = fromKey(k).getMonth() !== fromKey(cursor).getMonth();
                 return (
                   <button
@@ -715,11 +708,7 @@ function AgendaPage() {
                 )}
                 {digits.length >= 10 && (
                   <Button asChild variant="outline" className="h-11 justify-start">
-                    <a
-                      href={`https://wa.me/55${digits}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <a href={`https://wa.me/55${digits}`} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="h-4 w-4" /> WhatsApp
                     </a>
                   </Button>
@@ -764,7 +753,6 @@ function AgendaPage() {
                   </p>
                 )}
               </div>
-
             </div>
           )}
         </DialogContent>

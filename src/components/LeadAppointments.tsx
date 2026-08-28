@@ -34,7 +34,6 @@ import {
   updateAppointment,
 } from "@/lib/appointmentActions";
 
-
 export function LeadAppointments({
   leadId,
   canEdit,
@@ -77,7 +76,6 @@ export function LeadAppointments({
   async function logHistory(description: string) {
     await logAppointmentHistory(leadId, description);
   }
-
 
   function startCreate() {
     setEditing(null);
@@ -147,7 +145,6 @@ export function LeadAppointments({
     toast.success("Agendamento atualizado.");
   }
 
-
   return (
     <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -165,7 +162,9 @@ export function LeadAppointments({
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <CalendarClock className="h-4 w-4 text-primary" />
             <span className="text-sm font-bold">{formatAppointment(next.scheduled_at)}</span>
-            <span className="text-sm text-muted-foreground">· {typeName(next.contact_type_id)}</span>
+            <span className="text-sm text-muted-foreground">
+              · {typeName(next.contact_type_id)}
+            </span>
             <span
               className={cn(
                 "rounded-full border px-2 py-0.5 text-[11px] font-semibold",
@@ -202,7 +201,11 @@ export function LeadAppointments({
                     <Button size="sm" variant="ghost" onClick={() => changeStatus(a, "realizado")}>
                       <Check className="h-4 w-4" /> Realizado
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => changeStatus(a, "nao_realizado")}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => changeStatus(a, "nao_realizado")}
+                    >
                       <X className="h-4 w-4" /> Não realizado
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => changeStatus(a, "cancelado")}>
