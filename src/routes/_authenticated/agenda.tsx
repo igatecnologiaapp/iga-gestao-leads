@@ -421,13 +421,20 @@ function AgendaPage() {
 
       {/* Navegação e visualização */}
       <div className="flex flex-wrap items-center gap-2">
-        <Tabs value={view} onValueChange={(v) => setView(v as ViewMode)}>
+        <Tabs
+          value={view}
+          onValueChange={(v) => {
+            setShowUpcoming(false);
+            setView(v as ViewMode);
+          }}
+        >
           <TabsList>
             <TabsTrigger value="dia">Dia</TabsTrigger>
             <TabsTrigger value="semana">Semana</TabsTrigger>
             <TabsTrigger value="mes">Mês</TabsTrigger>
           </TabsList>
         </Tabs>
+
         <div className="flex items-center gap-1">
           <Button
             variant="outline"
