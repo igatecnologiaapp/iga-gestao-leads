@@ -104,30 +104,17 @@ export function LeadAppointments({
     }
     setSaving(true);
     if (editing) {
-      const { error } = await supabase
-        .from("lead_appointments")
-        .update({
-          scheduled_at: scheduledAt,
-          contact_type_id: draft.contactTypeId,
-          status: draft.status as never,
-        })
-        .eq("id", editing.id);
-      if (error) {
+      const { ok } = await updateAppointment({
+        appointment: editing,
+        scheduledAt,
+        contactTypeId: draft.contactTypeId,
+        status: draft.status,
+      });
+      if (!ok) {
         setSaving(false);
         toast.error("Não foi possível salvar o agendamento.");
         return;
       }
-      if (new Date(editing.scheduled_at).getTime() !== new Date(scheduledAt).getTime()) {
-        await logHistory(
-          `Agendamento alterado de ${formatAppointment(editing.scheduled_at)} para ${formatAppointment(scheduledAt)}.`,
-        );
-      }
-      if (editing.status !== draft.status) {
-        await logHistory(
-          `Agendamento de ${formatAppointment(scheduledAt)} marcado como ${appointmentStatusLabel(draft.status).toLowerCase()}.`,
-        );
-      }
-      await syncNextContactDate(leadId);
     } else {
       // Autoria preenchida pelo banco (auth.uid()) — impede atribuição a outro usuário.
       const { ok } = await createAppointment({
@@ -142,6 +129,7 @@ export function LeadAppointments({
         return;
       }
     }
+
     setSaving(false);
     setOpen(false);
     refresh();
