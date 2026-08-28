@@ -719,36 +719,47 @@ function AgendaPage() {
                     </a>
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  className="h-11 justify-start"
-                  onClick={() => {
-                    setDraft(emptyAppointment);
-                    setScheduleFor(selectedLead ?? null);
-                    setSelected(null);
-                  }}
-                >
-                  <Plus className="h-4 w-4" /> Agendar
-                </Button>
-                {selected.status === "agendado" && (
+                {/* Ações de escrita apenas para quem pode editar o lead (mesma regra do RLS). */}
+                {canEditLead(selected.lead_id) ? (
                   <>
                     <Button
                       variant="outline"
                       className="h-11 justify-start"
-                      onClick={() => changeStatus(selected, "realizado")}
+                      onClick={() => {
+                        setDraft(emptyAppointment);
+                        setScheduleFor(selectedLead ?? null);
+                        setSelected(null);
+                      }}
                     >
-                      <Check className="h-4 w-4" /> Realizado
+                      <Plus className="h-4 w-4" /> Agendar
                     </Button>
-                    <Button
-                      variant="outline"
-                      className="h-11 justify-start"
-                      onClick={() => changeStatus(selected, "nao_realizado")}
-                    >
-                      <X className="h-4 w-4" /> Não realizado
-                    </Button>
+                    {selected.status === "agendado" && (
+                      <>
+                        <Button
+                          variant="outline"
+                          className="h-11 justify-start"
+                          onClick={() => changeStatus(selected, "realizado")}
+                        >
+                          <Check className="h-4 w-4" /> Realizado
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-11 justify-start"
+                          onClick={() => changeStatus(selected, "nao_realizado")}
+                        >
+                          <X className="h-4 w-4" /> Não realizado
+                        </Button>
+                      </>
+                    )}
                   </>
+                ) : (
+                  <p className="text-xs text-muted-foreground sm:col-span-2">
+                    Somente o responsável pelo lead ou um administrador pode alterar este
+                    agendamento.
+                  </p>
                 )}
               </div>
+
             </div>
           )}
         </DialogContent>
