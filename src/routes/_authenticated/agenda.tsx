@@ -369,7 +369,9 @@ function AgendaPage() {
       <div className="grid gap-2 sm:grid-cols-3">
         <button
           type="button"
+          aria-pressed={onlyOverdue}
           onClick={() => {
+            setShowUpcoming(false);
             setOnlyOverdue(true);
             setStatusFilter("agendado");
             setView("mes");
@@ -377,6 +379,7 @@ function AgendaPage() {
           className={cn(
             "rounded-xl border p-3 text-left",
             overdue.length ? "border-destructive/40 bg-destructive/10" : "bg-card",
+            onlyOverdue && "ring-2 ring-destructive/40",
           )}
         >
           <p className="text-xs font-semibold text-muted-foreground">🔴 Atrasados</p>
@@ -387,6 +390,7 @@ function AgendaPage() {
         <button
           type="button"
           onClick={() => {
+            setShowUpcoming(false);
             setOnlyOverdue(false);
             setCursor(today);
             setView("dia");
@@ -396,10 +400,23 @@ function AgendaPage() {
           <p className="text-xs font-semibold text-muted-foreground">📅 Hoje</p>
           <p className="text-lg font-extrabold">{todayCount} agendado(s)</p>
         </button>
-        <div className="rounded-xl border bg-card p-3">
+        <button
+          type="button"
+          aria-pressed={showUpcoming}
+          onClick={() => {
+            setOnlyOverdue(false);
+            setStatusFilter("agendado");
+            setShowUpcoming(true);
+          }}
+          className={cn(
+            "rounded-xl border bg-card p-3 text-left",
+            showUpcoming && "ring-2 ring-primary/40",
+          )}
+        >
           <p className="text-xs font-semibold text-muted-foreground">⏰ Próximos</p>
           <p className="text-lg font-extrabold">{upcoming} agendado(s)</p>
-        </div>
+        </button>
+
       </div>
 
       {/* Navegação e visualização */}
