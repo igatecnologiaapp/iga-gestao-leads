@@ -533,7 +533,28 @@ function AgendaPage() {
       {/* Conteúdo */}
       {isLoading ? (
         <LoadingState label="Carregando agenda..." />
+      ) : showUpcoming ? (
+        <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
+          <h2 className="mb-3 text-sm font-bold">Próximos compromissos agendados</h2>
+          {upcomingList.length ? (
+            <div className="grid gap-2">
+              {upcomingList.map((a) => (
+                <div key={a.id} className="grid gap-1">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {br(toLocalParts(a.scheduled_at).date)}
+                  </p>
+                  <AppointmentRow a={a} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="px-1 py-3 text-sm text-muted-foreground">
+              Nenhum compromisso futuro agendado.
+            </p>
+          )}
+        </section>
       ) : view === "dia" ? (
+
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
           <h2 className="mb-3 text-sm font-bold">Compromissos do dia</h2>
           <DayList dayKey={cursor} />
