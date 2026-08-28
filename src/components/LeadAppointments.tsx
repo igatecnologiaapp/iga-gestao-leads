@@ -31,8 +31,8 @@ import {
   logAppointmentHistory,
   setAppointmentStatus,
   syncNextContactDate,
+  updateAppointment,
 } from "@/lib/appointmentActions";
-
 
 export function LeadAppointments({
   leadId,
@@ -77,7 +77,6 @@ export function LeadAppointments({
     await logAppointmentHistory(leadId, description);
   }
 
-
   function startCreate() {
     setEditing(null);
     setDraft(emptyAppointment);
@@ -104,30 +103,17 @@ export function LeadAppointments({
     }
     setSaving(true);
     if (editing) {
-      const { error } = await supabase
-        .from("lead_appointments")
-        .update({
-          scheduled_at: scheduledAt,
-          contact_type_id: draft.contactTypeId,
-          status: draft.status as never,
-        })
-        .eq("id", editing.id);
-      if (error) {
+      const { ok } = await updateAppointment({
+        appointment: editing,
+        scheduledAt,
+        contactTypeId: draft.contactTypeId,
+        status: draft.status,
+      });
+      if (!ok) {
         setSaving(false);
         toast.error("Não foi possível salvar o agendamento.");
         return;
       }
-      if (new Date(editing.scheduled_at).getTime() !== new Date(scheduledAt).getTime()) {
-        await logHistory(
-          `Agendamento alterado de ${formatAppointment(editing.scheduled_at)} para ${formatAppointment(scheduledAt)}.`,
-        );
-      }
-      if (editing.status !== draft.status) {
-        await logHistory(
-          `Agendamento de ${formatAppointment(scheduledAt)} marcado como ${appointmentStatusLabel(draft.status).toLowerCase()}.`,
-        );
-      }
-      await syncNextContactDate(leadId);
     } else {
       // Autoria preenchida pelo banco (auth.uid()) — impede atribuição a outro usuário.
       const { ok } = await createAppointment({
@@ -142,6 +128,7 @@ export function LeadAppointments({
         return;
       }
     }
+
     setSaving(false);
     setOpen(false);
     refresh();
@@ -157,7 +144,6 @@ export function LeadAppointments({
     refresh();
     toast.success("Agendamento atualizado.");
   }
-
 
   return (
     <div className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)]">
@@ -176,7 +162,9 @@ export function LeadAppointments({
           <div className="mt-1 flex flex-wrap items-center gap-2">
             <CalendarClock className="h-4 w-4 text-primary" />
             <span className="text-sm font-bold">{formatAppointment(next.scheduled_at)}</span>
-            <span className="text-sm text-muted-foreground">· {typeName(next.contact_type_id)}</span>
+            <span className="text-sm text-muted-foreground">
+              · {typeName(next.contact_type_id)}
+            </span>
             <span
               className={cn(
                 "rounded-full border px-2 py-0.5 text-[11px] font-semibold",
@@ -213,7 +201,11 @@ export function LeadAppointments({
                     <Button size="sm" variant="ghost" onClick={() => changeStatus(a, "realizado")}>
                       <Check className="h-4 w-4" /> Realizado
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => changeStatus(a, "nao_realizado")}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => changeStatus(a, "nao_realizado")}
+                    >
                       <X className="h-4 w-4" /> Não realizado
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => changeStatus(a, "cancelado")}>

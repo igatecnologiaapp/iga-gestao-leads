@@ -1,9 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import {
-  appointmentStatusLabel,
-  formatAppointment,
-  toLocalParts,
-} from "@/lib/appointments";
+import { appointmentStatusLabel, formatAppointment, toLocalParts } from "@/lib/appointments";
 
 /**
  * Regras compartilhadas de agendamento (Central do Lead e Agenda Operacional).
@@ -74,5 +70,38 @@ export async function createAppointment(input: {
     `Agendamento criado para ${formatAppointment(input.scheduledAt)} — ${input.typeLabel}.`,
   );
   await syncNextContactDate(input.leadId);
+  return { ok: true };
+}
+
+/** Atualiza data/hora, tipo e situação de um agendamento (fonte única de regra). */
+export async function updateAppointment(input: {
+  appointment: { id: string; lead_id: string; scheduled_at: string; status: string };
+  scheduledAt: string;
+  contactTypeId: string | null;
+  status: string;
+}): Promise<{ ok: boolean }> {
+  const { appointment, scheduledAt, contactTypeId, status } = input;
+  const { error } = await supabase
+    .from("lead_appointments")
+    .update({
+      scheduled_at: scheduledAt,
+      contact_type_id: contactTypeId,
+      status: status as never,
+    })
+    .eq("id", appointment.id);
+  if (error) return { ok: false };
+  if (new Date(appointment.scheduled_at).getTime() !== new Date(scheduledAt).getTime()) {
+    await logAppointmentHistory(
+      appointment.lead_id,
+      `Agendamento alterado de ${formatAppointment(appointment.scheduled_at)} para ${formatAppointment(scheduledAt)}.`,
+    );
+  }
+  if (appointment.status !== status) {
+    await logAppointmentHistory(
+      appointment.lead_id,
+      `Agendamento de ${formatAppointment(scheduledAt)} marcado como ${appointmentStatusLabel(status).toLowerCase()}.`,
+    );
+  }
+  await syncNextContactDate(appointment.lead_id);
   return { ok: true };
 }

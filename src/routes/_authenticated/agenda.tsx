@@ -81,6 +81,7 @@ type LeadLite = {
   company_name: string;
   contact_name: string | null;
   phone: string | null;
+  created_by: string | null;
 };
 
 type ViewMode = "dia" | "semana" | "mes";
@@ -134,7 +135,7 @@ function AgendaPage() {
   const today = key(new Date());
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAdmin, profile } = useAuth();
+  const { isAdmin, profile, user } = useAuth();
   const canSeeOthers = isAdmin || profile?.can_view_all_leads === true;
 
   const { data: appointments = [], isLoading } = useAppointments();
@@ -146,8 +147,9 @@ function AgendaPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("leads")
-        .select("id, company_name, contact_name, phone")
+        .select("id, company_name, contact_name, phone, created_by")
         .is("deleted_at", null);
+
       if (error) throw error;
       return data as LeadLite[];
     },
@@ -159,6 +161,7 @@ function AgendaPage() {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [ownerFilter, setOwnerFilter] = useState("todos");
   const [onlyOverdue, setOnlyOverdue] = useState(false);
+  const [showUpcoming, setShowUpcoming] = useState(false);
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [scheduleFor, setScheduleFor] = useState<LeadLite | null>(null);
   const [draft, setDraft] = useState<AppointmentDraft>(emptyAppointment);
@@ -169,6 +172,15 @@ function AgendaPage() {
     contactTypes.find((c) => c.id === id)?.name ?? "Não informado";
   const ownerName = (id: string | null) =>
     profiles.find((p) => p.id === id)?.full_name?.trim() || "Não informado";
+
+  /**
+   * Mesma regra da Central do Lead e das políticas RLS (can_edit_lead):
+   * administrador ou autor do lead pode alterar/criar agendamentos.
+   */
+  const canEditLead = (leadId: string) => {
+    const lead = leadById.get(leadId);
+    return isAdmin || (!!lead && !!user && lead.created_by === user.id);
+  };
 
   // Somente agendamentos de leads ativos e visíveis (RLS já filtra no banco).
   const visible = useMemo(
@@ -205,6 +217,14 @@ function AgendaPage() {
   const todayCount = visible.filter(
     (a) => toLocalParts(a.scheduled_at).date === today && a.status === "agendado",
   ).length;
+  /** Próximos: agendamentos ativos posteriores a hoje, em ordem cronológica. */
+  const upcomingList = useMemo(
+    () =>
+      filtered
+        .filter((a) => toLocalParts(a.scheduled_at).date > today && a.status === "agendado")
+        .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at)),
+    [filtered, today],
+  );
   const upcoming = visible.filter(
     (a) => toLocalParts(a.scheduled_at).date > today && a.status === "agendado",
   ).length;
@@ -255,6 +275,11 @@ function AgendaPage() {
 
   async function saveNew() {
     if (!scheduleFor) return;
+    if (!canEditLead(scheduleFor.id)) {
+      toast.error("Você não tem permissão para agendar neste lead.");
+      return;
+    }
+
     const scheduledAt = fromLocalParts(draft.date, draft.time);
     if (!scheduledAt) {
       toast.error("Informe data e hora do agendamento.");
@@ -347,7 +372,9 @@ function AgendaPage() {
       <div className="grid gap-2 sm:grid-cols-3">
         <button
           type="button"
+          aria-pressed={onlyOverdue}
           onClick={() => {
+            setShowUpcoming(false);
             setOnlyOverdue(true);
             setStatusFilter("agendado");
             setView("mes");
@@ -355,6 +382,7 @@ function AgendaPage() {
           className={cn(
             "rounded-xl border p-3 text-left",
             overdue.length ? "border-destructive/40 bg-destructive/10" : "bg-card",
+            onlyOverdue && "ring-2 ring-destructive/40",
           )}
         >
           <p className="text-xs font-semibold text-muted-foreground">🔴 Atrasados</p>
@@ -365,6 +393,7 @@ function AgendaPage() {
         <button
           type="button"
           onClick={() => {
+            setShowUpcoming(false);
             setOnlyOverdue(false);
             setCursor(today);
             setView("dia");
@@ -374,21 +403,40 @@ function AgendaPage() {
           <p className="text-xs font-semibold text-muted-foreground">📅 Hoje</p>
           <p className="text-lg font-extrabold">{todayCount} agendado(s)</p>
         </button>
-        <div className="rounded-xl border bg-card p-3">
+        <button
+          type="button"
+          aria-pressed={showUpcoming}
+          onClick={() => {
+            setOnlyOverdue(false);
+            setStatusFilter("agendado");
+            setShowUpcoming(true);
+          }}
+          className={cn(
+            "rounded-xl border bg-card p-3 text-left",
+            showUpcoming && "ring-2 ring-primary/40",
+          )}
+        >
           <p className="text-xs font-semibold text-muted-foreground">⏰ Próximos</p>
           <p className="text-lg font-extrabold">{upcoming} agendado(s)</p>
-        </div>
+        </button>
       </div>
 
       {/* Navegação e visualização */}
       <div className="flex flex-wrap items-center gap-2">
-        <Tabs value={view} onValueChange={(v) => setView(v as ViewMode)}>
+        <Tabs
+          value={view}
+          onValueChange={(v) => {
+            setShowUpcoming(false);
+            setView(v as ViewMode);
+          }}
+        >
           <TabsList>
             <TabsTrigger value="dia">Dia</TabsTrigger>
             <TabsTrigger value="semana">Semana</TabsTrigger>
             <TabsTrigger value="mes">Mês</TabsTrigger>
           </TabsList>
         </Tabs>
+
         <div className="flex items-center gap-1">
           <Button
             variant="outline"
@@ -413,11 +461,16 @@ function AgendaPage() {
           </Button>
         </div>
         <p className="text-sm font-semibold" aria-live="polite">
-          {periodLabel}
+          {showUpcoming ? "Próximos compromissos" : periodLabel}
         </p>
         {onlyOverdue && (
           <Button variant="ghost" className="h-10" onClick={() => setOnlyOverdue(false)}>
             Limpar filtro de atrasados
+          </Button>
+        )}
+        {showUpcoming && (
+          <Button variant="ghost" className="h-10" onClick={() => setShowUpcoming(false)}>
+            Voltar para a visão {view}
           </Button>
         )}
       </div>
@@ -481,6 +534,26 @@ function AgendaPage() {
       {/* Conteúdo */}
       {isLoading ? (
         <LoadingState label="Carregando agenda..." />
+      ) : showUpcoming ? (
+        <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
+          <h2 className="mb-3 text-sm font-bold">Próximos compromissos agendados</h2>
+          {upcomingList.length ? (
+            <div className="grid gap-2">
+              {upcomingList.map((a) => (
+                <div key={a.id} className="grid gap-1">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {br(toLocalParts(a.scheduled_at).date)}
+                  </p>
+                  <AppointmentRow a={a} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="px-1 py-3 text-sm text-muted-foreground">
+              Nenhum compromisso futuro agendado.
+            </p>
+          )}
+        </section>
       ) : view === "dia" ? (
         <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
           <h2 className="mb-3 text-sm font-bold">Compromissos do dia</h2>
@@ -533,9 +606,7 @@ function AgendaPage() {
             <div className="mt-1 grid grid-cols-7 gap-1">
               {monthDays.map((k) => {
                 const count = (byDay.get(k) ?? []).length;
-                const late = (byDay.get(k) ?? []).some((a) =>
-                  isOverdue(a.scheduled_at, a.status),
-                );
+                const late = (byDay.get(k) ?? []).some((a) => isOverdue(a.scheduled_at, a.status));
                 const otherMonth = fromKey(k).getMonth() !== fromKey(cursor).getMonth();
                 return (
                   <button
@@ -637,43 +708,49 @@ function AgendaPage() {
                 )}
                 {digits.length >= 10 && (
                   <Button asChild variant="outline" className="h-11 justify-start">
-                    <a
-                      href={`https://wa.me/55${digits}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <a href={`https://wa.me/55${digits}`} target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="h-4 w-4" /> WhatsApp
                     </a>
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  className="h-11 justify-start"
-                  onClick={() => {
-                    setDraft(emptyAppointment);
-                    setScheduleFor(selectedLead ?? null);
-                    setSelected(null);
-                  }}
-                >
-                  <Plus className="h-4 w-4" /> Agendar
-                </Button>
-                {selected.status === "agendado" && (
+                {/* Ações de escrita apenas para quem pode editar o lead (mesma regra do RLS). */}
+                {canEditLead(selected.lead_id) ? (
                   <>
                     <Button
                       variant="outline"
                       className="h-11 justify-start"
-                      onClick={() => changeStatus(selected, "realizado")}
+                      onClick={() => {
+                        setDraft(emptyAppointment);
+                        setScheduleFor(selectedLead ?? null);
+                        setSelected(null);
+                      }}
                     >
-                      <Check className="h-4 w-4" /> Realizado
+                      <Plus className="h-4 w-4" /> Agendar
                     </Button>
-                    <Button
-                      variant="outline"
-                      className="h-11 justify-start"
-                      onClick={() => changeStatus(selected, "nao_realizado")}
-                    >
-                      <X className="h-4 w-4" /> Não realizado
-                    </Button>
+                    {selected.status === "agendado" && (
+                      <>
+                        <Button
+                          variant="outline"
+                          className="h-11 justify-start"
+                          onClick={() => changeStatus(selected, "realizado")}
+                        >
+                          <Check className="h-4 w-4" /> Realizado
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="h-11 justify-start"
+                          onClick={() => changeStatus(selected, "nao_realizado")}
+                        >
+                          <X className="h-4 w-4" /> Não realizado
+                        </Button>
+                      </>
+                    )}
                   </>
+                ) : (
+                  <p className="text-xs text-muted-foreground sm:col-span-2">
+                    Somente o responsável pelo lead ou um administrador pode alterar este
+                    agendamento.
+                  </p>
                 )}
               </div>
             </div>
