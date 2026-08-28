@@ -277,6 +277,11 @@ function AgendaPage() {
 
   async function saveNew() {
     if (!scheduleFor) return;
+    if (!canEditLead(scheduleFor.id)) {
+      toast.error("Você não tem permissão para agendar neste lead.");
+      return;
+    }
+
     const scheduledAt = fromLocalParts(draft.date, draft.time);
     if (!scheduledAt) {
       toast.error("Informe data e hora do agendamento.");
