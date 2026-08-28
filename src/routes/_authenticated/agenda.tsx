@@ -459,13 +459,19 @@ function AgendaPage() {
           </Button>
         </div>
         <p className="text-sm font-semibold" aria-live="polite">
-          {periodLabel}
+          {showUpcoming ? "Próximos compromissos" : periodLabel}
         </p>
         {onlyOverdue && (
           <Button variant="ghost" className="h-10" onClick={() => setOnlyOverdue(false)}>
             Limpar filtro de atrasados
           </Button>
         )}
+        {showUpcoming && (
+          <Button variant="ghost" className="h-10" onClick={() => setShowUpcoming(false)}>
+            Voltar para a visão {view}
+          </Button>
+        )}
+
       </div>
 
       {/* Filtros */}
