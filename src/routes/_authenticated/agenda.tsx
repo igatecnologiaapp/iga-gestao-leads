@@ -162,6 +162,7 @@ function AgendaPage() {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [ownerFilter, setOwnerFilter] = useState("todos");
   const [onlyOverdue, setOnlyOverdue] = useState(false);
+  const [showUpcoming, setShowUpcoming] = useState(false);
   const [selected, setSelected] = useState<Appointment | null>(null);
   const [scheduleFor, setScheduleFor] = useState<LeadLite | null>(null);
   const [draft, setDraft] = useState<AppointmentDraft>(emptyAppointment);
@@ -172,6 +173,15 @@ function AgendaPage() {
     contactTypes.find((c) => c.id === id)?.name ?? "Não informado";
   const ownerName = (id: string | null) =>
     profiles.find((p) => p.id === id)?.full_name?.trim() || "Não informado";
+
+  /**
+   * Mesma regra da Central do Lead e das políticas RLS (can_edit_lead):
+   * administrador ou autor do lead pode alterar/criar agendamentos.
+   */
+  const canEditLead = (leadId: string) => {
+    const lead = leadById.get(leadId);
+    return isAdmin || (!!lead && !!user && lead.created_by === user.id);
+  };
 
   // Somente agendamentos de leads ativos e visíveis (RLS já filtra no banco).
   const visible = useMemo(
@@ -208,9 +218,18 @@ function AgendaPage() {
   const todayCount = visible.filter(
     (a) => toLocalParts(a.scheduled_at).date === today && a.status === "agendado",
   ).length;
+  /** Próximos: agendamentos ativos posteriores a hoje, em ordem cronológica. */
+  const upcomingList = useMemo(
+    () =>
+      filtered
+        .filter((a) => toLocalParts(a.scheduled_at).date > today && a.status === "agendado")
+        .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at)),
+    [filtered, today],
+  );
   const upcoming = visible.filter(
     (a) => toLocalParts(a.scheduled_at).date > today && a.status === "agendado",
   ).length;
+
 
   const weekStart = startOfWeek(cursor);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
