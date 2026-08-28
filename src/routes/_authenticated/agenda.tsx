@@ -81,7 +81,9 @@ type LeadLite = {
   company_name: string;
   contact_name: string | null;
   phone: string | null;
+  created_by: string | null;
 };
+
 
 type ViewMode = "dia" | "semana" | "mes";
 
