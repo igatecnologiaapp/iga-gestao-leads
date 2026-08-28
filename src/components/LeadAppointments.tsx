@@ -31,6 +31,7 @@ import {
   logAppointmentHistory,
   setAppointmentStatus,
   syncNextContactDate,
+  updateAppointment,
 } from "@/lib/appointmentActions";
 
 
