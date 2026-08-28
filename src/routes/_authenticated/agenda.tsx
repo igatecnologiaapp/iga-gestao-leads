@@ -646,7 +646,7 @@ function AgendaPage() {
         </section>
       )}
 
-      {!isLoading && !filtered.length && (
+      {!isLoading && !showUpcoming && !filtered.length && (
         <EmptyState
           title="Nenhum compromisso encontrado"
           description="Ajuste os filtros ou agende um contato a partir da Central do Lead."
