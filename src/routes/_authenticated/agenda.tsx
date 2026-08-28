@@ -134,7 +134,7 @@ function AgendaPage() {
   const today = key(new Date());
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { isAdmin, profile } = useAuth();
+  const { isAdmin, profile, user } = useAuth();
   const canSeeOthers = isAdmin || profile?.can_view_all_leads === true;
 
   const { data: appointments = [], isLoading } = useAppointments();
@@ -146,8 +146,9 @@ function AgendaPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("leads")
-        .select("id, company_name, contact_name, phone")
+        .select("id, company_name, contact_name, phone, created_by")
         .is("deleted_at", null);
+
       if (error) throw error;
       return data as LeadLite[];
     },
