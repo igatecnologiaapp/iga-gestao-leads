@@ -900,17 +900,6 @@ function Dashboard() {
   );
 }
 
-function SectionTitle({ id, text, hint }: { id: string; text: string; hint?: string }) {
-  return (
-    <div className="flex flex-wrap items-baseline justify-between gap-2">
-      <h2 id={id} className="text-sm font-bold tracking-wide uppercase">
-        {text}
-      </h2>
-      {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
-    </div>
-  );
-}
-
 function SubTitle({ text }: { text: string }) {
   return <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">{text}</p>;
 }
