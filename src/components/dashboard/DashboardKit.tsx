@@ -99,8 +99,12 @@ export function DetailPanel({
 }
 
 /** Mensagem padrão de ausência de dados dentro de um detalhamento. */
-export function NoData({ text = "Nenhum registro para este indicador." }: { text?: string }) {
-  return <p className="py-4 text-sm text-muted-foreground">{text}</p>;
+export function NoData({ text }: { text?: string | undefined }) {
+  return (
+    <p className="py-4 text-sm text-muted-foreground">
+      {text ?? "Nenhum registro para este indicador."}
+    </p>
+  );
 }
 
 export type Group = { key: string; name: string; count: number; extra?: string; items: ReactNode };
