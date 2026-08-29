@@ -1,12 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { CalendarClock, ChevronDown, Layers, UserRound, Users2 } from "lucide-react";
+import {
+  AlarmClock,
+  CalendarCheck2,
+  CalendarClock,
+  CalendarDays,
+  CircleAlert,
+  FileText,
+  Layers,
+  Receipt,
+  ScrollText,
+  TrendingUp,
+  UserRound,
+  Users2,
+  Wallet,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { statusLabel } from "@/lib/leads";
-import { StatusBadge } from "@/components/StatusBadge";
-import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,6 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { MetricCard, DetailPanel, GroupList, NoData } from "@/components/dashboard/DashboardKit";
+import {
+  AppointmentList,
+  DocumentList,
+  LeadList,
+  type Naming,
+} from "@/components/dashboard/DashboardLists";
+import { useAuth } from "@/hooks/useAuth";
 import {
   useAppointments,
   useContactTypes,
@@ -23,108 +43,60 @@ import {
   useSegments,
   type Appointment,
 } from "@/lib/queries";
-import {
-  APPOINTMENT_STATUSES,
-  appointmentStatusClass,
-  appointmentStatusLabel,
-  formatAppointment,
-  formatAppointmentTime,
-  isOverdue,
-  isToday,
-  toLocalParts,
-} from "@/lib/appointments";
+import { useCommercialDocuments, type CommercialDocument } from "@/lib/commercialQueries";
+import { isOverdue, isToday, toLocalParts } from "@/lib/appointments";
 import { leadPending, pendingClass, type PendingTone } from "@/lib/pendings";
-import { cn } from "@/lib/utils";
+import { LEAD_STATUSES, statusLabel } from "@/lib/leads";
+import { DOC_TYPES, formatCurrency, docTypeLabel } from "@/lib/commercial";
+import {
+  PERIOD_PRESETS,
+  groupBy,
+  inRangeDate,
+  inRangeIso,
+  periodLabel,
+  presetRange,
+  rate,
+  sum,
+  todayKey,
+  type DashLead,
+  type DateRange,
+} from "@/lib/dashboard";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — IGA TECNOLOGIA" },
+      { title: "Dashboard gerencial — IGA TECNOLOGIA" },
       {
         name: "description",
         content:
-          "Painel operacional: total de leads, agendamentos, segmentos e captação por vendedor.",
+          "Painel de gestão: pendências, evolução dos leads, desempenho comercial e resultados por colaborador e segmento.",
       },
-      { property: "og:title", content: "Dashboard — IGA TECNOLOGIA" },
+      { property: "og:title", content: "Dashboard gerencial — IGA TECNOLOGIA" },
       {
         property: "og:description",
         content:
-          "Painel operacional: total de leads, agendamentos, segmentos e captação por vendedor.",
+          "Painel de gestão: pendências, evolução dos leads, desempenho comercial e resultados por colaborador e segmento.",
       },
     ],
   }),
   component: Dashboard,
 });
 
-type LeadRow = {
-  id: string;
-  company_name: string;
-  contact_name: string | null;
-  phone: string | null;
-  status: string;
-  segment_id: string | null;
-  created_at: string;
-  created_by: string | null;
-  neighborhood_name: string | null;
-  street_name: string | null;
-  city: string | null;
-  next_contact_date: string | null;
-};
-
-/** Atalhos operacionais: abrem a listagem de Leads já filtrada pela situação. */
-const PENDING_SHORTCUTS: { tone: PendingTone; label: string; hint: string }[] = [
-  { tone: "atrasado", label: "Atrasados", hint: "Agendamento ou retorno vencido" },
-  { tone: "hoje", label: "Para hoje", hint: "Contato previsto para hoje" },
-  { tone: "agendado", label: "Próximas ações", hint: "Agendamento futuro" },
-  { tone: "sem_acao", label: "Sem próxima ação", hint: "Nenhum retorno definido" },
-];
-
-const PERIOD_PRESETS = [
-  { value: "hoje", label: "Hoje" },
-  { value: "ontem", label: "Ontem" },
-  { value: "7", label: "Últimos 7 dias" },
-  { value: "30", label: "Últimos 30 dias" },
-  { value: "mes", label: "Este mês" },
-  { value: "mes_anterior", label: "Mês anterior" },
-  { value: "custom", label: "Personalizado" },
-] as const;
-
-function isoDate(d: Date) {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function presetRange(preset: string): { from: string; to: string } {
-  const now = new Date();
-  const today = isoDate(now);
-  if (preset === "hoje") return { from: today, to: today };
-  if (preset === "ontem") {
-    const y = new Date(now.getTime() - 86400000);
-    return { from: isoDate(y), to: isoDate(y) };
-  }
-  if (preset === "7") return { from: isoDate(new Date(now.getTime() - 6 * 86400000)), to: today };
-  if (preset === "30") return { from: isoDate(new Date(now.getTime() - 29 * 86400000)), to: today };
-  if (preset === "mes")
-    return { from: isoDate(new Date(now.getFullYear(), now.getMonth(), 1)), to: today };
-  if (preset === "mes_anterior")
-    return {
-      from: isoDate(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
-      to: isoDate(new Date(now.getFullYear(), now.getMonth(), 0)),
-    };
-  return { from: isoDate(new Date(now.getFullYear(), now.getMonth(), 1)), to: today };
-}
-
 function Dashboard() {
+  const { isAdmin, profile } = useAuth();
+  const canSeeTeam = isAdmin || profile?.can_view_all_leads === true;
+
   const { data: segments = [] } = useSegments();
   const { data: profiles = [] } = useProfiles();
   const { data: contactTypes = [] } = useContactTypes();
-  const { data: appointments = [] } = useAppointments();
+  const { data: appointments = [], isLoading: loadingAppointments } = useAppointments();
+  const { data: documents = [], isLoading: loadingDocs } = useCommercialDocuments();
 
   const [preset, setPreset] = useState<string>("mes");
-  const [range, setRange] = useState(() => presetRange("mes"));
+  const [range, setRange] = useState<DateRange>(() => presetRange("mes"));
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const { data: leads = [] } = useQuery({
+  const { data: leads = [], isLoading: loadingLeads } = useQuery({
     queryKey: ["leads", "dashboard"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -135,69 +107,207 @@ function Dashboard() {
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as LeadRow[];
+      return data as DashLead[];
     },
   });
 
-  const leadById = useMemo(() => new Map(leads.map((l) => [l.id, l])), [leads]);
-  const segmentName = (id: string | null) =>
-    segments.find((s) => s.id === id)?.name ?? "Sem segmento";
-  const sellerName = (id: string | null) =>
-    profiles.find((p) => p.id === id)?.full_name?.trim() || (id ? "Usuário" : "Sem vendedor");
-  const typeName = (id: string | null) =>
-    contactTypes.find((c) => c.id === id)?.name ?? "Não informado";
+  const loading = loadingLeads || loadingAppointments || loadingDocs;
 
-  const inPeriod = useMemo(
-    () =>
-      leads.filter((l) => {
-        const d = toLocalParts(l.created_at).date;
-        return d >= range.from && d <= range.to;
-      }),
-    [leads, range],
+  const leadById = useMemo(() => new Map(leads.map((l) => [l.id, l])), [leads]);
+  const naming: Naming = useMemo(
+    () => ({
+      segmentName: (id) => segments.find((s) => s.id === id)?.name ?? "Sem segmento",
+      sellerName: (id) =>
+        profiles.find((p) => p.id === id)?.full_name?.trim() || (id ? "Usuário" : "Sem responsável"),
+      typeName: (id) => contactTypes.find((c) => c.id === id)?.name ?? "Não informado",
+    }),
+    [segments, profiles, contactTypes],
   );
 
-  // Agendamentos apenas de leads ativos (exclusão lógica respeitada)
+  /* ---------------- Área 1 — precisa de atenção ---------------- */
+
+  // Compromissos de leads ativos e visíveis (a RLS já limita o que chega aqui).
   const validAppointments = useMemo(
     () => appointments.filter((a) => leadById.has(a.lead_id)),
     [appointments, leadById],
   );
-  const activeAppointments = validAppointments.filter((a) => a.status === "agendado");
-  const scheduledLeadIds = new Set(activeAppointments.map((a) => a.lead_id));
+  const apptByLead = useMemo(() => {
+    const map = new Map<string, Appointment[]>();
+    for (const a of validAppointments) map.set(a.lead_id, [...(map.get(a.lead_id) ?? []), a]);
+    return map;
+  }, [validAppointments]);
 
-  /**
-   * Contagem por situação da próxima ação, usando a mesma regra da listagem
-   * (`leadPending`). Só considera leads visíveis ao usuário (RLS) e ativos.
-   */
-  const pendingCounts = useMemo(() => {
-    const acc: Record<PendingTone, number> = { atrasado: 0, hoje: 0, agendado: 0, sem_acao: 0 };
+  const sortByDate = (list: Appointment[]) =>
+    [...list].sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at));
+
+  const overdue = useMemo(
+    () => sortByDate(validAppointments.filter((a) => isOverdue(a.scheduled_at, a.status))),
+    [validAppointments],
+  );
+  const todayAppts = useMemo(
+    () =>
+      sortByDate(
+        validAppointments.filter(
+          (a) => a.status === "agendado" && isToday(a.scheduled_at) && !isOverdue(a.scheduled_at, a.status),
+        ),
+      ),
+    [validAppointments],
+  );
+  const upcoming = useMemo(
+    () =>
+      sortByDate(
+        validAppointments.filter(
+          (a) =>
+            a.status === "agendado" &&
+            !isToday(a.scheduled_at) &&
+            new Date(a.scheduled_at).getTime() > Date.now(),
+        ),
+      ),
+    [validAppointments],
+  );
+  const next7 = useMemo(
+    () =>
+      upcoming.filter((a) => new Date(a.scheduled_at).getTime() <= Date.now() + 7 * 86400000),
+    [upcoming],
+  );
+
+  /** Situação da próxima ação por lead — mesma regra da listagem (`leadPending`). */
+  const pendingByTone = useMemo(() => {
+    const acc: Record<PendingTone, DashLead[]> = {
+      atrasado: [],
+      hoje: [],
+      agendado: [],
+      sem_acao: [],
+    };
     for (const lead of leads) {
-      const tone = leadPending(
-        lead,
-        validAppointments.filter((a) => a.lead_id === lead.id),
-      ).tone;
-      acc[tone] += 1;
+      acc[leadPending(lead, apptByLead.get(lead.id) ?? []).tone].push(lead);
     }
     return acc;
-  }, [leads, validAppointments]);
+  }, [leads, apptByLead]);
+
+  /* ---------------- Área 2 — leads ---------------- */
+
+  const newLeads = useMemo(
+    () => leads.filter((l) => inRangeIso(l.created_at, range)),
+    [leads, range],
+  );
+
+  const leadsByStatus = useMemo(
+    () =>
+      LEAD_STATUSES.map((s) => ({ status: s.value, items: leads.filter((l) => l.status === s.value) }))
+        .filter((g) => g.items.length > 0)
+        .sort((a, b) => b.items.length - a.items.length),
+    [leads],
+  );
+
+  const leadsBySegment = useMemo(
+    () => groupBy(leads, (l) => l.segment_id ?? "none"),
+    [leads],
+  );
+
+  /* ---------------- Área 3 — comercial ---------------- */
+
+  const docsInPeriod = useMemo(
+    () => documents.filter((d) => inRangeDate(d.issue_date, range)),
+    [documents, range],
+  );
+  const docsByType = (type: string, list: CommercialDocument[] = docsInPeriod) =>
+    list.filter((d) => d.doc_type === type);
+  const totalOf = (list: CommercialDocument[]) => sum(list.map((d) => Number(d.total_general)));
+
+  const orcamentos = docsByType("orcamento");
+  const propostas = docsByType("proposta");
+  const pedidos = docsByType("pedido");
+  const movimentado = totalOf(docsInPeriod);
+
+  // Conversão real: baseada apenas em documentos gerados a partir de outro (converted_from_id).
+  const convertedFrom = useMemo(() => new Set(documents.map((d) => d.converted_from_id)), [documents]);
+  const funnel = useMemo(() => {
+    const stages = DOC_TYPES.map((t) => {
+      const list = docsByType(t.value);
+      const converted = list.filter((d) => convertedFrom.has(d.id));
+      return { type: t.value, label: t.plural, list, converted: converted.length };
+    });
+    return stages;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [docsInPeriod, convertedFrom]);
+
+  /* ---------------- Área 4 — visões gerenciais ---------------- */
+
+  const byCollaborator = useMemo(() => {
+    const ids = new Set<string>([
+      ...leads.map((l) => l.created_by ?? "none"),
+      ...docsInPeriod.map((d) => d.owner_id),
+    ]);
+    return [...ids]
+      .map((id) => {
+        const own = leads.filter((l) => (l.created_by ?? "none") === id);
+        const ownPeriod = own.filter((l) => inRangeIso(l.created_at, range));
+        const ownDocs = docsInPeriod.filter((d) => d.owner_id === id);
+        const ownAppts = validAppointments.filter(
+          (a) => (leadById.get(a.lead_id)?.created_by ?? "none") === id,
+        );
+        return { id, own, ownPeriod, ownDocs, ownAppts, value: totalOf(ownDocs) };
+      })
+      .sort((a, b) => b.own.length - a.own.length);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leads, docsInPeriod, validAppointments, leadById, range]);
+
+  const bySegment = useMemo(() => {
+    return leadsBySegment.map((g) => {
+      const ids = new Set(g.items.map((l) => l.id));
+      const segDocs = docsInPeriod.filter((d) => ids.has(d.lead_id));
+      const segAppts = validAppointments.filter((a) => ids.has(a.lead_id));
+      return { ...g, segDocs, segAppts, value: totalOf(segDocs) };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leadsBySegment, docsInPeriod, validAppointments]);
+
+  const realizados = useMemo(
+    () => validAppointments.filter((a) => a.status === "realizado" && inRangeIso(a.scheduled_at, range)),
+    [validAppointments, range],
+  );
+  const naoRealizados = useMemo(
+    () =>
+      validAppointments.filter(
+        (a) => a.status === "nao_realizado" && inRangeIso(a.scheduled_at, range),
+      ),
+    [validAppointments, range],
+  );
 
   function applyPreset(v: string) {
     setPreset(v);
     if (v !== "custom") setRange(presetRange(v));
   }
 
+  const close = () => setExpanded(null);
+  const detail = (id: string) => expanded === id;
+  const periodo = periodLabel(range);
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <PageHeader
         title="Dashboard"
-        description="Painel operacional da captação. Toque em um quadro para expandir."
+        description="Visão de gestão. Toque em qualquer quadro para ver os registros que compõem o resultado."
+        actions={
+          <Button asChild variant="outline" size="sm">
+            <Link to="/agenda">
+              <CalendarDays className="h-4 w-4" aria-hidden="true" /> Agenda
+            </Link>
+          </Button>
+        }
       />
 
-      <div className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)_minmax(0,1fr)]">
+      {/* Filtro global de período */}
+      <section
+        aria-label="Filtro de período"
+        className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]"
+      >
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,240px)_minmax(0,1fr)_minmax(0,1fr)]">
           <div className="space-y-1.5">
-            <Label>Período de captação</Label>
+            <Label htmlFor="periodo">Período</Label>
             <Select value={preset} onValueChange={applyPreset}>
-              <SelectTrigger className="h-11">
+              <SelectTrigger id="periodo" className="h-11">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -237,524 +347,546 @@ function Dashboard() {
           </div>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          O período afeta os quadros “Leads por segmentos” e “Leads por vendedor”. “Total de leads”
-          considera todos os leads ativos e “Leads agendados” usa a data do agendamento.
+          Período selecionado: <strong>{periodo}</strong>. Indicadores marcados como{" "}
+          <em>no período</em> consideram a movimentação nessas datas; os demais representam a base
+          acumulada atual.
         </p>
-      </div>
+      </section>
 
-      {/* Atalhos de pendências: levam à listagem de Leads já filtrada. */}
-      <section aria-labelledby="pendencias-title" className="space-y-2">
-        <h2 id="pendencias-title" className="text-sm font-bold tracking-wide uppercase">
-          Precisa de atenção
-        </h2>
+      {loading ? (
+        <p className="text-sm text-muted-foreground" role="status" aria-live="polite">
+          Carregando indicadores...
+        </p>
+      ) : null}
+
+      {/* ÁREA 1 — Precisa de atenção */}
+      <section aria-labelledby="area-atencao" className="space-y-3">
+        <SectionTitle id="area-atencao" text="1. Precisa de atenção" hint="Base acumulada" />
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {PENDING_SHORTCUTS.map((s) => (
-            <Link
-              key={s.tone}
-              to="/leads"
-              search={{ pendencia: s.tone }}
-              aria-label={`${s.label}: ${pendingCounts[s.tone]} lead(s)`}
-              className={cn(
-                "flex min-h-[72px] items-center justify-between gap-3 rounded-xl border px-4 py-3 transition hover:brightness-110",
-                pendingClass(s.tone),
-              )}
+          <MetricCard
+            id="atrasados"
+            label="🔴 Compromissos atrasados"
+            value={String(overdue.length)}
+            hint="Agendados com data vencida"
+            icon={AlarmClock}
+            toneClass={pendingClass("atrasado")}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+          <MetricCard
+            id="hoje"
+            label="📅 Compromissos para hoje"
+            value={String(todayAppts.length)}
+            hint="Agenda do dia"
+            icon={CalendarClock}
+            toneClass={pendingClass("hoje")}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+          <MetricCard
+            id="proximos"
+            label="⏰ Próximos compromissos"
+            value={String(upcoming.length)}
+            hint={`${next7.length} nos próximos 7 dias`}
+            icon={CalendarCheck2}
+            toneClass={pendingClass("agendado")}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+          <MetricCard
+            id="sem_acao"
+            label="⚠️ Leads sem próxima ação"
+            value={String(pendingByTone.sem_acao.length)}
+            hint="Nenhum retorno definido"
+            icon={CircleAlert}
+            toneClass={pendingClass("sem_acao")}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+        </div>
+
+        {detail("atrasados") && (
+          <DetailPanel
+            id="atrasados"
+            title={`Compromissos atrasados (${overdue.length})`}
+            description="Ordenados do mais antigo para o mais recente."
+            onClose={close}
+          >
+            <AppointmentList
+              appointments={overdue}
+              leadById={leadById}
+              naming={naming}
+              emptyText="Nenhum compromisso atrasado."
+            />
+            <GoTo to="/agenda" label="Abrir a Agenda" />
+          </DetailPanel>
+        )}
+        {detail("hoje") && (
+          <DetailPanel
+            id="hoje"
+            title={`Compromissos para hoje (${todayAppts.length})`}
+            onClose={close}
+          >
+            <AppointmentList
+              appointments={todayAppts}
+              leadById={leadById}
+              naming={naming}
+              emptyText="Nenhum compromisso para hoje."
+            />
+            <GoTo to="/agenda" label="Abrir a Agenda" />
+          </DetailPanel>
+        )}
+        {detail("proximos") && (
+          <DetailPanel
+            id="proximos"
+            title={`Próximos compromissos (${upcoming.length})`}
+            description="Compromissos ativos futuros, em ordem cronológica."
+            onClose={close}
+          >
+            <AppointmentList
+              appointments={upcoming}
+              leadById={leadById}
+              naming={naming}
+              emptyText="Nenhum compromisso futuro."
+            />
+            <GoTo to="/agenda" label="Abrir a Agenda" />
+          </DetailPanel>
+        )}
+        {detail("sem_acao") && (
+          <DetailPanel
+            id="sem_acao"
+            title={`Leads sem próxima ação (${pendingByTone.sem_acao.length})`}
+            description="Empresas sem agendamento ativo e sem previsão de retorno."
+            onClose={close}
+          >
+            <LeadList
+              leads={pendingByTone.sem_acao}
+              naming={naming}
+              emptyText="Todos os leads possuem próxima ação definida."
+            />
+            <GoTo to="/leads" search={{ pendencia: "sem_acao" as PendingTone }} label="Ver na listagem de Leads" />
+          </DetailPanel>
+        )}
+      </section>
+
+      {/* ÁREA 2 — Visão geral dos Leads */}
+      <section aria-labelledby="area-leads" className="space-y-3">
+        <SectionTitle id="area-leads" text="2. Visão geral dos Leads" hint={`Período: ${periodo}`} />
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            id="total_leads"
+            label="Total de Leads (acumulado)"
+            value={String(leads.length)}
+            hint="Empresas ativas visíveis a você"
+            icon={Users2}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+          <MetricCard
+            id="novos_leads"
+            label="Novos Leads no período"
+            value={String(newLeads.length)}
+            hint={periodo}
+            icon={TrendingUp}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+          <MetricCard
+            id="status_leads"
+            label="Leads por Status"
+            value={String(leadsByStatus.length)}
+            hint="Situações em uso"
+            icon={ScrollText}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+          <MetricCard
+            id="segmento_leads"
+            label="Leads por Segmento"
+            value={String(leadsBySegment.length)}
+            hint="Segmentos com leads"
+            icon={Layers}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+        </div>
+
+        {detail("total_leads") && (
+          <DetailPanel id="total_leads" title={`Todos os Leads (${leads.length})`} onClose={close}>
+            <LeadList leads={leads} naming={naming} />
+            <GoTo to="/leads" label="Abrir a listagem de Leads" />
+          </DetailPanel>
+        )}
+        {detail("novos_leads") && (
+          <DetailPanel
+            id="novos_leads"
+            title={`Novos Leads — ${periodo} (${newLeads.length})`}
+            onClose={close}
+          >
+            <LeadList
+              leads={newLeads}
+              naming={naming}
+              emptyText="Nenhum lead cadastrado no período."
+            />
+          </DetailPanel>
+        )}
+        {detail("status_leads") && (
+          <DetailPanel
+            id="status_leads"
+            title="Leads por Status"
+            description="Selecione um status para ver as empresas."
+            onClose={close}
+          >
+            <GroupList
+              groups={leadsByStatus.map((g) => ({
+                key: g.status,
+                name: statusLabel(g.status),
+                count: g.items.length,
+                extra: `${rate(g.items.length, leads.length)}% da base`,
+                items: <LeadList leads={g.items} naming={naming} />,
+              }))}
+            />
+          </DetailPanel>
+        )}
+        {detail("segmento_leads") && (
+          <DetailPanel
+            id="segmento_leads"
+            title="Leads por Segmento"
+            description="Selecione um segmento para ver as empresas correspondentes."
+            onClose={close}
+          >
+            <GroupList
+              groups={leadsBySegment.map((g) => ({
+                key: g.key,
+                name: naming.segmentName(g.key === "none" ? null : g.key),
+                count: g.items.length,
+                extra: `${rate(g.items.length, leads.length)}% da base`,
+                items: <LeadList leads={g.items} naming={naming} />,
+              }))}
+            />
+          </DetailPanel>
+        )}
+      </section>
+
+      {/* ÁREA 3 — Visão comercial */}
+      <section aria-labelledby="area-comercial" className="space-y-3">
+        <SectionTitle
+          id="area-comercial"
+          text="3. Visão comercial"
+          hint={`Documentos emitidos em ${periodo}`}
+        />
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            id="orcamentos"
+            label="Orçamentos no período"
+            value={String(orcamentos.length)}
+            hint={formatCurrency(totalOf(orcamentos))}
+            icon={FileText}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+          <MetricCard
+            id="propostas"
+            label="Propostas no período"
+            value={String(propostas.length)}
+            hint={formatCurrency(totalOf(propostas))}
+            icon={ScrollText}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+          <MetricCard
+            id="pedidos"
+            label="Pedidos no período"
+            value={String(pedidos.length)}
+            hint={formatCurrency(totalOf(pedidos))}
+            icon={Receipt}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+          <MetricCard
+            id="valor"
+            label="Valor movimentado no período"
+            value={formatCurrency(movimentado)}
+            hint={`${docsInPeriod.length} documentos`}
+            icon={Wallet}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+        </div>
+
+        {(["orcamento", "proposta", "pedido"] as const).map((t) => {
+          const id = t === "orcamento" ? "orcamentos" : t === "proposta" ? "propostas" : "pedidos";
+          const list = docsByType(t);
+          return detail(id) ? (
+            <DetailPanel
+              key={id}
+              id={id}
+              title={`${docTypeLabel(t)}s — ${periodo} (${list.length})`}
+              description={`Valor total: ${formatCurrency(totalOf(list))}`}
+              onClose={close}
             >
-              <span className="min-w-0">
-                <span className="block text-sm font-bold">{s.label}</span>
-                <span className="block truncate text-xs opacity-80">{s.hint}</span>
-              </span>
-              <span className="shrink-0 text-2xl font-extrabold">{pendingCounts[s.tone]}</span>
-            </Link>
-          ))}
+              <DocumentList
+                documents={list}
+                naming={naming}
+                emptyText="Nenhum documento deste tipo no período."
+              />
+              <GoTo to="/comercial" label="Abrir o módulo Comercial" />
+            </DetailPanel>
+          ) : null;
+        })}
+
+        {detail("valor") && (
+          <DetailPanel
+            id="valor"
+            title={`Documentos do período (${docsInPeriod.length})`}
+            description={`Valor movimentado: ${formatCurrency(movimentado)}`}
+            onClose={close}
+          >
+            <DocumentList
+              documents={[...docsInPeriod].sort((a, b) =>
+                Number(b.total_general) - Number(a.total_general),
+              )}
+              naming={naming}
+              emptyText="Nenhum documento emitido no período."
+            />
+          </DetailPanel>
+        )}
+
+        {/* Funil comercial: Orçamento → Proposta → Pedido */}
+        <div className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
+          <h3 className="text-sm font-bold">Funil comercial — Orçamento → Proposta → Pedido</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            A conversão considera apenas documentos que originaram outro documento no sistema
+            (rastreabilidade real).
+          </p>
+          <div className="mt-3">
+            <GroupList
+              groups={funnel.map((s) => ({
+                key: s.type,
+                name: s.label,
+                count: s.list.length,
+                extra: `${formatCurrency(totalOf(s.list))} · ${s.converted} convertido(s) — ${rate(
+                  s.converted,
+                  s.list.length,
+                )}%`,
+                items: (
+                  <DocumentList
+                    documents={s.list}
+                    naming={naming}
+                    emptyText="Nenhum documento nesta etapa."
+                  />
+                ),
+              }))}
+            />
+          </div>
         </div>
       </section>
 
+      {/* ÁREA 4 — Visões gerenciais */}
+      <section aria-labelledby="area-gerencial" className="space-y-3">
+        <SectionTitle id="area-gerencial" text="4. Visões gerenciais" hint={`Período: ${periodo}`} />
 
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          id="total"
-          label="Total de leads"
-          value={String(leads.length)}
-          icon={Users2}
-          expanded={expanded === "total"}
-          onToggle={setExpanded}
-        />
-        <StatCard
-          id="agendados"
-          label="Leads agendados"
-          value={String(scheduledLeadIds.size)}
-          hint={`${activeAppointments.length} agendamentos ativos`}
-          icon={CalendarClock}
-          expanded={expanded === "agendados"}
-          onToggle={setExpanded}
-        />
-        <StatCard
-          id="segmentos"
-          label="Leads por segmentos"
-          value={String(new Set(inPeriod.map((l) => l.segment_id)).size)}
-          hint={`${inPeriod.length} leads no período`}
-          icon={Layers}
-          expanded={expanded === "segmentos"}
-          onToggle={setExpanded}
-        />
-        <StatCard
-          id="vendedor"
-          label="Leads por vendedor"
-          value={String(inPeriod.length)}
-          hint={`${new Set(inPeriod.map((l) => l.created_by)).size} vendedores no período`}
-          icon={UserRound}
-          expanded={expanded === "vendedor"}
-          onToggle={setExpanded}
-        />
-      </div>
-
-      {expanded === "total" && (
-        <Panel title={`Todos os leads (${leads.length})`}>
-          <LeadList leads={leads} segmentName={segmentName} sellerName={sellerName} />
-        </Panel>
-      )}
-
-      {expanded === "agendados" && (
-        <Panel
-          title={`${scheduledLeadIds.size} leads | ${activeAppointments.length} agendamentos ativos`}
-        >
-          <AppointmentsPanel
-            appointments={validAppointments}
-            leadById={leadById}
-            segmentName={segmentName}
-            sellerName={sellerName}
-            typeName={typeName}
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <MetricCard
+            id="realizados"
+            label="Compromissos realizados"
+            value={String(realizados.length)}
+            hint={periodo}
+            icon={CalendarCheck2}
+            expandedId={expanded}
+            onToggle={setExpanded}
           />
-        </Panel>
-      )}
-
-      {expanded === "segmentos" && (
-        <Panel title={`Leads por segmentos — ${inPeriod.length} no período`}>
-          <SegmentsPanel
-            leads={inPeriod}
-            segments={segments}
-            appointments={activeAppointments}
-            typeName={typeName}
+          <MetricCard
+            id="nao_realizados"
+            label="Compromissos não realizados"
+            value={String(naoRealizados.length)}
+            hint={periodo}
+            icon={CalendarClock}
+            expandedId={expanded}
+            onToggle={setExpanded}
           />
-        </Panel>
-      )}
+          <MetricCard
+            id="agenda7"
+            label="Agenda dos próximos 7 dias"
+            value={String(next7.length)}
+            hint="Compromissos ativos"
+            icon={CalendarDays}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+          <MetricCard
+            id={canSeeTeam ? "colaboradores" : "meus_resultados"}
+            label={canSeeTeam ? "Resultados por Colaborador" : "Meus resultados"}
+            value={String(canSeeTeam ? byCollaborator.length : leads.length)}
+            hint={canSeeTeam ? "Responsáveis com registros" : "Leads sob sua responsabilidade"}
+            icon={UserRound}
+            expandedId={expanded}
+            onToggle={setExpanded}
+          />
+        </div>
 
-      {expanded === "vendedor" && (
-        <Panel title={`Leads por vendedor — total ${inPeriod.length}`}>
-          <SellersPanel leads={inPeriod} sellerName={sellerName} segmentName={segmentName} />
-        </Panel>
-      )}
-    </div>
-  );
-}
-
-function StatCard({
-  id,
-  label,
-  value,
-  hint,
-  icon: Icon,
-  expanded,
-  onToggle,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  hint?: string;
-  icon: typeof Users2;
-  expanded: boolean;
-  onToggle: (id: string | null) => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-expanded={expanded}
-      onClick={() => onToggle(expanded ? null : id)}
-      className={cn(
-        "min-h-[92px] rounded-2xl border bg-card p-4 text-left shadow-[var(--shadow-card)] transition-colors",
-        expanded ? "border-primary ring-1 ring-primary/30" : "hover:border-primary/40",
-      )}
-    >
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
-        <Icon className="h-4 w-4 shrink-0 text-primary" />
-      </div>
-      <p className="mt-2 text-3xl font-extrabold tracking-tight">{value}</p>
-      <div className="mt-1 flex items-center justify-between gap-2">
-        <span className="truncate text-[11px] text-muted-foreground">{hint ?? "Ver detalhes"}</span>
-        <ChevronDown
-          className={cn(
-            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
-            expanded && "rotate-180",
-          )}
-        />
-      </div>
-    </button>
-  );
-}
-
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5">
-      <h2 className="text-sm font-bold">{title}</h2>
-      <div className="mt-3">{children}</div>
-    </section>
-  );
-}
-
-function LeadList({
-  leads,
-  segmentName,
-  sellerName,
-  emptyText = "Nenhum lead encontrado.",
-}: {
-  leads: LeadRow[];
-  segmentName: (id: string | null) => string;
-  sellerName: (id: string | null) => string;
-  emptyText?: string;
-}) {
-  if (!leads.length) return <p className="py-4 text-sm text-muted-foreground">{emptyText}</p>;
-  return (
-    <ul className="divide-y">
-      {leads.map((l) => (
-        <li key={l.id}>
-          <Link
-            to="/leads/$id"
-            params={{ id: l.id }}
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3"
+        {detail("realizados") && (
+          <DetailPanel
+            id="realizados"
+            title={`Compromissos realizados — ${periodo} (${realizados.length})`}
+            onClose={close}
           >
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{l.company_name}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {[l.contact_name, l.phone, segmentName(l.segment_id)].filter(Boolean).join(" · ")}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {[l.street_name, l.neighborhood_name, l.city].filter(Boolean).join(", ") ||
-                  "Sem endereço"}
-                {" · "}
-                {sellerName(l.created_by)}
-              </p>
-            </div>
-            <StatusBadge status={l.status} />
-          </Link>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function AppointmentsPanel({
-  appointments,
-  leadById,
-  segmentName,
-  sellerName,
-  typeName,
-}: {
-  appointments: Appointment[];
-  leadById: Map<string, LeadRow>;
-  segmentName: (id: string | null) => string;
-  sellerName: (id: string | null) => string;
-  typeName: (id: string | null) => string;
-}) {
-  const [period, setPeriod] = useState("todos");
-  const [status, setStatus] = useState("agendado");
-
-  const filtered = useMemo(() => {
-    const now = Date.now();
-    return appointments
-      .filter((a) => (status === "todos" ? true : a.status === status))
-      .filter((a) => {
-        if (period === "todos") return true;
-        if (period === "hoje") return isToday(a.scheduled_at);
-        const days = Number(period);
-        const t = new Date(a.scheduled_at).getTime();
-        return t <= now + days * 86400000;
-      })
-      .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at));
-  }, [appointments, period, status]);
-
-  const overdue = filtered.filter((a) => isOverdue(a.scheduled_at, a.status));
-  const today = filtered.filter(
-    (a) => isToday(a.scheduled_at) && !isOverdue(a.scheduled_at, a.status),
-  );
-  const upcoming = filtered.filter(
-    (a) => !isToday(a.scheduled_at) && !isOverdue(a.scheduled_at, a.status),
-  );
-
-  function Card({ a }: { a: Appointment }) {
-    const lead = leadById.get(a.lead_id);
-    if (!lead) return null;
-    return (
-      <Link
-        to="/leads/$id"
-        params={{ id: lead.id }}
-        className="block rounded-xl border p-3 transition-colors hover:border-primary/50"
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-bold">{formatAppointment(a.scheduled_at)}</p>
-          <span
-            className={cn(
-              "rounded-full border px-2 py-0.5 text-[11px] font-semibold",
-              appointmentStatusClass(a.status),
-            )}
+            <AppointmentList
+              appointments={realizados}
+              leadById={leadById}
+              naming={naming}
+              emptyText="Nenhum compromisso realizado no período."
+            />
+          </DetailPanel>
+        )}
+        {detail("nao_realizados") && (
+          <DetailPanel
+            id="nao_realizados"
+            title={`Compromissos não realizados — ${periodo} (${naoRealizados.length})`}
+            onClose={close}
           >
-            {appointmentStatusLabel(a.status)}
-            {isOverdue(a.scheduled_at, a.status) ? " — Atrasado" : ""}
-          </span>
-        </div>
-        <p className="mt-1 truncate text-sm font-semibold">{lead.company_name}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {[lead.contact_name, lead.phone].filter(Boolean).join(" · ") || "Sem contato"}
-        </p>
-        <p className="truncate text-xs text-muted-foreground">
-          {segmentName(lead.segment_id)} · {typeName(a.contact_type_id)} ·{" "}
-          {sellerName(lead.created_by)}
-        </p>
-      </Link>
-    );
-  }
+            <AppointmentList
+              appointments={naoRealizados}
+              leadById={leadById}
+              naming={naming}
+              emptyText="Nenhum compromisso não realizado no período."
+            />
+          </DetailPanel>
+        )}
+        {detail("agenda7") && (
+          <DetailPanel
+            id="agenda7"
+            title={`Agenda dos próximos 7 dias (${next7.length})`}
+            onClose={close}
+          >
+            <AppointmentList
+              appointments={next7}
+              leadById={leadById}
+              naming={naming}
+              emptyText="Nenhum compromisso nos próximos 7 dias."
+            />
+            <GoTo to="/agenda" label="Abrir a Agenda" />
+          </DetailPanel>
+        )}
+        {detail("colaboradores") && (
+          <DetailPanel
+            id="colaboradores"
+            title="Resultados por Colaborador"
+            description="Leads, compromissos e documentos conforme a sua permissão de visualização."
+            onClose={close}
+          >
+            <GroupList
+              groups={byCollaborator.map((c) => ({
+                key: c.id,
+                name: naming.sellerName(c.id === "none" ? null : c.id),
+                count: c.own.length,
+                extra: `${c.ownPeriod.length} no período · ${c.ownAppts.length} compromissos · ${c.ownDocs.length} documentos · ${formatCurrency(c.value)}`,
+                items: (
+                  <div className="space-y-3 p-3">
+                    <SubTitle text={`Leads (${c.own.length})`} />
+                    <LeadList leads={c.own} naming={naming} />
+                    <SubTitle text={`Documentos no período (${c.ownDocs.length})`} />
+                    <DocumentList
+                      documents={c.ownDocs}
+                      naming={naming}
+                      emptyText="Nenhum documento no período."
+                    />
+                  </div>
+                ),
+              }))}
+            />
+          </DetailPanel>
+        )}
+        {detail("meus_resultados") && (
+          <DetailPanel
+            id="meus_resultados"
+            title={`Meus resultados (${leads.length} leads)`}
+            description={`${newLeads.length} novos no período · ${docsInPeriod.length} documentos · ${formatCurrency(movimentado)}`}
+            onClose={close}
+          >
+            <LeadList leads={leads} naming={naming} />
+          </DetailPanel>
+        )}
 
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label>Período</Label>
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="h-11">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="hoje">Hoje</SelectItem>
-              <SelectItem value="7">Próximos 7 dias</SelectItem>
-              <SelectItem value="30">Próximos 30 dias</SelectItem>
-              <SelectItem value="todos">Todos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label>Situação</Label>
-          <Select value={status} onValueChange={setStatus}>
-            <SelectTrigger className="h-11">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {APPOINTMENT_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-              <SelectItem value="todos">Todas</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {overdue.length > 0 && (
-        <div>
-          <p className="text-xs font-bold tracking-wide text-destructive uppercase">
-            🔴 Atrasados ({overdue.length})
+        {/* Resultados por segmento */}
+        <div className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
+          <h3 className="text-sm font-bold">Resultados por Segmento</h3>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Leads acumulados, compromissos e volume comercial no período selecionado.
           </p>
-          <div className="mt-2 grid gap-2 lg:grid-cols-2">
-            {overdue.map((a) => (
-              <Card key={a.id} a={a} />
-            ))}
+          <div className="mt-3">
+            {bySegment.length ? (
+              <GroupList
+                groups={bySegment.map((g) => ({
+                  key: g.key,
+                  name: naming.segmentName(g.key === "none" ? null : g.key),
+                  count: g.items.length,
+                  extra: `${g.segAppts.length} compromissos · ${g.segDocs.length} documentos · ${formatCurrency(g.value)}`,
+                  items: (
+                    <div className="space-y-3 p-3">
+                      <SubTitle text={`Empresas (${g.items.length})`} />
+                      <LeadList leads={g.items} naming={naming} />
+                      <SubTitle text={`Documentos no período (${g.segDocs.length})`} />
+                      <DocumentList
+                        documents={g.segDocs}
+                        naming={naming}
+                        emptyText="Nenhum documento no período."
+                      />
+                    </div>
+                  ),
+                }))}
+              />
+            ) : (
+              <NoData text="Nenhum lead cadastrado." />
+            )}
           </div>
         </div>
-      )}
+      </section>
 
-      {today.length > 0 && (
-        <div>
-          <p className="text-xs font-bold tracking-wide text-primary uppercase">
-            Hoje ({today.length})
-          </p>
-          <ul className="mt-2 space-y-1.5">
-            {today.map((a) => {
-              const lead = leadById.get(a.lead_id);
-              if (!lead) return null;
-              return (
-                <li key={a.id}>
-                  <Link
-                    to="/leads/$id"
-                    params={{ id: lead.id }}
-                    className="flex flex-wrap items-center gap-2 rounded-xl border p-3 text-sm hover:border-primary/50"
-                  >
-                    <span className="font-bold">{formatAppointmentTime(a.scheduled_at)}</span>
-                    <span className="truncate font-semibold">{lead.company_name}</span>
-                    <span className="text-muted-foreground">· {typeName(a.contact_type_id)}</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
-      <div>
-        <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
-          Próximos agendamentos ({upcoming.length})
-        </p>
-        <div className="mt-2 grid gap-2 lg:grid-cols-2">
-          {upcoming.map((a) => (
-            <Card key={a.id} a={a} />
-          ))}
-          {!upcoming.length && (
-            <p className="py-2 text-sm text-muted-foreground">Nenhum agendamento futuro.</p>
-          )}
-        </div>
-      </div>
+      <p className="pb-2 text-xs text-muted-foreground">
+        Todos os indicadores respeitam as permissões do banco de dados: você visualiza apenas os
+        leads, compromissos e documentos aos quais tem acesso. Base de referência: {todayKey()}.
+      </p>
     </div>
   );
 }
 
-function SegmentsPanel({
-  leads,
-  segments,
-  appointments,
-  typeName,
-}: {
-  leads: LeadRow[];
-  segments: { id: string; name: string }[];
-  appointments: Appointment[];
-  typeName: (id: string | null) => string;
-}) {
-  const [open, setOpen] = useState<string | null>(null);
-
-  const groups = useMemo(() => {
-    const map = new Map<string, LeadRow[]>();
-    for (const l of leads) {
-      const key = l.segment_id ?? "none";
-      map.set(key, [...(map.get(key) ?? []), l]);
-    }
-    return [...map.entries()]
-      .map(([key, items]) => ({
-        key,
-        name: segments.find((s) => s.id === key)?.name ?? "Sem segmento",
-        items,
-      }))
-      .sort((a, b) => b.items.length - a.items.length);
-  }, [leads, segments]);
-
-  function nextFor(leadId: string) {
-    return appointments
-      .filter((a) => a.lead_id === leadId)
-      .sort((a, b) => a.scheduled_at.localeCompare(b.scheduled_at))[0];
-  }
-
-  if (!groups.length)
-    return <p className="text-sm text-muted-foreground">Nenhum lead no período.</p>;
-
+function SectionTitle({ id, text, hint }: { id: string; text: string; hint?: string }) {
   return (
-    <ul className="space-y-2">
-      {groups.map((g) => (
-        <li key={g.key} className="rounded-xl border">
-          <button
-            type="button"
-            aria-expanded={open === g.key}
-            onClick={() => setOpen(open === g.key ? null : g.key)}
-            className="flex min-h-11 w-full items-center justify-between gap-3 p-3 text-left"
-          >
-            <span className="truncate text-sm font-semibold">{g.name}</span>
-            <span className="flex items-center gap-2 text-sm font-bold">
-              {g.items.length}
-              <ChevronDown
-                className={cn("h-4 w-4 transition-transform", open === g.key && "rotate-180")}
-              />
-            </span>
-          </button>
-          {open === g.key && (
-            <ul className="divide-y border-t">
-              {g.items.map((l) => {
-                const next = nextFor(l.id);
-                return (
-                  <li key={l.id}>
-                    <Link to="/leads/$id" params={{ id: l.id }} className="block px-3 py-2.5">
-                      <p className="truncate text-sm font-semibold">{l.company_name}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {next
-                          ? `Próximo contato: ${formatAppointment(next.scheduled_at)} — ${typeName(next.contact_type_id)}`
-                          : `Sem agendamento · ${statusLabel(l.status)}`}
-                      </p>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 id={id} className="text-sm font-bold tracking-wide uppercase">
+        {text}
+      </h2>
+      {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
+    </div>
   );
 }
 
-function SellersPanel({
-  leads,
-  sellerName,
-  segmentName,
+function SubTitle({ text }: { text: string }) {
+  return <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">{text}</p>;
+}
+
+/** Atalho para a tela completa correspondente ao indicador. */
+function GoTo({
+  to,
+  label,
+  search,
 }: {
-  leads: LeadRow[];
-  sellerName: (id: string | null) => string;
-  segmentName: (id: string | null) => string;
+  to: "/leads" | "/agenda" | "/comercial";
+  label: string;
+  search?: { pendencia: PendingTone };
 }) {
-  const [open, setOpen] = useState<string | null>(null);
-
-  const groups = useMemo(() => {
-    const map = new Map<string, LeadRow[]>();
-    for (const l of leads) {
-      const key = l.created_by ?? "none";
-      map.set(key, [...(map.get(key) ?? []), l]);
-    }
-    return [...map.entries()]
-      .map(([key, items]) => ({
-        key,
-        name: key === "none" ? "Sem vendedor" : sellerName(key),
-        items,
-      }))
-      .sort((a, b) => b.items.length - a.items.length);
-  }, [leads, sellerName]);
-
-  if (!groups.length)
-    return <p className="text-sm text-muted-foreground">Nenhum lead no período.</p>;
-
   return (
-    <ul className="space-y-2">
-      {groups.map((g) => (
-        <li key={g.key} className="rounded-xl border">
-          <button
-            type="button"
-            aria-expanded={open === g.key}
-            onClick={() => setOpen(open === g.key ? null : g.key)}
-            className="flex min-h-11 w-full items-center justify-between gap-3 p-3 text-left"
-          >
-            <span className="truncate text-sm font-semibold">{g.name}</span>
-            <span className="flex items-center gap-2 text-sm font-bold">
-              {g.items.length} leads
-              <ChevronDown
-                className={cn("h-4 w-4 transition-transform", open === g.key && "rotate-180")}
-              />
-            </span>
-          </button>
-          {open === g.key && (
-            <ul className="divide-y border-t">
-              {g.items.map((l) => (
-                <li key={l.id}>
-                  <Link to="/leads/$id" params={{ id: l.id }} className="block px-3 py-2.5">
-                    <p className="truncate text-sm font-semibold">{l.company_name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {[segmentName(l.segment_id), l.contact_name, l.phone]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </li>
-      ))}
-      <li className="rounded-xl border bg-muted/40 p-3 text-sm font-bold">
-        Total — {leads.length} leads
-      </li>
-    </ul>
+    <div className="mt-3">
+      <Button asChild variant="outline" size="sm">
+        {search ? (
+          <Link to={to} search={search}>
+            {label}
+          </Link>
+        ) : (
+          <Link to={to}>{label}</Link>
+        )}
+      </Button>
+    </div>
   );
 }
