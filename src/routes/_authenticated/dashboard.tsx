@@ -375,8 +375,15 @@ function Dashboard() {
       ) : null}
 
       {/* ÁREA 1 — Precisa de atenção */}
-      <section aria-labelledby="area-atencao" className="space-y-3">
-        <SectionTitle id="area-atencao" text="1. Precisa de atenção" hint="Base acumulada" />
+      <DashboardSection
+        id="atencao"
+        title="1. Precisa de atenção"
+        hint="Base acumulada"
+        summary={`${overdue.length} atrasados · ${todayAppts.length} para hoje · ${pendingByTone.sem_acao.length} sem próxima ação`}
+        icon={CircleAlert}
+        open={openSection === "atencao"}
+        onToggle={toggleSection}
+      >
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             id="atrasados"
@@ -482,12 +489,20 @@ function Dashboard() {
             <GoTo to="/leads" search={{ pendencia: "sem_acao" as PendingTone }} label="Ver na listagem de Leads" />
           </DetailPanel>
         )}
-      </section>
+      </DashboardSection>
 
       {/* ÁREA 2 — Visão geral dos Leads */}
-      <section aria-labelledby="area-leads" className="space-y-3">
-        <SectionTitle id="area-leads" text="2. Visão geral dos Leads" hint={`Período: ${periodo}`} />
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      <DashboardSection
+        id="leads"
+        title="2. Visão geral dos Leads"
+        hint={`Período: ${periodo}`}
+        summary={`${leads.length} leads na base · ${newLeads.length} novos no período`}
+        icon={Users2}
+        open={openSection === "leads"}
+        onToggle={toggleSection}
+      >
+        <SubTitle text="Resumo" />
+        <div className="grid gap-2 sm:grid-cols-2">
           <MetricCard
             id="total_leads"
             label="Total de Leads (acumulado)"
@@ -506,6 +521,9 @@ function Dashboard() {
             expandedId={expanded}
             onToggle={setExpanded}
           />
+        </div>
+        <SubTitle text="Distribuição" />
+        <div className="grid gap-2 sm:grid-cols-2">
           <MetricCard
             id="status_leads"
             label="Leads por Status"
@@ -581,15 +599,19 @@ function Dashboard() {
             />
           </DetailPanel>
         )}
-      </section>
+      </DashboardSection>
 
       {/* ÁREA 3 — Visão comercial */}
-      <section aria-labelledby="area-comercial" className="space-y-3">
-        <SectionTitle
-          id="area-comercial"
-          text="3. Visão comercial"
-          hint={`Documentos emitidos em ${periodo}`}
-        />
+      <DashboardSection
+        id="comercial"
+        title="3. Visão comercial"
+        hint={`Documentos emitidos em ${periodo}`}
+        summary={`${docsInPeriod.length} documentos · ${formatCurrency(movimentado)} no período`}
+        icon={Wallet}
+        open={openSection === "comercial"}
+        onToggle={toggleSection}
+      >
+        <SubTitle text="Documentos e resultados" />
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             id="orcamentos"
@@ -667,6 +689,7 @@ function Dashboard() {
           </DetailPanel>
         )}
 
+        <SubTitle text="Conversão" />
         {/* Funil comercial: Orçamento → Proposta → Pedido */}
         <div className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
           <h3 className="text-sm font-bold">Funil comercial — Orçamento → Proposta → Pedido</h3>
@@ -695,13 +718,20 @@ function Dashboard() {
             />
           </div>
         </div>
-      </section>
+      </DashboardSection>
 
       {/* ÁREA 4 — Visões gerenciais */}
-      <section aria-labelledby="area-gerencial" className="space-y-3">
-        <SectionTitle id="area-gerencial" text="4. Visões gerenciais" hint={`Período: ${periodo}`} />
-
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      <DashboardSection
+        id="gerencial"
+        title="4. Visões gerenciais"
+        hint={`Período: ${periodo}`}
+        summary={`${realizados.length} realizados · ${naoRealizados.length} não realizados · ${next7.length} nos próximos 7 dias`}
+        icon={UserRound}
+        open={openSection === "gerencial"}
+        onToggle={toggleSection}
+      >
+        <SubTitle text="Operação e compromissos" />
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           <MetricCard
             id="realizados"
             label="Compromissos realizados"
@@ -729,6 +759,9 @@ function Dashboard() {
             expandedId={expanded}
             onToggle={setExpanded}
           />
+        </div>
+        <SubTitle text={canSeeTeam ? "Resultados por Colaborador" : "Meus resultados"} />
+        <div className="grid gap-2 sm:grid-cols-2">
           <MetricCard
             id={canSeeTeam ? "colaboradores" : "meus_resultados"}
             label={canSeeTeam ? "Resultados por Colaborador" : "Meus resultados"}
@@ -824,6 +857,7 @@ function Dashboard() {
         )}
 
         {/* Resultados por segmento */}
+        <SubTitle text="Resultados por Segmento" />
         <div className="rounded-2xl border bg-card p-4 shadow-[var(--shadow-card)]">
           <h3 className="text-sm font-bold">Resultados por Segmento</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
@@ -856,7 +890,7 @@ function Dashboard() {
             )}
           </div>
         </div>
-      </section>
+      </DashboardSection>
 
       <p className="pb-2 text-xs text-muted-foreground">
         Todos os indicadores respeitam as permissões do banco de dados: você visualiza apenas os
