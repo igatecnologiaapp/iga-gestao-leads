@@ -3,6 +3,69 @@ import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
+ * Seção expansível de primeiro nível do Dashboard (nível 1 da navegação).
+ * Mantém os quadros/indicadores como nível 2, sem alterar o comportamento deles.
+ */
+export function DashboardSection({
+  id,
+  title,
+  hint,
+  summary,
+  icon: Icon,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  hint?: string;
+  summary?: string;
+  icon?: LucideIcon;
+  open: boolean;
+  onToggle: (id: string | null) => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-2xl border bg-card shadow-[var(--shadow-card)]">
+      <h2>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={`secao-${id}`}
+          onClick={() => onToggle(open ? null : id)}
+          className={cn(
+            "flex min-h-14 w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/50",
+            open && "border-b bg-muted/40",
+          )}
+        >
+          {Icon ? <Icon className="h-5 w-5 shrink-0 opacity-80" aria-hidden="true" /> : null}
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-bold tracking-wide uppercase">{title}</span>
+            <span className="block truncate text-xs text-muted-foreground">
+              {summary ?? hint ?? (open ? "Recolher seção" : "Expandir seção")}
+            </span>
+          </span>
+          <span className="flex shrink-0 items-center gap-2 text-xs font-semibold text-muted-foreground">
+            {open ? "Recolher" : "Expandir"}
+            <ChevronDown
+              aria-hidden="true"
+              className={cn("h-4 w-4 transition-transform", open && "rotate-180")}
+            />
+          </span>
+        </button>
+      </h2>
+      {open ? (
+        <div id={`secao-${id}`} className="space-y-3 p-3 sm:p-4">
+          {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+          {children}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+
+/**
  * Padrão único de indicador do Dashboard.
  * Todo quadro é um botão acessível (teclado + leitor de tela) que expande o
  * detalhamento correspondente logo abaixo da seção.
