@@ -365,7 +365,7 @@ function Dashboard() {
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             id="atrasados"
-            label="🔴 Compromissos atrasados"
+            label="Compromissos atrasados"
             value={String(overdue.length)}
             hint="Agendados com data vencida"
             icon={AlarmClock}
@@ -375,7 +375,7 @@ function Dashboard() {
           />
           <MetricCard
             id="hoje"
-            label="📅 Compromissos para hoje"
+            label="Compromissos para hoje"
             value={String(todayAppts.length)}
             hint="Agenda do dia"
             icon={CalendarClock}
@@ -385,7 +385,7 @@ function Dashboard() {
           />
           <MetricCard
             id="proximos"
-            label="⏰ Próximos compromissos"
+            label="Próximos compromissos"
             value={String(upcoming.length)}
             hint={`${next7.length} nos próximos 7 dias`}
             icon={CalendarCheck2}
@@ -395,7 +395,7 @@ function Dashboard() {
           />
           <MetricCard
             id="sem_acao"
-            label="⚠️ Leads sem próxima ação"
+            label="Leads sem próxima ação"
             value={String(pendingByTone.sem_acao.length)}
             hint="Nenhum retorno definido"
             icon={CircleAlert}
