@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlarmClock,
   CalendarCheck2,
@@ -28,7 +28,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MetricCard, DetailPanel, GroupList, NoData } from "@/components/dashboard/DashboardKit";
+import {
+  MetricCard,
+  DetailPanel,
+  DashboardSection,
+  GroupList,
+  NoData,
+} from "@/components/dashboard/DashboardKit";
 import {
   AppointmentList,
   DocumentList,
@@ -95,6 +101,8 @@ function Dashboard() {
   const [preset, setPreset] = useState<string>("mes");
   const [range, setRange] = useState<DateRange>(() => presetRange("mes"));
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  const autoOpened = useRef(false);
 
   const { data: leads = [], isLoading: loadingLeads } = useQuery({
     queryKey: ["leads", "dashboard"],
@@ -280,9 +288,16 @@ function Dashboard() {
     if (v !== "custom") setRange(presetRange(v));
   }
 
+  /** Nível 1: apenas uma seção aberta por vez; ao trocar, os detalhes são recolhidos. */
+  function toggleSection(id: string | null) {
+    setOpenSection(id);
+    setExpanded(null);
+  }
+
   const close = () => setExpanded(null);
   const detail = (id: string) => expanded === id;
   const periodo = periodLabel(range);
+
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
