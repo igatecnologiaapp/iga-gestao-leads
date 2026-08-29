@@ -294,6 +294,14 @@ function Dashboard() {
     setExpanded(null);
   }
 
+  // Abre automaticamente "Precisa de atenção" (uma única vez) quando há pendências relevantes.
+  const hasAttention = overdue.length > 0 || todayAppts.length > 0;
+  useEffect(() => {
+    if (autoOpened.current || loading || !hasAttention) return;
+    autoOpened.current = true;
+    setOpenSection("atencao");
+  }, [loading, hasAttention]);
+
   const close = () => setExpanded(null);
   const detail = (id: string) => expanded === id;
   const periodo = periodLabel(range);
