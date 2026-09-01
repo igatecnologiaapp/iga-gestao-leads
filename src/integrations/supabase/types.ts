@@ -628,6 +628,88 @@ export type Database = {
           },
         ]
       }
+      lead_visits: {
+        Row: {
+          arrived_at: string | null
+          contact_person: string | null
+          created_at: string
+          distance_km: number | null
+          duration_minutes: number | null
+          finished_at: string | null
+          id: string
+          lead_id: string
+          next_contact_date: string | null
+          notes: string | null
+          result: Database["public"]["Enums"]["visit_result"]
+          route_id: string | null
+          started_at: string | null
+          stop_id: string | null
+          travel_minutes: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          arrived_at?: string | null
+          contact_person?: string | null
+          created_at?: string
+          distance_km?: number | null
+          duration_minutes?: number | null
+          finished_at?: string | null
+          id?: string
+          lead_id: string
+          next_contact_date?: string | null
+          notes?: string | null
+          result?: Database["public"]["Enums"]["visit_result"]
+          route_id?: string | null
+          started_at?: string | null
+          stop_id?: string | null
+          travel_minutes?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          arrived_at?: string | null
+          contact_person?: string | null
+          created_at?: string
+          distance_km?: number | null
+          duration_minutes?: number | null
+          finished_at?: string | null
+          id?: string
+          lead_id?: string
+          next_contact_date?: string | null
+          notes?: string | null
+          result?: Database["public"]["Enums"]["visit_result"]
+          route_id?: string | null
+          started_at?: string | null
+          stop_id?: string | null
+          travel_minutes?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_visits_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_visits_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "visit_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_visits_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "visit_route_stops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           city: string | null
@@ -649,6 +731,11 @@ export type Database = {
           phone: string | null
           postal_code: string | null
           segment_id: string | null
+          source: string
+          source_external_id: string | null
+          source_provider: string | null
+          source_region: string | null
+          source_searched_at: string | null
           state: string | null
           status: Database["public"]["Enums"]["lead_status"]
           street_id: string | null
@@ -676,6 +763,11 @@ export type Database = {
           phone?: string | null
           postal_code?: string | null
           segment_id?: string | null
+          source?: string
+          source_external_id?: string | null
+          source_provider?: string | null
+          source_region?: string | null
+          source_searched_at?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           street_id?: string | null
@@ -703,6 +795,11 @@ export type Database = {
           phone?: string | null
           postal_code?: string | null
           segment_id?: string | null
+          source?: string
+          source_external_id?: string | null
+          source_provider?: string | null
+          source_region?: string | null
+          source_searched_at?: string | null
           state?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           street_id?: string | null
@@ -1102,6 +1199,240 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicles: {
+        Row: {
+          active: boolean
+          avg_consumption: number
+          created_at: string
+          created_by: string
+          description: string
+          fuel_price: number
+          fuel_type: string
+          id: string
+          plate: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          avg_consumption?: number
+          created_at?: string
+          created_by?: string
+          description: string
+          fuel_price?: number
+          fuel_type?: string
+          id?: string
+          plate?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          avg_consumption?: number
+          created_at?: string
+          created_by?: string
+          description?: string
+          fuel_price?: number
+          fuel_type?: string
+          id?: string
+          plate?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      visit_route_stops: {
+        Row: {
+          actual_travel_minutes: number | null
+          actual_visit_minutes: number | null
+          address: string | null
+          created_at: string
+          id: string
+          latitude: number | null
+          lead_id: string
+          longitude: number | null
+          notes: string | null
+          planned_time: string | null
+          planned_travel_minutes: number | null
+          planned_visit_minutes: number
+          priority: number
+          route_id: string
+          sort_order: number
+          status: Database["public"]["Enums"]["route_stop_status"]
+          updated_at: string
+        }
+        Insert: {
+          actual_travel_minutes?: number | null
+          actual_visit_minutes?: number | null
+          address?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          lead_id: string
+          longitude?: number | null
+          notes?: string | null
+          planned_time?: string | null
+          planned_travel_minutes?: number | null
+          planned_visit_minutes?: number
+          priority?: number
+          route_id: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["route_stop_status"]
+          updated_at?: string
+        }
+        Update: {
+          actual_travel_minutes?: number | null
+          actual_visit_minutes?: number | null
+          address?: string | null
+          created_at?: string
+          id?: string
+          latitude?: number | null
+          lead_id?: string
+          longitude?: number | null
+          notes?: string | null
+          planned_time?: string | null
+          planned_travel_minutes?: number | null
+          planned_visit_minutes?: number
+          priority?: number
+          route_id?: string
+          sort_order?: number
+          status?: Database["public"]["Enums"]["route_stop_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_route_stops_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_route_stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "visit_routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visit_routes: {
+        Row: {
+          actual_cost: number | null
+          actual_distance_km: number | null
+          actual_duration_minutes: number | null
+          available_minutes: number | null
+          city: string | null
+          created_at: string
+          created_by: string
+          departure_time: string | null
+          end_address: string | null
+          end_label: string | null
+          end_latitude: number | null
+          end_longitude: number | null
+          estimated_cost: number | null
+          finished_at: string | null
+          id: string
+          notes: string | null
+          owner_id: string
+          planned_distance_km: number | null
+          planned_duration_minutes: number | null
+          region: string | null
+          route_date: string
+          segment_id: string | null
+          start_address: string | null
+          start_label: string | null
+          start_latitude: number | null
+          start_longitude: number | null
+          started_at: string | null
+          state: string | null
+          status: Database["public"]["Enums"]["route_status"]
+          title: string | null
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          actual_cost?: number | null
+          actual_distance_km?: number | null
+          actual_duration_minutes?: number | null
+          available_minutes?: number | null
+          city?: string | null
+          created_at?: string
+          created_by?: string
+          departure_time?: string | null
+          end_address?: string | null
+          end_label?: string | null
+          end_latitude?: number | null
+          end_longitude?: number | null
+          estimated_cost?: number | null
+          finished_at?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          planned_distance_km?: number | null
+          planned_duration_minutes?: number | null
+          region?: string | null
+          route_date: string
+          segment_id?: string | null
+          start_address?: string | null
+          start_label?: string | null
+          start_latitude?: number | null
+          start_longitude?: number | null
+          started_at?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["route_status"]
+          title?: string | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          actual_cost?: number | null
+          actual_distance_km?: number | null
+          actual_duration_minutes?: number | null
+          available_minutes?: number | null
+          city?: string | null
+          created_at?: string
+          created_by?: string
+          departure_time?: string | null
+          end_address?: string | null
+          end_label?: string | null
+          end_latitude?: number | null
+          end_longitude?: number | null
+          estimated_cost?: number | null
+          finished_at?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          planned_distance_km?: number | null
+          planned_duration_minutes?: number | null
+          region?: string | null
+          route_date?: string
+          segment_id?: string | null
+          start_address?: string | null
+          start_label?: string | null
+          start_latitude?: number | null
+          start_longitude?: number | null
+          started_at?: string | null
+          state?: string | null
+          status?: Database["public"]["Enums"]["route_status"]
+          title?: string | null
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_routes_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "visit_routes_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1109,6 +1440,7 @@ export type Database = {
     Functions: {
       can_access_document: { Args: { _document_id: string }; Returns: boolean }
       can_access_lead: { Args: { _lead_id: string }; Returns: boolean }
+      can_access_route: { Args: { _route_id: string }; Returns: boolean }
       can_delete_documents: { Args: { _user_id: string }; Returns: boolean }
       can_edit_lead: { Args: { _lead_id: string }; Returns: boolean }
       can_view_all_leads: { Args: { _user_id: string }; Returns: boolean }
@@ -1152,6 +1484,25 @@ export type Database = {
         | "negociacao"
         | "convertido"
         | "perdido"
+      route_status: "planejado" | "em_andamento" | "concluido" | "cancelado"
+      route_stop_status:
+        | "pendente"
+        | "em_deslocamento"
+        | "em_visita"
+        | "visitado"
+        | "nao_visitado"
+        | "reagendado"
+        | "cancelado"
+      visit_result:
+        | "responsavel_ausente"
+        | "contato_realizado"
+        | "sem_interesse"
+        | "interessado"
+        | "demonstracao"
+        | "proposta"
+        | "follow_up"
+        | "venda"
+        | "nao_informado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1296,6 +1647,27 @@ export const Constants = {
         "negociacao",
         "convertido",
         "perdido",
+      ],
+      route_status: ["planejado", "em_andamento", "concluido", "cancelado"],
+      route_stop_status: [
+        "pendente",
+        "em_deslocamento",
+        "em_visita",
+        "visitado",
+        "nao_visitado",
+        "reagendado",
+        "cancelado",
+      ],
+      visit_result: [
+        "responsavel_ausente",
+        "contato_realizado",
+        "sem_interesse",
+        "interessado",
+        "demonstracao",
+        "proposta",
+        "follow_up",
+        "venda",
+        "nao_informado",
       ],
     },
   },
