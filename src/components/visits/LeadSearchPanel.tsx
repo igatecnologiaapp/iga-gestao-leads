@@ -53,8 +53,14 @@ export function LeadSearchPanel() {
   );
 
   async function handleSearch() {
-    if (!segment) return toast.error("Selecione o segmento.");
-    if (city.trim().length < 2) return toast.error("Informe a cidade.");
+    if (!segment) {
+      toast.error("Selecione o segmento.");
+      return;
+    }
+    if (city.trim().length < 2) {
+      toast.error("Informe a cidade.");
+      return;
+    }
     setLoading(true);
     setSelected(new Set());
     setImportedIds([]);
@@ -99,7 +105,10 @@ export function LeadSearchPanel() {
   async function importSelected() {
     if (!user || !segment) return;
     const chosen = analyzed.filter((a) => selected.has(a.place.externalId) && !a.duplicate);
-    if (chosen.length === 0) return toast.error("Selecione ao menos um estabelecimento novo.");
+    if (chosen.length === 0) {
+      toast.error("Selecione ao menos um estabelecimento novo.");
+      return;
+    }
     setImporting(true);
     try {
       const now = new Date().toISOString();
@@ -109,7 +118,7 @@ export function LeadSearchPanel() {
         segment_id: segment.id,
         street_name: place.street,
         number: place.number,
-        neighborhood_name: place.neighborhood ?? region.trim() || null,
+        neighborhood_name: place.neighborhood ?? (region.trim() || null),
         city: place.city ?? city.trim(),
         state: place.state ?? state.trim().toUpperCase(),
         postal_code: place.postalCode,
