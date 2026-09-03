@@ -11,6 +11,7 @@ import {
   Package,
   FileText,
   Briefcase,
+  MapPinned,
   ChevronDown,
   ShieldCheck,
   BadgeCheck,
@@ -51,6 +52,7 @@ const groups = [
       { title: "Captar Lead", url: "/captar", icon: PlusCircle },
       { title: "Leads", url: "/leads", icon: Users2 },
       { title: "Agenda", url: "/agenda", icon: CalendarDays },
+      { title: "Gestão de Visitas", url: "/visitas", icon: MapPinned },
     ],
   },
   {
