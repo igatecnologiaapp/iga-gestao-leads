@@ -99,7 +99,7 @@ function RoteiroPage() {
 
   async function patchRoute(patch: Record<string, unknown>) {
     setSavingHeader(true);
-    const { error } = await supabase.from("visit_routes").update(patch).eq("id", id);
+    const { error } = await supabase.from("visit_routes").update(patch as never).eq("id", id);
     setSavingHeader(false);
     if (error) {
       toast.error(error.message);
@@ -110,8 +110,8 @@ function RoteiroPage() {
     toast.success("Roteiro atualizado.");
   }
 
-  async function patchStop(stop: RouteStop, patch: Partial<RouteStop>) {
-    const { error } = await supabase.from("visit_route_stops").update(patch).eq("id", stop.id);
+  async function patchStop(stop: RouteStop, patch: Record<string, unknown>) {
+    const { error } = await supabase.from("visit_route_stops").update(patch as never).eq("id", stop.id);
     if (error) {
       toast.error(error.message);
       return;

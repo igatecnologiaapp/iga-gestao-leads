@@ -28,6 +28,7 @@ import { Route as AuthenticatedComercialIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 import { Route as AuthenticatedVisitasIndexRouteImport } from './routes/_authenticated/visitas.index'
+import { Route as AuthenticatedVisitasIdRouteImport } from './routes/_authenticated/visitas.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -126,6 +127,11 @@ const AuthenticatedVisitasIndexRoute =
     path: '/visitas/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVisitasIdRoute = AuthenticatedVisitasIdRouteImport.update({
+  id: '/visitas/$id',
+  path: '/visitas/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/comercial/$id': typeof AuthenticatedComercialIdRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
+  '/visitas/$id': typeof AuthenticatedVisitasIdRoute
   '/comercial/': typeof AuthenticatedComercialIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
   '/visitas/': typeof AuthenticatedVisitasIndexRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/comercial/$id': typeof AuthenticatedComercialIdRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
+  '/visitas/$id': typeof AuthenticatedVisitasIdRoute
   '/comercial': typeof AuthenticatedComercialIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
   '/visitas': typeof AuthenticatedVisitasIndexRoute
@@ -185,6 +193,7 @@ export interface FileRoutesById {
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/comercial/$id': typeof AuthenticatedComercialIdRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
+  '/_authenticated/visitas/$id': typeof AuthenticatedVisitasIdRoute
   '/_authenticated/comercial/': typeof AuthenticatedComercialIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
   '/_authenticated/visitas/': typeof AuthenticatedVisitasIndexRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/comercial/$id'
     | '/leads/$id'
+    | '/visitas/$id'
     | '/comercial/'
     | '/leads/'
     | '/visitas/'
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/comercial/$id'
     | '/leads/$id'
+    | '/visitas/$id'
     | '/comercial'
     | '/leads'
     | '/visitas'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/_authenticated/usuarios'
     | '/_authenticated/comercial/$id'
     | '/_authenticated/leads/$id'
+    | '/_authenticated/visitas/$id'
     | '/_authenticated/comercial/'
     | '/_authenticated/leads/'
     | '/_authenticated/visitas/'
@@ -395,6 +407,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVisitasIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/visitas/$id': {
+      id: '/_authenticated/visitas/$id'
+      path: '/visitas/$id'
+      fullPath: '/visitas/$id'
+      preLoaderRoute: typeof AuthenticatedVisitasIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -411,6 +430,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedComercialIdRoute: typeof AuthenticatedComercialIdRoute
   AuthenticatedLeadsIdRoute: typeof AuthenticatedLeadsIdRoute
+  AuthenticatedVisitasIdRoute: typeof AuthenticatedVisitasIdRoute
   AuthenticatedComercialIndexRoute: typeof AuthenticatedComercialIndexRoute
   AuthenticatedLeadsIndexRoute: typeof AuthenticatedLeadsIndexRoute
   AuthenticatedVisitasIndexRoute: typeof AuthenticatedVisitasIndexRoute
@@ -429,6 +449,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedComercialIdRoute: AuthenticatedComercialIdRoute,
   AuthenticatedLeadsIdRoute: AuthenticatedLeadsIdRoute,
+  AuthenticatedVisitasIdRoute: AuthenticatedVisitasIdRoute,
   AuthenticatedComercialIndexRoute: AuthenticatedComercialIndexRoute,
   AuthenticatedLeadsIndexRoute: AuthenticatedLeadsIndexRoute,
   AuthenticatedVisitasIndexRoute: AuthenticatedVisitasIndexRoute,
