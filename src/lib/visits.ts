@@ -59,6 +59,10 @@ export function stopStatusLabel(value: string): string {
   return STOP_STATUSES.find((s) => s.value === value)?.label ?? value;
 }
 
+export function visitResultLabel(value: string): string {
+  return VISIT_RESULTS.find((r) => r.value === value)?.label ?? value;
+}
+
 export function priorityLabel(value: number): string {
   return PRIORITIES.find((p) => p.value === value)?.label ?? String(value);
 }
