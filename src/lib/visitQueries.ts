@@ -158,3 +158,38 @@ export function leadAddress(lead: LeadLite): string {
     .filter(Boolean)
     .join(" · ");
 }
+
+const VISIT_COLS =
+  "id, lead_id, route_id, stop_id, user_id, arrived_at, started_at, finished_at, duration_minutes, distance_km, result, contact_person, notes, next_contact_date, created_at";
+
+/** Visitas visíveis ao usuário (RLS: apenas Leads acessíveis). */
+export function useLeadVisits() {
+  return useQuery({
+    queryKey: ["lead_visits"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_visits")
+        .select(VISIT_COLS)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data as unknown as LeadVisit[];
+    },
+  });
+}
+
+/** Visitas de um roteiro específico (execução e progresso). */
+export function useRouteVisits(routeId: string) {
+  return useQuery({
+    queryKey: ["lead_visits", "route", routeId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_visits")
+        .select(VISIT_COLS)
+        .eq("route_id", routeId)
+        .order("created_at");
+      if (error) throw error;
+      return data as unknown as LeadVisit[];
+    },
+  });
+}
