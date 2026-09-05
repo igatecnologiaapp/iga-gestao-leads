@@ -1,7 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowLeft, ArrowUp, Plus, Save, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  CheckCircle2,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Play,
+  Plus,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -13,15 +25,25 @@ import { Badge } from "@/components/ui/badge";
 import { Combobox } from "@/components/Combobox";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState, LoadingState } from "@/components/DataState";
+import { VisitResultDialog } from "@/components/visits/VisitResultDialog";
 import { useAuth } from "@/hooks/useAuth";
 import {
   leadAddress,
   useLeadsLite,
   useRouteStops,
+  useRouteVisits,
   useVehicles,
   useVisitRoute,
   type RouteStop,
 } from "@/lib/visitQueries";
+import {
+  mapsLink,
+  setRouteStatus,
+  startVisit,
+  telLink,
+  whatsappLink,
+  type LeadVisit,
+} from "@/lib/visitActions";
 import {
   PRIORITIES,
   ROUTE_STATUSES,
@@ -31,6 +53,7 @@ import {
   fuelCost,
   routeStatusClass,
   routeStatusLabel,
+  stopStatusLabel,
 } from "@/lib/visits";
 
 export const Route = createFileRoute("/_authenticated/visitas/$id")({
