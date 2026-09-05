@@ -85,14 +85,30 @@ function RoteiroPage() {
   const { data: stops = [] } = useRouteStops(id);
   const { data: leads = [] } = useLeadsLite();
   const { data: vehicles = [] } = useVehicles();
+  const { data: visits = [] } = useRouteVisits(id);
 
   const [addLead, setAddLead] = useState<string | null>(null);
   const [savingHeader, setSavingHeader] = useState(false);
   const [draftNotes, setDraftNotes] = useState<string | null>(null);
+  const [resultStopId, setResultStopId] = useState<string | null>(null);
 
   const canEdit = !!route && (isAdmin || route.owner_id === user?.id || route.created_by === user?.id);
   const leadById = useMemo(() => new Map(leads.map((l) => [l.id, l])), [leads]);
   const vehicle = vehicles.find((v) => v.id === route?.vehicle_id) ?? null;
+
+  /** Visita em andamento por parada (sem horário de término). */
+  const openVisitByStop = useMemo(() => {
+    const map = new Map<string, LeadVisit>();
+    for (const v of visits) if (v.stop_id && !v.finished_at) map.set(v.stop_id, v);
+    return map;
+  }, [visits]);
+
+  const doneStops = stops.filter((s) => s.status === "visitado").length;
+  const failedStops = stops.filter(
+    (s) => s.status === "nao_visitado" || s.status === "cancelado",
+  ).length;
+  const pendingStops = Math.max(0, stops.length - doneStops - failedStops);
+  const progress = stops.length ? Math.round((doneStops / stops.length) * 100) : 0;
 
   const totalDistance = useMemo(() => {
     let total = 0;
