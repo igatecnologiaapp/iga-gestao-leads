@@ -1,7 +1,19 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowDown, ArrowLeft, ArrowUp, Plus, Save, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  CheckCircle2,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Play,
+  Plus,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -13,15 +25,25 @@ import { Badge } from "@/components/ui/badge";
 import { Combobox } from "@/components/Combobox";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState, LoadingState } from "@/components/DataState";
+import { VisitResultDialog } from "@/components/visits/VisitResultDialog";
 import { useAuth } from "@/hooks/useAuth";
 import {
   leadAddress,
   useLeadsLite,
   useRouteStops,
+  useRouteVisits,
   useVehicles,
   useVisitRoute,
   type RouteStop,
 } from "@/lib/visitQueries";
+import {
+  mapsLink,
+  setRouteStatus,
+  startVisit,
+  telLink,
+  whatsappLink,
+  type LeadVisit,
+} from "@/lib/visitActions";
 import {
   PRIORITIES,
   ROUTE_STATUSES,
@@ -31,6 +53,7 @@ import {
   fuelCost,
   routeStatusClass,
   routeStatusLabel,
+  stopStatusLabel,
 } from "@/lib/visits";
 
 export const Route = createFileRoute("/_authenticated/visitas/$id")({
@@ -62,14 +85,30 @@ function RoteiroPage() {
   const { data: stops = [] } = useRouteStops(id);
   const { data: leads = [] } = useLeadsLite();
   const { data: vehicles = [] } = useVehicles();
+  const { data: visits = [] } = useRouteVisits(id);
 
   const [addLead, setAddLead] = useState<string | null>(null);
   const [savingHeader, setSavingHeader] = useState(false);
   const [draftNotes, setDraftNotes] = useState<string | null>(null);
+  const [resultStopId, setResultStopId] = useState<string | null>(null);
 
   const canEdit = !!route && (isAdmin || route.owner_id === user?.id || route.created_by === user?.id);
   const leadById = useMemo(() => new Map(leads.map((l) => [l.id, l])), [leads]);
   const vehicle = vehicles.find((v) => v.id === route?.vehicle_id) ?? null;
+
+  /** Visita em andamento por parada (sem horário de término). */
+  const openVisitByStop = useMemo(() => {
+    const map = new Map<string, LeadVisit>();
+    for (const v of visits) if (v.stop_id && !v.finished_at) map.set(v.stop_id, v);
+    return map;
+  }, [visits]);
+
+  const doneStops = stops.filter((s) => s.status === "visitado").length;
+  const failedStops = stops.filter(
+    (s) => s.status === "nao_visitado" || s.status === "cancelado",
+  ).length;
+  const pendingStops = Math.max(0, stops.length - doneStops - failedStops);
+  const progress = stops.length ? Math.round((doneStops / stops.length) * 100) : 0;
 
   const totalDistance = useMemo(() => {
     let total = 0;
@@ -94,6 +133,38 @@ function RoteiroPage() {
 
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["visit_route_stops", id] });
+    await queryClient.invalidateQueries({ queryKey: ["visit_routes"] });
+    await queryClient.invalidateQueries({ queryKey: ["lead_visits"] });
+  }
+
+  /** Inicia a visita da parada (data/hora real e status em visita). */
+  async function handleStartVisit(stop: RouteStop) {
+    if (!user) return;
+    const res = await startVisit({
+      leadId: stop.lead_id,
+      routeId: id,
+      stopId: stop.id,
+      userId: user.id,
+      routeTitle: route?.title ?? null,
+    });
+    if (!res.ok) {
+      toast.error(res.message ?? "Não foi possível iniciar a visita.");
+      return;
+    }
+    if (route?.status === "planejado") await setRouteStatus(id, "em_andamento");
+    toast.success("Visita iniciada.");
+    await refresh();
+    await queryClient.invalidateQueries({ queryKey: ["visit_routes", id] });
+  }
+
+  async function handleRouteStatus(status: "em_andamento" | "concluido" | "cancelado") {
+    const res = await setRouteStatus(id, status);
+    if (!res.ok) {
+      toast.error(res.message ?? "Não foi possível atualizar o roteiro.");
+      return;
+    }
+    toast.success("Roteiro atualizado.");
+    await queryClient.invalidateQueries({ queryKey: ["visit_routes", id] });
     await queryClient.invalidateQueries({ queryKey: ["visit_routes"] });
   }
 
@@ -218,6 +289,52 @@ function RoteiroPage() {
         />
       </section>
 
+      <section className="space-y-3 rounded-2xl border bg-card p-3 sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-bold tracking-wide uppercase">Andamento do roteiro</h2>
+          <span className="text-sm font-semibold">{progress}%</span>
+        </div>
+        <div
+          className="h-2 w-full overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-valuenow={progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Progresso do roteiro"
+        >
+          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Metric label="Total" value={String(stops.length)} />
+          <Metric label="Realizadas" value={String(doneStops)} />
+          <Metric label="Pendentes" value={String(pendingStops)} />
+          <Metric label="Não realizadas" value={String(failedStops)} />
+        </div>
+        {canEdit ? (
+          <div className="flex flex-wrap gap-2">
+            {route.status === "planejado" ? (
+              <Button className="h-11" onClick={() => void handleRouteStatus("em_andamento")}>
+                <Play className="h-4 w-4" /> Iniciar roteiro
+              </Button>
+            ) : null}
+            {route.status === "em_andamento" ? (
+              <>
+                <Button className="h-11" onClick={() => void handleRouteStatus("concluido")}>
+                  <CheckCircle2 className="h-4 w-4" /> Concluir roteiro
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-11"
+                  onClick={() => void handleRouteStatus("cancelado")}
+                >
+                  Cancelar roteiro
+                </Button>
+              </>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+
       {canEdit ? (
         <section className="grid gap-3 rounded-2xl border bg-card p-3 sm:grid-cols-2 sm:p-4">
           <div className="grid gap-1.5">
@@ -303,6 +420,14 @@ function RoteiroPage() {
           <ol className="space-y-3">
             {stops.map((stop, index) => {
               const lead = leadById.get(stop.lead_id);
+              const openVisit = openVisitByStop.get(stop.id) ?? null;
+              const tel = telLink(lead?.phone);
+              const wa = whatsappLink(lead?.phone);
+              const maps = mapsLink({
+                latitude: stop.latitude,
+                longitude: stop.longitude,
+                address: stop.address ?? (lead ? leadAddress(lead) : null),
+              });
               return (
                 <li key={stop.id} className="rounded-2xl border bg-card p-3">
                   <div className="flex items-start gap-2">
@@ -318,8 +443,57 @@ function RoteiroPage() {
                         {lead?.company_name ?? "Lead"}
                       </Link>
                       <p className="truncate text-xs text-muted-foreground">
+                        {[lead?.contact_name, lead?.phone].filter(Boolean).join(" · ") ||
+                          "Contato não disponível"}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
                         {stop.address ?? (lead ? leadAddress(lead) : "Endereço não disponível")}
                       </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">{stopStatusLabel(stop.status)}</Badge>
+                        {tel ? (
+                          <Button asChild size="sm" variant="outline" className="h-9">
+                            <a href={tel}>
+                              <Phone className="h-4 w-4" /> Ligar
+                            </a>
+                          </Button>
+                        ) : null}
+                        {wa ? (
+                          <Button asChild size="sm" variant="outline" className="h-9">
+                            <a href={wa} target="_blank" rel="noreferrer">
+                              <MessageCircle className="h-4 w-4" /> WhatsApp
+                            </a>
+                          </Button>
+                        ) : null}
+                        {maps ? (
+                          <Button asChild size="sm" variant="outline" className="h-9">
+                            <a href={maps} target="_blank" rel="noreferrer">
+                              <MapPin className="h-4 w-4" /> Localização
+                            </a>
+                          </Button>
+                        ) : null}
+                        {canEdit && !openVisit && stop.status !== "visitado" ? (
+                          <Button size="sm" className="h-9" onClick={() => void handleStartVisit(stop)}>
+                            <Play className="h-4 w-4" /> Iniciar visita
+                          </Button>
+                        ) : null}
+                        {canEdit && openVisit ? (
+                          <Button size="sm" className="h-9" onClick={() => setResultStopId(stop.id)}>
+                            <CheckCircle2 className="h-4 w-4" /> Registrar resultado
+                          </Button>
+                        ) : null}
+                      </div>
+                      {openVisit && resultStopId === stop.id ? (
+                        <VisitResultDialog
+                          open
+                          onOpenChange={(o) => !o && setResultStopId(null)}
+                          visit={openVisit}
+                          stopId={stop.id}
+                          leadName={lead?.company_name ?? "Lead"}
+                          routeTitle={route.title}
+                          onSaved={refresh}
+                        />
+                      ) : null}
                       <div className="mt-2 grid gap-2 sm:grid-cols-4">
                         <FieldMini label="Prioridade">
                           <Combobox
