@@ -420,6 +420,14 @@ function RoteiroPage() {
           <ol className="space-y-3">
             {stops.map((stop, index) => {
               const lead = leadById.get(stop.lead_id);
+              const openVisit = openVisitByStop.get(stop.id) ?? null;
+              const tel = telLink(lead?.phone);
+              const wa = whatsappLink(lead?.phone);
+              const maps = mapsLink({
+                latitude: stop.latitude,
+                longitude: stop.longitude,
+                address: stop.address ?? (lead ? leadAddress(lead) : null),
+              });
               return (
                 <li key={stop.id} className="rounded-2xl border bg-card p-3">
                   <div className="flex items-start gap-2">
@@ -435,8 +443,57 @@ function RoteiroPage() {
                         {lead?.company_name ?? "Lead"}
                       </Link>
                       <p className="truncate text-xs text-muted-foreground">
+                        {[lead?.contact_name, lead?.phone].filter(Boolean).join(" · ") ||
+                          "Contato não disponível"}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
                         {stop.address ?? (lead ? leadAddress(lead) : "Endereço não disponível")}
                       </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <Badge variant="outline">{stopStatusLabel(stop.status)}</Badge>
+                        {tel ? (
+                          <Button asChild size="sm" variant="outline" className="h-9">
+                            <a href={tel}>
+                              <Phone className="h-4 w-4" /> Ligar
+                            </a>
+                          </Button>
+                        ) : null}
+                        {wa ? (
+                          <Button asChild size="sm" variant="outline" className="h-9">
+                            <a href={wa} target="_blank" rel="noreferrer">
+                              <MessageCircle className="h-4 w-4" /> WhatsApp
+                            </a>
+                          </Button>
+                        ) : null}
+                        {maps ? (
+                          <Button asChild size="sm" variant="outline" className="h-9">
+                            <a href={maps} target="_blank" rel="noreferrer">
+                              <MapPin className="h-4 w-4" /> Localização
+                            </a>
+                          </Button>
+                        ) : null}
+                        {canEdit && !openVisit && stop.status !== "visitado" ? (
+                          <Button size="sm" className="h-9" onClick={() => void handleStartVisit(stop)}>
+                            <Play className="h-4 w-4" /> Iniciar visita
+                          </Button>
+                        ) : null}
+                        {canEdit && openVisit ? (
+                          <Button size="sm" className="h-9" onClick={() => setResultStopId(stop.id)}>
+                            <CheckCircle2 className="h-4 w-4" /> Registrar resultado
+                          </Button>
+                        ) : null}
+                      </div>
+                      {openVisit && resultStopId === stop.id ? (
+                        <VisitResultDialog
+                          open
+                          onOpenChange={(o) => !o && setResultStopId(null)}
+                          visit={openVisit}
+                          stopId={stop.id}
+                          leadName={lead?.company_name ?? "Lead"}
+                          routeTitle={route.title}
+                          onSaved={refresh}
+                        />
+                      ) : null}
                       <div className="mt-2 grid gap-2 sm:grid-cols-4">
                         <FieldMini label="Prioridade">
                           <Combobox
