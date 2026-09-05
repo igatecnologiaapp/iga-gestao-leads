@@ -289,6 +289,52 @@ function RoteiroPage() {
         />
       </section>
 
+      <section className="space-y-3 rounded-2xl border bg-card p-3 sm:p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-bold tracking-wide uppercase">Andamento do roteiro</h2>
+          <span className="text-sm font-semibold">{progress}%</span>
+        </div>
+        <div
+          className="h-2 w-full overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-valuenow={progress}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Progresso do roteiro"
+        >
+          <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Metric label="Total" value={String(stops.length)} />
+          <Metric label="Realizadas" value={String(doneStops)} />
+          <Metric label="Pendentes" value={String(pendingStops)} />
+          <Metric label="Não realizadas" value={String(failedStops)} />
+        </div>
+        {canEdit ? (
+          <div className="flex flex-wrap gap-2">
+            {route.status === "planejado" ? (
+              <Button className="h-11" onClick={() => void handleRouteStatus("em_andamento")}>
+                <Play className="h-4 w-4" /> Iniciar roteiro
+              </Button>
+            ) : null}
+            {route.status === "em_andamento" ? (
+              <>
+                <Button className="h-11" onClick={() => void handleRouteStatus("concluido")}>
+                  <CheckCircle2 className="h-4 w-4" /> Concluir roteiro
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-11"
+                  onClick={() => void handleRouteStatus("cancelado")}
+                >
+                  Cancelar roteiro
+                </Button>
+              </>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+
       {canEdit ? (
         <section className="grid gap-3 rounded-2xl border bg-card p-3 sm:grid-cols-2 sm:p-4">
           <div className="grid gap-1.5">
