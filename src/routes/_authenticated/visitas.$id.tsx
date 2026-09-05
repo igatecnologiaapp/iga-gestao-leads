@@ -134,6 +134,38 @@ function RoteiroPage() {
   async function refresh() {
     await queryClient.invalidateQueries({ queryKey: ["visit_route_stops", id] });
     await queryClient.invalidateQueries({ queryKey: ["visit_routes"] });
+    await queryClient.invalidateQueries({ queryKey: ["lead_visits"] });
+  }
+
+  /** Inicia a visita da parada (data/hora real e status em visita). */
+  async function handleStartVisit(stop: RouteStop) {
+    if (!user) return;
+    const res = await startVisit({
+      leadId: stop.lead_id,
+      routeId: id,
+      stopId: stop.id,
+      userId: user.id,
+      routeTitle: route?.title ?? null,
+    });
+    if (!res.ok) {
+      toast.error(res.message ?? "Não foi possível iniciar a visita.");
+      return;
+    }
+    if (route?.status === "planejado") await setRouteStatus(id, "em_andamento");
+    toast.success("Visita iniciada.");
+    await refresh();
+    await queryClient.invalidateQueries({ queryKey: ["visit_routes", id] });
+  }
+
+  async function handleRouteStatus(status: "em_andamento" | "concluido" | "cancelado") {
+    const res = await setRouteStatus(id, status);
+    if (!res.ok) {
+      toast.error(res.message ?? "Não foi possível atualizar o roteiro.");
+      return;
+    }
+    toast.success("Roteiro atualizado.");
+    await queryClient.invalidateQueries({ queryKey: ["visit_routes", id] });
+    await queryClient.invalidateQueries({ queryKey: ["visit_routes"] });
   }
 
   async function patchRoute(patch: Record<string, unknown>) {
