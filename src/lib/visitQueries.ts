@@ -194,3 +194,34 @@ export function useRouteVisits(routeId: string) {
     },
   });
 }
+
+/** Todas as paradas visíveis ao usuário (base de pendentes/não realizadas). */
+export function useAllRouteStops() {
+  return useQuery({
+    queryKey: ["visit_route_stops", "all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("visit_route_stops")
+        .select("*")
+        .order("sort_order");
+      if (error) throw error;
+      return data as unknown as RouteStop[];
+    },
+  });
+}
+
+/** Visitas de um Lead específico (usado na aba Histórico da Central do Lead). */
+export function useVisitsByLead(leadId: string) {
+  return useQuery({
+    queryKey: ["lead_visits", "lead", leadId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lead_visits")
+        .select(VISIT_COLS)
+        .eq("lead_id", leadId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as unknown as LeadVisit[];
+    },
+  });
+}
