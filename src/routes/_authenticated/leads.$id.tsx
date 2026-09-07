@@ -25,6 +25,7 @@ import { EditLeadDialog } from "@/components/lead/EditLeadDialog";
 import { LeadHeaderCard } from "@/components/lead/LeadHeaderCard";
 import { LeadDataTab } from "@/components/lead/LeadDataTab";
 import { LeadQualificationTab } from "@/components/lead/LeadQualificationTab";
+import { LeadVisitsHistory } from "@/components/lead/LeadVisitsHistory";
 import { formatDateTime } from "@/lib/leads";
 import { useLeadAppointments, useProfiles, useSegments } from "@/lib/queries";
 import { useAuth } from "@/hooks/useAuth";
@@ -232,7 +233,8 @@ function LeadDetail() {
           <LeadCommercialDocs leadId={lead.id} onNewDocument={() => setNewDocOpen(true)} />
         </TabsContent>
 
-        <TabsContent value="historico" className="mt-4">
+        <TabsContent value="historico" className="mt-4 space-y-4">
+          <LeadVisitsHistory leadId={lead.id} />
           <section className="rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)]">
             <h2 className="text-sm font-bold">Histórico do relacionamento</h2>
             <ul className="mt-3 space-y-3">
