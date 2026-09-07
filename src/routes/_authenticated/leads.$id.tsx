@@ -25,6 +25,7 @@ import { EditLeadDialog } from "@/components/lead/EditLeadDialog";
 import { LeadHeaderCard } from "@/components/lead/LeadHeaderCard";
 import { LeadDataTab } from "@/components/lead/LeadDataTab";
 import { LeadQualificationTab } from "@/components/lead/LeadQualificationTab";
+import { LeadVisitsHistory } from "@/components/lead/LeadVisitsHistory";
 import { formatDateTime } from "@/lib/leads";
 import { useLeadAppointments, useProfiles, useSegments } from "@/lib/queries";
 import { useAuth } from "@/hooks/useAuth";

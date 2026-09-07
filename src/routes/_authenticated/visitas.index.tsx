@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { LeadSearchPanel } from "@/components/visits/LeadSearchPanel";
 import { RoutesPanel } from "@/components/visits/RoutesPanel";
 import { VehiclesPanel } from "@/components/visits/VehiclesPanel";
+import { VisitHistoryPanel } from "@/components/visits/VisitHistoryPanel";
+import { VisitInsightsPanel } from "@/components/visits/VisitInsightsPanel";
 
 export const Route = createFileRoute("/_authenticated/visitas/")({
   head: () => ({
