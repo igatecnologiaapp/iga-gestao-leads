@@ -148,21 +148,18 @@ async function searchOsm(input: z.infer<typeof searchSchema>): Promise<PlaceSear
         })
         .join("")});out center ${input.limit * 2};`;
 
-  const res = await fetch("https://overpass-api.de/api/interpreter", {
-    method: "POST",
-    headers: { "Content-Type": "text/plain", "User-Agent": UA },
-    body,
-  });
-  if (!res.ok) {
+  const overpass = await fetchOverpass(body);
+  if (!overpass.ok) {
     return {
       provider: "OpenStreetMap (Nominatim + Overpass)",
       center,
       results: [],
-      message: `Serviço de pesquisa indisponível no momento (HTTP ${res.status}).`,
+      message:
+        "O serviço público de mapas (OpenStreetMap) está temporariamente indisponível. Nenhum dado foi alterado — aguarde alguns instantes e clique em PESQUISAR LEADS novamente.",
     };
   }
-  const json = (await res.json()) as { elements?: OverpassElement[] };
-  const elements = json.elements ?? [];
+  const elements = overpass.elements;
+
 
   const results: PlaceResult[] = elements
     .map((el) => {
