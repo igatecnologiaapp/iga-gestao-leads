@@ -394,12 +394,14 @@ export const searchPlaces = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => searchSchema.parse(data))
   .handler(async ({ data }): Promise<PlaceSearchResult> => {
-    const provider = PROVIDERS[data.provider ?? "osm"];
+    const key = data.provider ?? "google";
+    const provider = PROVIDERS[key];
     try {
       return await provider(data);
-    } catch {
+    } catch (e) {
+      console.error("Falha na pesquisa externa de estabelecimentos:", e);
       return {
-        provider: "OpenStreetMap (Nominatim + Overpass)",
+        provider: key === "google" ? GOOGLE_PROVIDER_LABEL : "OpenStreetMap (Nominatim + Overpass)",
         center: null,
         results: [],
         message: "Não foi possível concluir a pesquisa externa agora. Tente novamente.",
