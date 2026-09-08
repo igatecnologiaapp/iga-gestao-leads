@@ -20,7 +20,7 @@ const searchSchema = z.object({
   region: z.string().trim().max(160).optional().nullable(),
   radiusKm: z.number().min(0.5).max(20),
   limit: z.number().int().min(1).max(60),
-  provider: z.enum(["osm"]).optional(),
+  provider: z.enum(["google", "osm"]).optional(),
 });
 
 export type PlaceResult = {
@@ -232,19 +232,176 @@ async function searchOsm(input: z.infer<typeof searchSchema>): Promise<PlaceSear
   return { provider: "OpenStreetMap (Nominatim + Overpass)", center, results };
 }
 
-const PROVIDERS = { osm: searchOsm };
+/* ------------------------------------------------------------------ */
+/* Provedor: Google Places API (New) — Text Search                     */
+/* ------------------------------------------------------------------ */
+
+const GOOGLE_PROVIDER_LABEL = "Google Places API (New)";
+const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_maps";
+
+/** Somente os campos necessários ao fluxo — evita cobrança por dados extras. */
+const PLACES_FIELD_MASK = [
+  "places.id",
+  "places.displayName",
+  "places.formattedAddress",
+  "places.addressComponents",
+  "places.location",
+  "places.nationalPhoneNumber",
+  "places.websiteUri",
+  "nextPageToken",
+].join(",");
+
+type GooglePlace = {
+  id: string;
+  displayName?: { text?: string };
+  formattedAddress?: string;
+  addressComponents?: { longText?: string; shortText?: string; types?: string[] }[];
+  location?: { latitude?: number; longitude?: number };
+  nationalPhoneNumber?: string;
+  websiteUri?: string;
+};
+
+function component(place: GooglePlace, type: string, short = false): string | null {
+  const c = place.addressComponents?.find((x) => x.types?.includes(type));
+  if (!c) return null;
+  return (short ? c.shortText : c.longText) ?? null;
+}
+
+function googleErrorMessage(status: number, body: string): string {
+  if (status === 401 || status === 403) {
+    if (/API_KEY_HTTP_REFERRER_BLOCKED/.test(body))
+      return "A chave do Google Maps está restrita por domínio e bloqueou a consulta do servidor. Ajuste as restrições da chave para 'Nenhuma' ou por endereço IP.";
+    if (/API_KEY_SERVICE_BLOCKED|SERVICE_DISABLED|has not been used/i.test(body))
+      return "A Places API (New) não está habilitada ou não é permitida para esta chave. Habilite a API e libere-a na chave.";
+    return "Não foi possível autenticar na pesquisa do Google. Verifique a configuração da chave.";
+  }
+  if (status === 429) return "Limite de consultas do Google atingido no momento. Aguarde alguns instantes e tente novamente.";
+  if (status === 400) return "Não foi possível montar a consulta com os filtros informados. Revise cidade, UF e região.";
+  if (status >= 500) return "O serviço de pesquisa do Google está temporariamente indisponível. Tente novamente em instantes.";
+  return "Não foi possível concluir a pesquisa agora. Tente novamente.";
+}
+
+async function searchGoogle(input: z.infer<typeof searchSchema>): Promise<PlaceSearchResult> {
+  const lovableKey = process.env["LOVABLE_API_KEY"];
+  const mapsKey = process.env["GOOGLE_MAPS_API_KEY"];
+  if (!lovableKey || !mapsKey) {
+    return {
+      provider: GOOGLE_PROVIDER_LABEL,
+      center: null,
+      results: [],
+      message: "A pesquisa pelo Google ainda não está configurada neste ambiente.",
+    };
+  }
+
+  const regionLabel = [input.region, input.city, input.state].filter(Boolean).join(", ");
+  // Geocodificação gratuita (Nominatim) apenas para centrar o raio — evita SKU extra do Google.
+  const center = await geocode(regionLabel || input.city);
+
+  const textQuery = `${input.segment} em ${regionLabel || input.city}`;
+  const radius = Math.min(Math.max(input.radiusKm * 1000, 500), 50_000);
+
+  const collected: GooglePlace[] = [];
+  let pageToken: string | null = null;
+  // Máx. 3 páginas (60 resultados) — controle de custo.
+  for (let page = 0; page < 3 && collected.length < input.limit; page += 1) {
+    const body: Record<string, unknown> = {
+      textQuery,
+      languageCode: "pt-BR",
+      regionCode: "BR",
+      maxResultCount: Math.min(20, Math.max(1, input.limit - collected.length)),
+    };
+    if (center) {
+      body["locationBias"] = {
+        circle: { center: { latitude: center.lat, longitude: center.lon }, radius },
+      };
+    }
+    if (pageToken) body["pageToken"] = pageToken;
+
+    const res = await fetch(`${GATEWAY_URL}/places/v1/places:searchText`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${lovableKey}`,
+        "X-Connection-Api-Key": mapsKey,
+        "Content-Type": "application/json",
+        "X-Goog-FieldMask": PLACES_FIELD_MASK,
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30_000),
+    });
+
+    if (!res.ok) {
+      const errorBody = await res.text();
+      console.error(`Google Places falhou [${res.status}]: ${errorBody}`);
+      if (collected.length > 0) break;
+      return {
+        provider: GOOGLE_PROVIDER_LABEL,
+        center,
+        results: [],
+        message: googleErrorMessage(res.status, errorBody),
+      };
+    }
+
+    const json = (await res.json()) as { places?: GooglePlace[]; nextPageToken?: string };
+    collected.push(...(json.places ?? []));
+    pageToken = json.nextPageToken ?? null;
+    if (!pageToken) break;
+  }
+
+  const results: PlaceResult[] = collected
+    .map((p) => {
+      const lat = p.location?.latitude ?? null;
+      const lon = p.location?.longitude ?? null;
+      const extra: Record<string, string> = {};
+      if (p.formattedAddress) extra["formatted_address"] = p.formattedAddress;
+      return {
+        externalId: p.id,
+        name: p.displayName?.text ?? "",
+        phone: formatBrPhone(p.nationalPhoneNumber),
+        whatsapp: null,
+        website: p.websiteUri ?? null,
+        street: component(p, "route"),
+        number: component(p, "street_number"),
+        neighborhood: component(p, "sublocality_level_1") ?? component(p, "sublocality"),
+        city: component(p, "administrative_area_level_2") ?? component(p, "locality"),
+        state: component(p, "administrative_area_level_1", true),
+        postalCode: component(p, "postal_code"),
+        latitude: lat,
+        longitude: lon,
+        distanceKm:
+          center && lat != null && lon != null ? haversineKm(center.lat, center.lon, lat, lon) : null,
+        extra,
+      } satisfies PlaceResult;
+    })
+    .filter((r) => r.name.trim().length > 1)
+    .sort((a, b) => (a.distanceKm ?? 999) - (b.distanceKm ?? 999))
+    .slice(0, input.limit);
+
+  if (results.length === 0) {
+    return {
+      provider: GOOGLE_PROVIDER_LABEL,
+      center,
+      results,
+      message: "Nenhum estabelecimento encontrado pelo Google para este segmento e região.",
+    };
+  }
+  return { provider: GOOGLE_PROVIDER_LABEL, center, results };
+}
+
+const PROVIDERS = { google: searchGoogle, osm: searchOsm };
 
 /** Pesquisa estabelecimentos reais por segmento e região. Requer usuário autenticado. */
 export const searchPlaces = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => searchSchema.parse(data))
   .handler(async ({ data }): Promise<PlaceSearchResult> => {
-    const provider = PROVIDERS[data.provider ?? "osm"];
+    const key = data.provider ?? "google";
+    const provider = PROVIDERS[key];
     try {
       return await provider(data);
-    } catch {
+    } catch (e) {
+      console.error("Falha na pesquisa externa de estabelecimentos:", e);
       return {
-        provider: "OpenStreetMap (Nominatim + Overpass)",
+        provider: key === "google" ? GOOGLE_PROVIDER_LABEL : "OpenStreetMap (Nominatim + Overpass)",
         center: null,
         results: [],
         message: "Não foi possível concluir a pesquisa externa agora. Tente novamente.",
