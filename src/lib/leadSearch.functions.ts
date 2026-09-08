@@ -376,15 +376,15 @@ async function searchGoogle(input: z.infer<typeof searchSchema>): Promise<PlaceS
     .sort((a, b) => (a.distanceKm ?? 999) - (b.distanceKm ?? 999))
     .slice(0, input.limit);
 
-  return {
-    provider: GOOGLE_PROVIDER_LABEL,
-    center,
-    results,
-    message:
-      results.length === 0
-        ? "Nenhum estabelecimento encontrado pelo Google para este segmento e região."
-        : undefined,
-  };
+  if (results.length === 0) {
+    return {
+      provider: GOOGLE_PROVIDER_LABEL,
+      center,
+      results,
+      message: "Nenhum estabelecimento encontrado pelo Google para este segmento e região.",
+    };
+  }
+  return { provider: GOOGLE_PROVIDER_LABEL, center, results };
 }
 
 const PROVIDERS = { google: searchGoogle, osm: searchOsm };
