@@ -109,6 +109,40 @@ type OverpassElement = {
   tags?: Record<string, string>;
 };
 
+/** Espelhos públicos do Overpass. O principal (overpass-api.de) responde HTTP 521
+ *  quando o servidor de origem está fora do ar; nesse caso tentamos os demais. */
+const OVERPASS_ENDPOINTS = [
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter",
+  "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+];
+
+async function fetchOverpass(
+  body: string,
+): Promise<{ ok: true; elements: OverpassElement[] } | { ok: false; status: number }> {
+  let lastStatus = 0;
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain", "User-Agent": UA },
+        body,
+        signal: AbortSignal.timeout(45_000),
+      });
+      if (!res.ok) {
+        lastStatus = res.status;
+        continue;
+      }
+      const json = (await res.json()) as { elements?: OverpassElement[] };
+      return { ok: true, elements: json.elements ?? [] };
+    } catch {
+      lastStatus = lastStatus || 0;
+    }
+  }
+  return { ok: false, status: lastStatus };
+}
+
+
 function onlyDigits(v: string | undefined): string | null {
   if (!v) return null;
   const d = v.replace(/\D/g, "");
