@@ -246,9 +246,9 @@ export function LeadSearchPanel() {
                         {place.phone ?? NAO_DISPONIVEL}
                         {place.whatsapp ? ` · WhatsApp: ${place.whatsapp}` : ""}
                       </li>
-                      <li className="flex items-center gap-1.5">
+                      <li className="flex min-w-0 items-center gap-1.5">
                         <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        <span className="truncate">{place.website ?? NAO_DISPONIVEL}</span>
+                        <span className="min-w-0 truncate">{place.website ?? NAO_DISPONIVEL}</span>
                       </li>
                       <li>
                         Distância: {place.distanceKm != null ? `${place.distanceKm} km` : NAO_DISPONIVEL} ·
