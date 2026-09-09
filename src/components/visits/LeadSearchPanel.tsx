@@ -208,9 +208,9 @@ export function LeadSearchPanel() {
             </span>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {analyzed.map(({ place, duplicate }) => (
-              <article key={place.externalId} className="rounded-2xl border bg-card p-3">
+              <article key={place.externalId} className="min-w-0 overflow-hidden rounded-2xl border bg-card p-3">
                 <div className="flex items-start gap-2">
                   <Checkbox
                     className="mt-1"
