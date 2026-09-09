@@ -153,6 +153,7 @@ function formatBrPhone(raw: string | undefined): string | null {
   const d = onlyDigits(raw);
   if (!d) return null;
   const local = d.startsWith("55") && d.length > 11 ? d.slice(2) : d;
+  if (local.startsWith("0800")) return raw ?? null;
   if (local.length === 11) return `(${local.slice(0, 2)}) ${local.slice(2, 7)}-${local.slice(7)}`;
   if (local.length === 10) return `(${local.slice(0, 2)}) ${local.slice(2, 6)}-${local.slice(6)}`;
   return raw ?? null;

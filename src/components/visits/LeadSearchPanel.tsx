@@ -208,9 +208,9 @@ export function LeadSearchPanel() {
             </span>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {analyzed.map(({ place, duplicate }) => (
-              <article key={place.externalId} className="rounded-2xl border bg-card p-3">
+              <article key={place.externalId} className="min-w-0 overflow-hidden rounded-2xl border bg-card p-3">
                 <div className="flex items-start gap-2">
                   <Checkbox
                     className="mt-1"
@@ -246,9 +246,9 @@ export function LeadSearchPanel() {
                         {place.phone ?? NAO_DISPONIVEL}
                         {place.whatsapp ? ` · WhatsApp: ${place.whatsapp}` : ""}
                       </li>
-                      <li className="flex items-center gap-1.5">
+                      <li className="flex min-w-0 items-center gap-1.5">
                         <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                        <span className="truncate">{place.website ?? NAO_DISPONIVEL}</span>
+                        <span className="min-w-0 truncate">{place.website ?? NAO_DISPONIVEL}</span>
                       </li>
                       <li>
                         Distância: {place.distanceKm != null ? `${place.distanceKm} km` : NAO_DISPONIVEL} ·
