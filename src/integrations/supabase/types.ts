@@ -593,6 +593,83 @@ export type Database = {
           },
         ]
       }
+      lead_searches: {
+        Row: {
+          city: string | null
+          created_at: string
+          created_by: string
+          found_count: number
+          id: string
+          imported_count: number
+          name: string
+          notes: string | null
+          owner_id: string
+          provider: string | null
+          radius_km: number | null
+          region: string | null
+          requested_count: number
+          searched_at: string
+          segment_id: string | null
+          segment_name: string | null
+          selected_count: number
+          state: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          created_by: string
+          found_count?: number
+          id?: string
+          imported_count?: number
+          name: string
+          notes?: string | null
+          owner_id: string
+          provider?: string | null
+          radius_km?: number | null
+          region?: string | null
+          requested_count?: number
+          searched_at?: string
+          segment_id?: string | null
+          segment_name?: string | null
+          selected_count?: number
+          state?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          created_by?: string
+          found_count?: number
+          id?: string
+          imported_count?: number
+          name?: string
+          notes?: string | null
+          owner_id?: string
+          provider?: string | null
+          radius_km?: number | null
+          region?: string | null
+          requested_count?: number
+          searched_at?: string
+          segment_id?: string | null
+          segment_name?: string | null
+          selected_count?: number
+          state?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_searches_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_status_history: {
         Row: {
           created_at: string
@@ -730,6 +807,7 @@ export type Database = {
           number: string | null
           phone: string | null
           postal_code: string | null
+          search_id: string | null
           segment_id: string | null
           source: string
           source_external_id: string | null
@@ -762,6 +840,7 @@ export type Database = {
           number?: string | null
           phone?: string | null
           postal_code?: string | null
+          search_id?: string | null
           segment_id?: string | null
           source?: string
           source_external_id?: string | null
@@ -794,6 +873,7 @@ export type Database = {
           number?: string | null
           phone?: string | null
           postal_code?: string | null
+          search_id?: string | null
           segment_id?: string | null
           source?: string
           source_external_id?: string | null
@@ -813,6 +893,13 @@ export type Database = {
             columns: ["neighborhood_id"]
             isOneToOne: false
             referencedRelation: "neighborhoods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_search_id_fkey"
+            columns: ["search_id"]
+            isOneToOne: false
+            referencedRelation: "lead_searches"
             referencedColumns: ["id"]
           },
           {
