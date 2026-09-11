@@ -355,9 +355,50 @@ export function LeadSearchPanel() {
                 </Button>
               </>
             ) : null}
+            <Button
+              variant="outline"
+              className="h-12"
+              onClick={openArchive}
+              disabled={!lastQuery || archiving}
+            >
+              <Archive className="h-5 w-5" />{" "}
+              {archivedId ? "Arquivar novamente" : "Arquivar pesquisa"}
+            </Button>
           </div>
         </>
       ) : null}
+
+      <Dialog open={archiveOpen} onOpenChange={setArchiveOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Arquivar pesquisa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="arqnome">Nome da pesquisa</Label>
+              <Input
+                id="arqnome"
+                className="h-11"
+                value={archiveName}
+                onChange={(e) => setArchiveName(e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Encontrados: {results.length} · Selecionados:{" "}
+              {Math.max(selected.size, importedIds.length)} · Captados: {importedIds.length}.
+              Os Leads captados nesta pesquisa ficarão vinculados a ela.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setArchiveOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmArchive} disabled={archiving}>
+              {archiving ? "Arquivando..." : "Arquivar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AddToRouteDialog leadIds={importedIds} open={routeOpen} onOpenChange={setRouteOpen} />
     </div>
