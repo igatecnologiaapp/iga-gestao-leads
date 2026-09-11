@@ -102,6 +102,15 @@ export function LeadSearchPanel() {
       });
       setProvider(res.provider);
       setResults(res.results);
+      setLastQuery({
+        segmentId: segment.id,
+        segmentName: segment.name,
+        region: region.trim(),
+        city: city.trim(),
+        state: state.trim().toUpperCase(),
+        radiusKm: Number(radiusKm) || 3,
+        requested: Number(limit) || 30,
+      });
       setMessage(res.message ?? null);
       if (res.results.length === 0 && !res.message) {
         setMessage("Nenhum estabelecimento encontrado para este segmento e região.");
