@@ -171,7 +171,7 @@ export function LeadSearchPanel() {
       }));
       const { data, error } = await supabase.from("leads").insert(rows).select("id");
       if (error) throw error;
-      setImportedIds((data ?? []).map((d) => d.id));
+      setImportedIds((prev) => [...prev, ...(data ?? []).map((d) => d.id)]);
       setSelected(new Set());
       await queryClient.invalidateQueries({ queryKey: ["leads"] });
       toast.success(`${rows.length} Lead(s) importado(s) para o Gestão de Leads.`);
@@ -181,6 +181,52 @@ export function LeadSearchPanel() {
       setImporting(false);
     }
   }
+
+  function openArchive() {
+    if (!lastQuery) return;
+    setArchiveName(suggestSearchName(lastQuery.region, lastQuery.city, lastQuery.segmentName));
+    setArchiveOpen(true);
+  }
+
+  async function confirmArchive() {
+    if (!user || !lastQuery) return;
+    if (archiveName.trim().length < 3) {
+      toast.error("Informe um nome para a pesquisa.");
+      return;
+    }
+    setArchiving(true);
+    try {
+      const id = await archiveSearch({
+        name: archiveName.trim(),
+        segmentId: lastQuery.segmentId,
+        segmentName: lastQuery.segmentName,
+        region: lastQuery.region || null,
+        city: lastQuery.city || null,
+        state: lastQuery.state || null,
+        radiusKm: lastQuery.radiusKm,
+        requested: lastQuery.requested,
+        found: results.length,
+        selected: Math.max(selected.size, importedIds.length),
+        imported: importedIds.length,
+        provider,
+        notes: null,
+        userId: user.id,
+        leadIds: importedIds,
+      });
+      setArchivedId(id);
+      setArchiveOpen(false);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["lead_searches"] }),
+        queryClient.invalidateQueries({ queryKey: ["leads"] }),
+      ]);
+      toast.success("Pesquisa arquivada com sucesso.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível arquivar a pesquisa.");
+    } finally {
+      setArchiving(false);
+    }
+  }
+
 
   return (
     <div className="space-y-4">
