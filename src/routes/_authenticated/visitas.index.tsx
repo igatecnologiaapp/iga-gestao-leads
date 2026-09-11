@@ -50,6 +50,9 @@ function VisitasPage() {
         <TabsContent value="pesquisa" className="mt-4">
           <LeadSearchPanel />
         </TabsContent>
+        <TabsContent value="arquivadas" className="mt-4">
+          <ArchivedSearchesPanel />
+        </TabsContent>
         <TabsContent value="roteiros" className="mt-4">
           <RoutesPanel mode="abertos" />
         </TabsContent>
