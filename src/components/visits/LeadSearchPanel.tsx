@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { MapPin, Phone, Globe, Search, Download, Route as RouteIcon } from "lucide-react";
+import { MapPin, Phone, Globe, Search, Download, Route as RouteIcon, Archive } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,25 @@ import { useSegments } from "@/lib/queries";
 import { useLeadsLite } from "@/lib/visitQueries";
 import { findDuplicate } from "@/lib/visits";
 import { searchPlaces, type PlaceResult } from "@/lib/leadSearch.functions";
+import { archiveSearch, suggestSearchName } from "@/lib/searchQueries";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+/** Parâmetros da última pesquisa executada — usados apenas para arquivar o histórico. */
+type LastQuery = {
+  segmentId: string | null;
+  segmentName: string;
+  region: string;
+  city: string;
+  state: string;
+  radiusKm: number;
+  requested: number;
+};
 
 const NAO_DISPONIVEL = "Não disponível";
 
@@ -44,6 +63,11 @@ export function LeadSearchPanel() {
   const [importing, setImporting] = useState(false);
   const [importedIds, setImportedIds] = useState<string[]>([]);
   const [routeOpen, setRouteOpen] = useState(false);
+  const [lastQuery, setLastQuery] = useState<LastQuery | null>(null);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveName, setArchiveName] = useState("");
+  const [archiving, setArchiving] = useState(false);
+  const [archivedId, setArchivedId] = useState<string | null>(null);
 
   const segment = segments.find((s) => s.id === segmentId) ?? null;
 
@@ -64,6 +88,7 @@ export function LeadSearchPanel() {
     setLoading(true);
     setSelected(new Set());
     setImportedIds([]);
+    setArchivedId(null);
     try {
       const res = await runSearch({
         data: {
@@ -77,6 +102,15 @@ export function LeadSearchPanel() {
       });
       setProvider(res.provider);
       setResults(res.results);
+      setLastQuery({
+        segmentId: segment.id,
+        segmentName: segment.name,
+        region: region.trim(),
+        city: city.trim(),
+        state: state.trim().toUpperCase(),
+        radiusKm: Number(radiusKm) || 3,
+        requested: Number(limit) || 30,
+      });
       setMessage(res.message ?? null);
       if (res.results.length === 0 && !res.message) {
         setMessage("Nenhum estabelecimento encontrado para este segmento e região.");
@@ -137,7 +171,7 @@ export function LeadSearchPanel() {
       }));
       const { data, error } = await supabase.from("leads").insert(rows).select("id");
       if (error) throw error;
-      setImportedIds((data ?? []).map((d) => d.id));
+      setImportedIds((prev) => [...prev, ...(data ?? []).map((d) => d.id)]);
       setSelected(new Set());
       await queryClient.invalidateQueries({ queryKey: ["leads"] });
       toast.success(`${rows.length} Lead(s) importado(s) para o Gestão de Leads.`);
@@ -147,6 +181,52 @@ export function LeadSearchPanel() {
       setImporting(false);
     }
   }
+
+  function openArchive() {
+    if (!lastQuery) return;
+    setArchiveName(suggestSearchName(lastQuery.region, lastQuery.city, lastQuery.segmentName));
+    setArchiveOpen(true);
+  }
+
+  async function confirmArchive() {
+    if (!user || !lastQuery) return;
+    if (archiveName.trim().length < 3) {
+      toast.error("Informe um nome para a pesquisa.");
+      return;
+    }
+    setArchiving(true);
+    try {
+      const id = await archiveSearch({
+        name: archiveName.trim(),
+        segmentId: lastQuery.segmentId,
+        segmentName: lastQuery.segmentName,
+        region: lastQuery.region || null,
+        city: lastQuery.city || null,
+        state: lastQuery.state || null,
+        radiusKm: lastQuery.radiusKm,
+        requested: lastQuery.requested,
+        found: results.length,
+        selected: Math.max(selected.size, importedIds.length),
+        imported: importedIds.length,
+        provider,
+        notes: null,
+        userId: user.id,
+        leadIds: importedIds,
+      });
+      setArchivedId(id);
+      setArchiveOpen(false);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["lead_searches"] }),
+        queryClient.invalidateQueries({ queryKey: ["leads"] }),
+      ]);
+      toast.success("Pesquisa arquivada com sucesso.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível arquivar a pesquisa.");
+    } finally {
+      setArchiving(false);
+    }
+  }
+
 
   return (
     <div className="space-y-4">
@@ -275,9 +355,50 @@ export function LeadSearchPanel() {
                 </Button>
               </>
             ) : null}
+            <Button
+              variant="outline"
+              className="h-12"
+              onClick={openArchive}
+              disabled={!lastQuery || archiving}
+            >
+              <Archive className="h-5 w-5" />{" "}
+              {archivedId ? "Arquivar novamente" : "Arquivar pesquisa"}
+            </Button>
           </div>
         </>
       ) : null}
+
+      <Dialog open={archiveOpen} onOpenChange={setArchiveOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Arquivar pesquisa</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="arqnome">Nome da pesquisa</Label>
+              <Input
+                id="arqnome"
+                className="h-11"
+                value={archiveName}
+                onChange={(e) => setArchiveName(e.target.value)}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Encontrados: {results.length} · Selecionados:{" "}
+              {Math.max(selected.size, importedIds.length)} · Captados: {importedIds.length}.
+              Os Leads captados nesta pesquisa ficarão vinculados a ela.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setArchiveOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmArchive} disabled={archiving}>
+              {archiving ? "Arquivando..." : "Arquivar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AddToRouteDialog leadIds={importedIds} open={routeOpen} onOpenChange={setRouteOpen} />
     </div>
