@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { MapPin, Phone, Globe, Search, Download, Route as RouteIcon } from "lucide-react";
+import { MapPin, Phone, Globe, Search, Download, Route as RouteIcon, Archive } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,25 @@ import { useSegments } from "@/lib/queries";
 import { useLeadsLite } from "@/lib/visitQueries";
 import { findDuplicate } from "@/lib/visits";
 import { searchPlaces, type PlaceResult } from "@/lib/leadSearch.functions";
+import { archiveSearch, suggestSearchName } from "@/lib/searchQueries";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+/** Parâmetros da última pesquisa executada — usados apenas para arquivar o histórico. */
+type LastQuery = {
+  segmentId: string | null;
+  segmentName: string;
+  region: string;
+  city: string;
+  state: string;
+  radiusKm: number;
+  requested: number;
+};
 
 const NAO_DISPONIVEL = "Não disponível";
 
