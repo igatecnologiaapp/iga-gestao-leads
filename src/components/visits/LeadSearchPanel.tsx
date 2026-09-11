@@ -63,6 +63,11 @@ export function LeadSearchPanel() {
   const [importing, setImporting] = useState(false);
   const [importedIds, setImportedIds] = useState<string[]>([]);
   const [routeOpen, setRouteOpen] = useState(false);
+  const [lastQuery, setLastQuery] = useState<LastQuery | null>(null);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveName, setArchiveName] = useState("");
+  const [archiving, setArchiving] = useState(false);
+  const [archivedId, setArchivedId] = useState<string | null>(null);
 
   const segment = segments.find((s) => s.id === segmentId) ?? null;
 
@@ -83,6 +88,7 @@ export function LeadSearchPanel() {
     setLoading(true);
     setSelected(new Set());
     setImportedIds([]);
+    setArchivedId(null);
     try {
       const res = await runSearch({
         data: {
