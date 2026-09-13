@@ -54,8 +54,8 @@ export function ArchivedSearchesPanel() {
   const [segment, setSegment] = useState(ALL);
   const [owner, setOwner] = useState(ALL);
   const [status, setStatus] = useState(ALL);
-  const [preset, setPreset] = useState("90d");
-  const [range, setRange] = useState<DateRange>(() => presetRange("90d"));
+  const [preset, setPreset] = useState("30");
+  const [range, setRange] = useState<DateRange>(() => presetRange("30"));
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<LeadSearch | null>(null);
 
