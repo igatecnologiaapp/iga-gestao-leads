@@ -227,14 +227,16 @@ export function ArchivedSearchesPanel() {
                         {s.imported_count}
                       </li>
                     </ul>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-3"
-                      onClick={() => setDetail(s)}
-                    >
-                      Ver detalhes
-                    </Button>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setDetail(s)}>
+                        Ver detalhes
+                      </Button>
+                      {s.status === "rascunho" ? (
+                        <Button size="sm" onClick={() => finalize(s)} disabled={finalizingId === s.id}>
+                          {finalizingId === s.id ? "Concluindo..." : "Concluir arquivamento"}
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </article>
