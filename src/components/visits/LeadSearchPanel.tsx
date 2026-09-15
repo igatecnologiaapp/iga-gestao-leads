@@ -119,6 +119,9 @@ export function LeadSearchPanel() {
     setSelected(new Set());
     setImportedIds([]);
     setArchivedId(null);
+    // Nova pesquisa: começa um novo rascunho, sem sobrescrever a pesquisa anterior.
+    setDraftId(null);
+    writeDraft(null);
     try {
       const res = await runSearch({
         data: {
