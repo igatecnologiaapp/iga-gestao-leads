@@ -90,13 +90,14 @@ export function LeadSearchPanel() {
   const [results, setResults] = useState<PlaceResult[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
-  const [importedIds, setImportedIds] = useState<string[]>([]);
+  const [importedIds, setImportedIds] = useState<string[]>(() => readDraft()?.leadIds ?? []);
   const [routeOpen, setRouteOpen] = useState(false);
-  const [lastQuery, setLastQuery] = useState<LastQuery | null>(null);
+  const [lastQuery, setLastQuery] = useState<LastQuery | null>(() => readDraft()?.query ?? null);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveName, setArchiveName] = useState("");
   const [archiving, setArchiving] = useState(false);
   const [archivedId, setArchivedId] = useState<string | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(() => readDraft()?.searchId ?? null);
 
   const segment = segments.find((s) => s.id === segmentId) ?? null;
 
