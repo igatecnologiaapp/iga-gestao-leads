@@ -67,7 +67,10 @@ export function useLeadSearches() {
   });
 }
 
-/** Leads captados a partir de uma pesquisa arquivada. */
+/**
+ * Leads captados a partir de uma pesquisa arquivada.
+ * Inclui Leads excluídos logicamente para preservar a fotografia histórica da pesquisa.
+ */
 export function useSearchLeads(searchId: string | null) {
   return useQuery({
     queryKey: ["lead_searches", "leads", searchId],
@@ -76,10 +79,9 @@ export function useSearchLeads(searchId: string | null) {
       const { data, error } = await supabase
         .from("leads")
         .select(
-          "id, company_name, contact_name, phone, status, neighborhood_name, city, state, latitude, longitude, next_contact_date, source, source_provider, created_by",
+          "id, company_name, contact_name, phone, status, neighborhood_name, city, state, latitude, longitude, next_contact_date, source, source_provider, created_by, deleted_at",
         )
         .eq("search_id", searchId!)
-        .is("deleted_at", null)
         .order("company_name");
       if (error) throw error;
       return (data ?? []) as unknown as SearchLead[];
