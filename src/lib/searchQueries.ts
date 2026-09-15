@@ -44,6 +44,8 @@ export type SearchLead = {
   source: string;
   source_provider: string | null;
   created_by: string;
+  /** Exclusão lógica do Lead: mantido no histórico da pesquisa, sem ações ativas. */
+  deleted_at: string | null;
 };
 
 const SEARCH_COLS =
