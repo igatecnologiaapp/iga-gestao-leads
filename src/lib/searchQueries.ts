@@ -167,3 +167,17 @@ export function suggestSearchName(region: string, city: string, segment: string)
   const place = region.trim() || city.trim();
   return `Pesquisa — ${place || segment || "sem região"}`;
 }
+
+/**
+ * Conclui o arquivamento de uma pesquisa que ficou como rascunho
+ * (por exemplo, quando a página foi recarregada antes de arquivar).
+ * Não recalcula contagens históricas nem altera os Leads já vinculados.
+ */
+export async function finalizeSearch(searchId: string, name: string) {
+  const { error } = await supabase
+    .from("lead_searches")
+    .update({ name, status: "arquivada", updated_at: new Date().toISOString() } as never)
+    .eq("id", searchId);
+  if (error) throw error;
+  return searchId;
+}
