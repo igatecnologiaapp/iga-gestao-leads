@@ -41,6 +41,35 @@ type LastQuery = {
 
 const NAO_DISPONIVEL = "Não disponível";
 
+/**
+ * Rascunho da captação em andamento.
+ * O vínculo Pesquisa → Lead já fica gravado no banco na importação; este registro local
+ * apenas permite continuar o arquivamento após um recarregamento da página.
+ */
+const DRAFT_KEY = "iga.pesquisa.rascunho";
+
+type Draft = { searchId: string; leadIds: string[]; query: LastQuery };
+
+function readDraft(): Draft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as Draft) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(draft: Draft | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (draft) window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    else window.localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    /* armazenamento indisponível: o vínculo já está no banco */
+  }
+}
+
 export function LeadSearchPanel() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
