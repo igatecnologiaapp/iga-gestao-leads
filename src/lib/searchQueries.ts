@@ -107,6 +107,8 @@ export function useVisitedLeadIds(leadIds: string[]) {
 }
 
 export type ArchiveSearchInput = {
+  /** Quando informado, atualiza a pesquisa existente (rascunho) em vez de criar outra. */
+  searchId?: string | null;
   name: string;
   segmentId: string | null;
   segmentName: string | null;
@@ -120,47 +122,44 @@ export type ArchiveSearchInput = {
   imported: number;
   provider: string | null;
   notes: string | null;
-  userId: string;
+  /** "rascunho" enquanto a captação está em andamento; "arquivada" quando concluída. */
+  status?: string;
   leadIds: string[];
 };
 
 /**
- * Arquiva a pesquisa e vincula os Leads captados.
- * Não altera dados de origem já existentes no Lead (provedor, id externo, região, data).
+ * Grava a pesquisa e vincula os Leads captados em uma única operação transacional no banco.
+ * Se qualquer vínculo falhar, nada é gravado — não existe pesquisa "arquivada sem Leads".
+ * Não altera dados de origem já existentes no Lead (provedor, id externo, região, data)
+ * e nunca reatribui um Lead já vinculado a outra pesquisa.
  */
 export async function archiveSearch(input: ArchiveSearchInput) {
-  const { data, error } = await supabase
-    .from("lead_searches")
-    .insert({
-      name: input.name,
-      segment_id: input.segmentId,
-      segment_name: input.segmentName,
-      region: input.region,
-      city: input.city,
-      state: input.state,
-      radius_km: input.radiusKm,
-      requested_count: input.requested,
-      found_count: input.found,
-      selected_count: input.selected,
-      imported_count: input.imported,
-      provider: input.provider,
-      notes: input.notes,
-      owner_id: input.userId,
-      created_by: input.userId,
-    } as never)
-    .select("id")
-    .single();
-  if (error) throw error;
-
-  const searchId = (data as { id: string }).id;
-  if (input.leadIds.length > 0) {
-    const { error: linkError } = await supabase
-      .from("leads")
-      .update({ search_id: searchId } as never)
-      .in("id", input.leadIds);
-    if (linkError) throw linkError;
-  }
-  return searchId;
+  const { data, error } = await (
+    supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: string | null; error: { message: string } | null }>
+  )("upsert_lead_search_link", {
+    _search_id: input.searchId ?? null,
+    _name: input.name,
+    _segment_id: input.segmentId,
+    _segment_name: input.segmentName,
+    _region: input.region,
+    _city: input.city,
+    _state: input.state,
+    _radius_km: input.radiusKm,
+    _requested: input.requested,
+    _found: input.found,
+    _selected: input.selected,
+    _imported: input.imported,
+    _provider: input.provider,
+    _status: input.status ?? "arquivada",
+    _notes: input.notes,
+    _lead_ids: input.leadIds,
+  });
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Não foi possível registrar a pesquisa.");
+  return data;
 }
 
 /** Nome sugerido para a pesquisa: "Pesquisa — Parque Boturussu". */
