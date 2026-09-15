@@ -41,6 +41,35 @@ type LastQuery = {
 
 const NAO_DISPONIVEL = "Não disponível";
 
+/**
+ * Rascunho da captação em andamento.
+ * O vínculo Pesquisa → Lead já fica gravado no banco na importação; este registro local
+ * apenas permite continuar o arquivamento após um recarregamento da página.
+ */
+const DRAFT_KEY = "iga.pesquisa.rascunho";
+
+type Draft = { searchId: string; leadIds: string[]; query: LastQuery };
+
+function readDraft(): Draft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    return raw ? (JSON.parse(raw) as Draft) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeDraft(draft: Draft | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (draft) window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    else window.localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    /* armazenamento indisponível: o vínculo já está no banco */
+  }
+}
+
 export function LeadSearchPanel() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -61,13 +90,14 @@ export function LeadSearchPanel() {
   const [results, setResults] = useState<PlaceResult[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
-  const [importedIds, setImportedIds] = useState<string[]>([]);
+  const [importedIds, setImportedIds] = useState<string[]>(() => readDraft()?.leadIds ?? []);
   const [routeOpen, setRouteOpen] = useState(false);
-  const [lastQuery, setLastQuery] = useState<LastQuery | null>(null);
+  const [lastQuery, setLastQuery] = useState<LastQuery | null>(() => readDraft()?.query ?? null);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [archiveName, setArchiveName] = useState("");
   const [archiving, setArchiving] = useState(false);
   const [archivedId, setArchivedId] = useState<string | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(() => readDraft()?.searchId ?? null);
 
   const segment = segments.find((s) => s.id === segmentId) ?? null;
 
@@ -89,6 +119,9 @@ export function LeadSearchPanel() {
     setSelected(new Set());
     setImportedIds([]);
     setArchivedId(null);
+    // Nova pesquisa: começa um novo rascunho, sem sobrescrever a pesquisa anterior.
+    setDraftId(null);
+    writeDraft(null);
     try {
       const res = await runSearch({
         data: {
@@ -171,10 +204,36 @@ export function LeadSearchPanel() {
       }));
       const { data, error } = await supabase.from("leads").insert(rows).select("id");
       if (error) throw error;
-      setImportedIds((prev) => [...prev, ...(data ?? []).map((d) => d.id)]);
+      const newIds = (data ?? []).map((d) => d.id);
+      const allIds = [...importedIds, ...newIds];
+      setImportedIds(allIds);
       setSelected(new Set());
       await queryClient.invalidateQueries({ queryKey: ["leads"] });
       toast.success(`${rows.length} Lead(s) importado(s) para o Gestão de Leads.`);
+
+      // Vincula imediatamente os Leads à pesquisa (rascunho) em operação única no banco,
+      // para que o vínculo não dependa da sessão do navegador.
+      if (lastQuery) {
+        try {
+          const id = await persistSearch({
+            searchId: draftId,
+            status: "rascunho",
+            name: draftId
+              ? archiveName.trim() || suggestSearchName(lastQuery.region, lastQuery.city, lastQuery.segmentName)
+              : suggestSearchName(lastQuery.region, lastQuery.city, lastQuery.segmentName),
+            leadIds: allIds,
+            importedCount: allIds.length,
+            query: lastQuery,
+          });
+          setDraftId(id);
+          writeDraft({ searchId: id, leadIds: allIds, query: lastQuery });
+          await queryClient.invalidateQueries({ queryKey: ["lead_searches"] });
+        } catch {
+          toast.warning(
+            "Leads importados, mas o vínculo com a pesquisa não foi concluído. Use Arquivar pesquisa para concluir.",
+          );
+        }
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível importar.");
     } finally {
@@ -182,9 +241,41 @@ export function LeadSearchPanel() {
     }
   }
 
+  /** Grava/atualiza a pesquisa e vincula os Leads na mesma operação transacional. */
+  async function persistSearch(args: {
+    searchId: string | null;
+    status: string;
+    name: string;
+    leadIds: string[];
+    importedCount: number;
+    query: LastQuery;
+  }) {
+    return archiveSearch({
+      searchId: args.searchId,
+      status: args.status,
+      name: args.name,
+      segmentId: args.query.segmentId,
+      segmentName: args.query.segmentName,
+      region: args.query.region || null,
+      city: args.query.city || null,
+      state: args.query.state || null,
+      radiusKm: args.query.radiusKm,
+      requested: args.query.requested,
+      found: Math.max(results.length, args.importedCount),
+      selected: Math.max(selected.size, args.importedCount),
+      imported: args.importedCount,
+      provider,
+      notes: null,
+      leadIds: args.leadIds,
+    });
+  }
+
   function openArchive() {
     if (!lastQuery) return;
-    setArchiveName(suggestSearchName(lastQuery.region, lastQuery.city, lastQuery.segmentName));
+    setArchiveName(
+      archiveName.trim() ||
+        suggestSearchName(lastQuery.region, lastQuery.city, lastQuery.segmentName),
+    );
     setArchiveOpen(true);
   }
 
@@ -196,24 +287,17 @@ export function LeadSearchPanel() {
     }
     setArchiving(true);
     try {
-      const id = await archiveSearch({
+      const id = await persistSearch({
+        searchId: draftId,
+        status: "arquivada",
         name: archiveName.trim(),
-        segmentId: lastQuery.segmentId,
-        segmentName: lastQuery.segmentName,
-        region: lastQuery.region || null,
-        city: lastQuery.city || null,
-        state: lastQuery.state || null,
-        radiusKm: lastQuery.radiusKm,
-        requested: lastQuery.requested,
-        found: results.length,
-        selected: Math.max(selected.size, importedIds.length),
-        imported: importedIds.length,
-        provider,
-        notes: null,
-        userId: user.id,
         leadIds: importedIds,
+        importedCount: importedIds.length,
+        query: lastQuery,
       });
       setArchivedId(id);
+      setDraftId(id);
+      writeDraft(null);
       setArchiveOpen(false);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["lead_searches"] }),

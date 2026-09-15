@@ -1553,6 +1553,27 @@ export type Database = {
         Args: { _document_id: string }
         Returns: undefined
       }
+      upsert_lead_search_link: {
+        Args: {
+          _city: string
+          _found: number
+          _imported: number
+          _lead_ids: string[]
+          _name: string
+          _notes: string
+          _provider: string
+          _radius_km: number
+          _region: string
+          _requested: number
+          _search_id: string
+          _segment_id: string
+          _segment_name: string
+          _selected: number
+          _state: string
+          _status: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "captador"
