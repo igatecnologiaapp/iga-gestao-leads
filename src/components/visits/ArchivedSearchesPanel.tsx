@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Archive, MapPin, ExternalLink } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +30,7 @@ import { usePagedList } from "@/hooks/usePagedList";
 import { presetRange, type DateRange } from "@/lib/dashboard";
 import { useProfiles, useSegments } from "@/lib/queries";
 import {
+  finalizeSearch,
   useLeadSearches,
   useSearchLeads,
   useVisitedLeadIds,
@@ -58,6 +61,22 @@ export function ArchivedSearchesPanel() {
   const [range, setRange] = useState<DateRange>(() => presetRange("30"));
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<LeadSearch | null>(null);
+  const [finalizingId, setFinalizingId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  /** Conclui o arquivamento de uma pesquisa que ficou em rascunho. */
+  async function finalize(s: LeadSearch) {
+    setFinalizingId(s.id);
+    try {
+      await finalizeSearch(s.id, s.name);
+      await queryClient.invalidateQueries({ queryKey: ["lead_searches"] });
+      toast.success("Pesquisa arquivada.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível concluir o arquivamento.");
+    } finally {
+      setFinalizingId(null);
+    }
+  }
 
   const profileName = (id: string) =>
     profiles.find((p) => p.id === id)?.full_name ?? "Não disponível";
@@ -317,12 +336,24 @@ function SearchDetailDialog({
               ) : null}
               <ul className="space-y-2">
                 {leads.map((lead) => (
-                  <li key={lead.id} className="min-w-0 overflow-hidden rounded-xl border p-2">
+                  <li
+                    key={lead.id}
+                    className={`min-w-0 overflow-hidden rounded-xl border p-2 ${lead.deleted_at ? "opacity-70" : ""}`}
+                  >
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="min-w-0 truncate text-sm font-medium">
                         {lead.company_name}
                       </span>
-                      <StatusBadge status={lead.status} />
+                      {lead.deleted_at ? (
+                        <Badge
+                          variant="outline"
+                          className="border-destructive/40 bg-destructive/15 text-destructive"
+                        >
+                          Lead excluído
+                        </Badge>
+                      ) : (
+                        <StatusBadge status={lead.status} />
+                      )}
                       {lead.latitude == null || lead.longitude == null ? (
                         <Badge variant="outline" className="border-warning/40 bg-warning/15">
                           Sem localização
@@ -350,11 +381,19 @@ function SearchDetailDialog({
                         ? new Date(`${lead.next_contact_date}T00:00:00`).toLocaleDateString("pt-BR")
                         : "Não definida"}
                     </p>
-                    <Button variant="ghost" size="sm" asChild className="mt-1 h-8 px-2">
-                      <Link to="/leads/$id" params={{ id: lead.id }}>
-                        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> Central do Lead
-                      </Link>
-                    </Button>
+                    {lead.deleted_at ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Excluído em{" "}
+                        {new Date(lead.deleted_at).toLocaleDateString("pt-BR")} · mantido no
+                        histórico da pesquisa.
+                      </p>
+                    ) : (
+                      <Button variant="ghost" size="sm" asChild className="mt-1 h-8 px-2">
+                        <Link to="/leads/$id" params={{ id: lead.id }}>
+                          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> Central do Lead
+                        </Link>
+                      </Button>
+                    )}
                   </li>
                 ))}
               </ul>
