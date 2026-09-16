@@ -59,6 +59,22 @@ export function ArchivedSearchesPanel() {
   const [range, setRange] = useState<DateRange>(() => presetRange("30"));
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [detail, setDetail] = useState<LeadSearch | null>(null);
+  const [finalizingId, setFinalizingId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  /** Conclui o arquivamento de uma pesquisa que ficou em rascunho. */
+  async function finalize(s: LeadSearch) {
+    setFinalizingId(s.id);
+    try {
+      await finalizeSearch(s.id, s.name);
+      await queryClient.invalidateQueries({ queryKey: ["lead_searches"] });
+      toast.success("Pesquisa arquivada.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível concluir o arquivamento.");
+    } finally {
+      setFinalizingId(null);
+    }
+  }
 
   const profileName = (id: string) =>
     profiles.find((p) => p.id === id)?.full_name ?? "Não disponível";
