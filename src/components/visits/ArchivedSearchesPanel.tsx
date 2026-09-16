@@ -381,11 +381,19 @@ function SearchDetailDialog({
                         ? new Date(`${lead.next_contact_date}T00:00:00`).toLocaleDateString("pt-BR")
                         : "Não definida"}
                     </p>
-                    <Button variant="ghost" size="sm" asChild className="mt-1 h-8 px-2">
-                      <Link to="/leads/$id" params={{ id: lead.id }}>
-                        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> Central do Lead
-                      </Link>
-                    </Button>
+                    {lead.deleted_at ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Excluído em{" "}
+                        {new Date(lead.deleted_at).toLocaleDateString("pt-BR")} · mantido no
+                        histórico da pesquisa.
+                      </p>
+                    ) : (
+                      <Button variant="ghost" size="sm" asChild className="mt-1 h-8 px-2">
+                        <Link to="/leads/$id" params={{ id: lead.id }}>
+                          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> Central do Lead
+                        </Link>
+                      </Button>
+                    )}
                   </li>
                 ))}
               </ul>
