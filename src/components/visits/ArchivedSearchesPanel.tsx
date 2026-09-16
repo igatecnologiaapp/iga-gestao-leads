@@ -28,6 +28,7 @@ import { usePagedList } from "@/hooks/usePagedList";
 import { presetRange, type DateRange } from "@/lib/dashboard";
 import { useProfiles, useSegments } from "@/lib/queries";
 import {
+  finalizeSearch,
   useLeadSearches,
   useSearchLeads,
   useVisitedLeadIds,
