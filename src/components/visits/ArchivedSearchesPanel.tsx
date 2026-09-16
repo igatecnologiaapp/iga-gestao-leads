@@ -336,12 +336,24 @@ function SearchDetailDialog({
               ) : null}
               <ul className="space-y-2">
                 {leads.map((lead) => (
-                  <li key={lead.id} className="min-w-0 overflow-hidden rounded-xl border p-2">
+                  <li
+                    key={lead.id}
+                    className={`min-w-0 overflow-hidden rounded-xl border p-2 ${lead.deleted_at ? "opacity-70" : ""}`}
+                  >
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="min-w-0 truncate text-sm font-medium">
                         {lead.company_name}
                       </span>
-                      <StatusBadge status={lead.status} />
+                      {lead.deleted_at ? (
+                        <Badge
+                          variant="outline"
+                          className="border-destructive/40 bg-destructive/15 text-destructive"
+                        >
+                          Lead excluído
+                        </Badge>
+                      ) : (
+                        <StatusBadge status={lead.status} />
+                      )}
                       {lead.latitude == null || lead.longitude == null ? (
                         <Badge variant="outline" className="border-warning/40 bg-warning/15">
                           Sem localização
