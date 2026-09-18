@@ -54,6 +54,9 @@ function VisitasPage() {
         <TabsContent value="arquivadas" className="mt-4">
           <ArchivedSearchesPanel />
         </TabsContent>
+        <TabsContent value="planejamento" className="mt-4">
+          <RoutePlanningPanel />
+        </TabsContent>
         <TabsContent value="roteiros" className="mt-4">
           <RoutesPanel mode="abertos" />
         </TabsContent>
