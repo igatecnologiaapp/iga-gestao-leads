@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/PageHeader";
 import { LeadSearchPanel } from "@/components/visits/LeadSearchPanel";
 import { ArchivedSearchesPanel } from "@/components/visits/ArchivedSearchesPanel";
+import { RoutePlanningPanel } from "@/components/visits/RoutePlanningPanel";
 import { RoutesPanel } from "@/components/visits/RoutesPanel";
 import { VehiclesPanel } from "@/components/visits/VehiclesPanel";
 import { VisitHistoryPanel } from "@/components/visits/VisitHistoryPanel";
