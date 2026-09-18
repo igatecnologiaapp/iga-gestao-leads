@@ -41,6 +41,7 @@ function VisitasPage() {
         <TabsList className="flex w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="pesquisa">Pesquisa de Leads</TabsTrigger>
           <TabsTrigger value="arquivadas">Pesquisas arquivadas</TabsTrigger>
+          <TabsTrigger value="planejamento">Planejar roteiro</TabsTrigger>
           <TabsTrigger value="roteiros">Roteiros</TabsTrigger>
           <TabsTrigger value="concluidos">Roteiros concluídos</TabsTrigger>
           <TabsTrigger value="historico">Histórico de visitas</TabsTrigger>
