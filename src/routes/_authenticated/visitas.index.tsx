@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/PageHeader";
 import { LeadSearchPanel } from "@/components/visits/LeadSearchPanel";
 import { ArchivedSearchesPanel } from "@/components/visits/ArchivedSearchesPanel";
+import { RoutePlanningPanel } from "@/components/visits/RoutePlanningPanel";
 import { RoutesPanel } from "@/components/visits/RoutesPanel";
 import { VehiclesPanel } from "@/components/visits/VehiclesPanel";
 import { VisitHistoryPanel } from "@/components/visits/VisitHistoryPanel";
@@ -41,6 +42,7 @@ function VisitasPage() {
         <TabsList className="flex w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="pesquisa">Pesquisa de Leads</TabsTrigger>
           <TabsTrigger value="arquivadas">Pesquisas arquivadas</TabsTrigger>
+          <TabsTrigger value="planejamento">Planejar roteiro</TabsTrigger>
           <TabsTrigger value="roteiros">Roteiros</TabsTrigger>
           <TabsTrigger value="concluidos">Roteiros concluídos</TabsTrigger>
           <TabsTrigger value="historico">Histórico de visitas</TabsTrigger>
@@ -52,6 +54,9 @@ function VisitasPage() {
         </TabsContent>
         <TabsContent value="arquivadas" className="mt-4">
           <ArchivedSearchesPanel />
+        </TabsContent>
+        <TabsContent value="planejamento" className="mt-4">
+          <RoutePlanningPanel />
         </TabsContent>
         <TabsContent value="roteiros" className="mt-4">
           <RoutesPanel mode="abertos" />
