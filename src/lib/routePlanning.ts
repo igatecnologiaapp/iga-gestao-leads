@@ -82,7 +82,7 @@ export function useScheduledLeadIds(leadIds: string[]) {
 }
 
 export function hasLocation(lead: CandidateLead): boolean {
-  return lead.latitude != null && lead.longitude != null;
+  return hasUsableCoords(lead.latitude, lead.longitude);
 }
 
 export function leadAddress(lead: CandidateLead): string {
