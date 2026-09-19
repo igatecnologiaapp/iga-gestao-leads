@@ -58,6 +58,7 @@ export function RoutePlanningPanel() {
   const initial = useMemo(() => loadSelection(), []);
   const [searchIds, setSearchIds] = useState<Set<string>>(() => new Set(initial.searchIds));
   const [leadIds, setLeadIds] = useState<Set<string>>(() => new Set(initial.leadIds));
+  const [points, setPoints] = useState<PlanningPoints>(() => loadPoints());
 
   const [searchTerm, setSearchTerm] = useState("");
   const [term, setTerm] = useState("");
