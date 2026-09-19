@@ -20,12 +20,20 @@ import { useLeadSearches, useVisitedLeadIds } from "@/lib/searchQueries";
 import {
   hasLocation,
   leadAddress,
+  loadPoints,
   loadSelection,
+  savePoints,
   saveSelection,
   useCandidateLeads,
   useScheduledLeadIds,
   type CandidateLead,
+  type PlanningPoints,
 } from "@/lib/routePlanning";
+import {
+  GeoValidationSection,
+  PointsSection,
+  ReadinessSection,
+} from "@/components/visits/RoutePlanningSteps";
 
 const ALL = "todos";
 const NAO_DISPONIVEL = "Não disponível";
