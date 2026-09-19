@@ -77,6 +77,10 @@ export function RoutePlanningPanel() {
     saveSelection({ searchIds: Array.from(searchIds), leadIds: Array.from(leadIds) });
   }, [searchIds, leadIds]);
 
+  useEffect(() => {
+    savePoints(points);
+  }, [points]);
+
   const profileName = (id: string) => profiles.find((p) => p.id === id)?.full_name ?? NAO_DISPONIVEL;
   const segmentName = (id: string | null) =>
     (id ? segments.find((s) => s.id === id)?.name : null) ?? NAO_DISPONIVEL;
