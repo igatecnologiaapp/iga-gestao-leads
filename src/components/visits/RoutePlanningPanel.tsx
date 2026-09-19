@@ -354,9 +354,18 @@ export function RoutePlanningPanel() {
           {selectedLeads.length} Leads selecionados
         </p>
         <p className="text-xs text-muted-foreground">
-          A próxima fase (3.2) usará esta seleção para a validação geográfica. Nada é gravado como roteiro nesta etapa.
+          Nada é gravado como roteiro nesta etapa.
         </p>
       </section>
+
+      <GeoValidationSection selectedLeads={selectedLeads} />
+      <PointsSection points={points} onChange={setPoints} />
+      <ReadinessSection
+        searchCount={searchIds.size}
+        consolidated={leads.length}
+        selectedLeads={selectedLeads}
+        points={points}
+      />
     </div>
   );
 }
