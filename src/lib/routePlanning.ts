@@ -82,7 +82,7 @@ export function useScheduledLeadIds(leadIds: string[]) {
 }
 
 export function hasLocation(lead: CandidateLead): boolean {
-  return lead.latitude != null && lead.longitude != null;
+  return hasUsableCoords(lead.latitude, lead.longitude);
 }
 
 export function leadAddress(lead: CandidateLead): string {
@@ -124,4 +124,124 @@ export function saveSelection(selection: PlanningSelection) {
   } catch {
     /* armazenamento indisponível: a seleção segue válida apenas na sessão atual */
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Fase 3.2 — validação geográfica e pontos de saída/retorno           */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Coordenada utilizável: números finitos dentro dos limites geográficos reais.
+ * Nada é estimado a partir do texto do endereço — sem coordenada, o Lead fica
+ * identificado como pendente de localização.
+ */
+export function hasUsableCoords(lat: number | null, lon: number | null): boolean {
+  if (lat == null || lon == null) return false;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false;
+  if (lat === 0 && lon === 0) return false;
+  return lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+}
+
+export type GeoIssue = "ok" | "sem_latitude" | "sem_longitude" | "sem_coordenadas" | "invalida";
+
+export function geoIssue(lead: CandidateLead): GeoIssue {
+  const { latitude: lat, longitude: lon } = lead;
+  if (lat == null && lon == null) return "sem_coordenadas";
+  if (lat == null) return "sem_latitude";
+  if (lon == null) return "sem_longitude";
+  return hasUsableCoords(lat, lon) ? "ok" : "invalida";
+}
+
+export const GEO_ISSUE_LABEL: Record<GeoIssue, string> = {
+  ok: "Com localização",
+  sem_latitude: "Sem latitude",
+  sem_longitude: "Sem longitude",
+  sem_coordenadas: "Sem coordenadas",
+  invalida: "Coordenada inválida",
+};
+
+/** Endereço completo já cadastrado, para ajudar a identificar o problema. */
+export function leadFullAddress(lead: CandidateLead): string {
+  const parts = [
+    [lead.street_name, lead.number].filter(Boolean).join(", "),
+    lead.neighborhood_name,
+    [lead.city, lead.state].filter(Boolean).join("/"),
+    lead.postal_code,
+  ].filter((p) => p && String(p).trim().length > 0);
+  return parts.join(" · ");
+}
+
+/**
+ * Ponto de saída/retorno do planejamento. Nesta fase guarda o endereço digitado e,
+ * quando o usuário usa a localização atual do aparelho, as coordenadas obtidas pelo
+ * próprio navegador. Nenhuma API externa é chamada e nenhuma coordenada é inventada.
+ */
+export type PlanningPoint = {
+  label: string;
+  address: string;
+  latitude: number | null;
+  longitude: number | null;
+  source: "endereco" | "localizacao_atual";
+};
+
+export type PlanningPoints = {
+  start: PlanningPoint;
+  sameAsStart: boolean;
+  end: PlanningPoint;
+};
+
+export const emptyPoint: PlanningPoint = {
+  label: "",
+  address: "",
+  latitude: null,
+  longitude: null,
+  source: "endereco",
+};
+
+export const defaultPoints: PlanningPoints = {
+  start: emptyPoint,
+  sameAsStart: true,
+  end: emptyPoint,
+};
+
+const POINTS_KEY = "route-planning-points-v1";
+
+function normalizePoint(value: unknown): PlanningPoint {
+  const p = (value ?? {}) as Partial<PlanningPoint>;
+  return {
+    label: typeof p.label === "string" ? p.label : "",
+    address: typeof p.address === "string" ? p.address : "",
+    latitude: typeof p.latitude === "number" ? p.latitude : null,
+    longitude: typeof p.longitude === "number" ? p.longitude : null,
+    source: p.source === "localizacao_atual" ? "localizacao_atual" : "endereco",
+  };
+}
+
+export function loadPoints(): PlanningPoints {
+  if (typeof window === "undefined") return defaultPoints;
+  try {
+    const raw = window.localStorage.getItem(POINTS_KEY);
+    if (!raw) return defaultPoints;
+    const parsed = JSON.parse(raw) as Partial<PlanningPoints>;
+    return {
+      start: normalizePoint(parsed.start),
+      sameAsStart: parsed.sameAsStart !== false,
+      end: normalizePoint(parsed.end),
+    };
+  } catch {
+    return defaultPoints;
+  }
+}
+
+export function savePoints(points: PlanningPoints) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(POINTS_KEY, JSON.stringify(points));
+  } catch {
+    /* armazenamento indisponível: os pontos seguem válidos apenas na sessão atual */
+  }
+}
+
+export function isPointDefined(point: PlanningPoint): boolean {
+  return point.address.trim().length > 0 || hasUsableCoords(point.latitude, point.longitude);
 }

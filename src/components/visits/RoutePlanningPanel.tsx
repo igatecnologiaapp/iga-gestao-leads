@@ -20,12 +20,20 @@ import { useLeadSearches, useVisitedLeadIds } from "@/lib/searchQueries";
 import {
   hasLocation,
   leadAddress,
+  loadPoints,
   loadSelection,
+  savePoints,
   saveSelection,
   useCandidateLeads,
   useScheduledLeadIds,
   type CandidateLead,
+  type PlanningPoints,
 } from "@/lib/routePlanning";
+import {
+  GeoValidationSection,
+  PointsSection,
+  ReadinessSection,
+} from "@/components/visits/RoutePlanningSteps";
 
 const ALL = "todos";
 const NAO_DISPONIVEL = "Não disponível";
@@ -50,6 +58,7 @@ export function RoutePlanningPanel() {
   const initial = useMemo(() => loadSelection(), []);
   const [searchIds, setSearchIds] = useState<Set<string>>(() => new Set(initial.searchIds));
   const [leadIds, setLeadIds] = useState<Set<string>>(() => new Set(initial.leadIds));
+  const [points, setPoints] = useState<PlanningPoints>(() => loadPoints());
 
   const [searchTerm, setSearchTerm] = useState("");
   const [term, setTerm] = useState("");
@@ -67,6 +76,10 @@ export function RoutePlanningPanel() {
   useEffect(() => {
     saveSelection({ searchIds: Array.from(searchIds), leadIds: Array.from(leadIds) });
   }, [searchIds, leadIds]);
+
+  useEffect(() => {
+    savePoints(points);
+  }, [points]);
 
   const profileName = (id: string) => profiles.find((p) => p.id === id)?.full_name ?? NAO_DISPONIVEL;
   const segmentName = (id: string | null) =>
@@ -341,9 +354,18 @@ export function RoutePlanningPanel() {
           {selectedLeads.length} Leads selecionados
         </p>
         <p className="text-xs text-muted-foreground">
-          A próxima fase (3.2) usará esta seleção para a validação geográfica. Nada é gravado como roteiro nesta etapa.
+          Nada é gravado como roteiro nesta etapa.
         </p>
       </section>
+
+      <GeoValidationSection selectedLeads={selectedLeads} />
+      <PointsSection points={points} onChange={setPoints} />
+      <ReadinessSection
+        searchCount={searchIds.size}
+        consolidated={leads.length}
+        selectedLeads={selectedLeads}
+        points={points}
+      />
     </div>
   );
 }

@@ -1,0 +1,276 @@
+import { Link } from "@tanstack/react-router";
+import { LocateFixed, MapPinOff } from "lucide-react";
+import { toast } from "sonner";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { EmptyState } from "@/components/DataState";
+import {
+  GEO_ISSUE_LABEL,
+  geoIssue,
+  hasLocation,
+  hasUsableCoords,
+  isPointDefined,
+  leadFullAddress,
+  type CandidateLead,
+  type PlanningPoint,
+  type PlanningPoints,
+} from "@/lib/routePlanning";
+
+const NAO_DISPONIVEL = "Não disponível";
+
+/**
+ * Fase 3.2 — validação geográfica dos Leads selecionados e definição dos pontos
+ * de saída e retorno. Nenhum cálculo de rota, distância ou chamada externa.
+ */
+export function GeoValidationSection({ selectedLeads }: { selectedLeads: CandidateLead[] }) {
+  const located = selectedLeads.filter(hasLocation);
+  const pending = selectedLeads.filter((l) => !hasLocation(l));
+
+  return (
+    <section className="space-y-3 rounded-2xl border bg-card p-3 sm:p-4">
+      <h2 className="text-sm font-semibold">4. Validação geográfica</h2>
+
+      {selectedLeads.length === 0 ? (
+        <EmptyState
+          title="Nenhum Lead selecionado"
+          description="Selecione Leads na etapa anterior para conferir a localização."
+        />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <Stat label="Leads selecionados" value={selectedLeads.length} />
+            <Stat label="Com localização" value={located.length} tone="success" />
+            <Stat label="Sem localização" value={pending.length} tone="warning" />
+          </div>
+
+          {pending.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Todos os Leads selecionados possuem latitude e longitude utilizáveis.
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Os Leads abaixo continuam vinculados às pesquisas e não são alterados. Corrija o endereço na
+                Central do Lead e volte aqui para reavaliar.
+              </p>
+              <ul className="space-y-2">
+                {pending.map((lead) => (
+                  <li key={lead.id} className="rounded-xl border p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium break-words">{lead.company_name}</span>
+                      <Badge variant="outline" className="gap-1 text-warning">
+                        <MapPinOff className="h-3 w-3" /> {GEO_ISSUE_LABEL[geoIssue(lead)]}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground break-words">
+                      {leadFullAddress(lead) || NAO_DISPONIVEL}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground break-words">
+                      Latitude: {lead.latitude ?? NAO_DISPONIVEL} · Longitude:{" "}
+                      {lead.longitude ?? NAO_DISPONIVEL}
+                    </p>
+                    <Link
+                      to="/leads/$id"
+                      params={{ id: lead.id }}
+                      className="mt-2 inline-block text-xs font-medium text-primary underline underline-offset-4"
+                    >
+                      Corrigir na Central do Lead
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+export function PointsSection({
+  points,
+  onChange,
+}: {
+  points: PlanningPoints;
+  onChange: (next: PlanningPoints) => void;
+}) {
+  function setStart(patch: Partial<PlanningPoint>) {
+    onChange({ ...points, start: { ...points.start, ...patch } });
+  }
+  function setEnd(patch: Partial<PlanningPoint>) {
+    onChange({ ...points, end: { ...points.end, ...patch } });
+  }
+
+  function useCurrentLocation() {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      toast.error("Localização indisponível neste dispositivo.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setStart({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          label: points.start.label.trim() || "Localização atual",
+          source: "localizacao_atual",
+        });
+        toast.success("Localização atual capturada.");
+      },
+      () => toast.error("Não foi possível obter a localização."),
+    );
+  }
+
+  return (
+    <section className="space-y-4 rounded-2xl border bg-card p-3 sm:p-4">
+      <h2 className="text-sm font-semibold">5. Ponto de saída e de retorno</h2>
+
+      <div className="grid gap-3">
+        <div className="grid gap-1.5">
+          <Label htmlFor="p-saida-end">Endereço de saída</Label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              id="p-saida-end"
+              className="h-11"
+              value={points.start.address}
+              onChange={(e) => setStart({ address: e.target.value, source: "endereco" })}
+              placeholder="Ex.: Rua Fernão Mendes Pinto, 696 — São Paulo/SP"
+            />
+            <Button type="button" variant="outline" className="h-11 sm:shrink-0" onClick={useCurrentLocation}>
+              <LocateFixed className="h-4 w-4" /> Usar localização atual
+            </Button>
+          </div>
+        </div>
+        <div className="grid gap-1.5">
+          <Label htmlFor="p-saida-nome">Identificação (opcional)</Label>
+          <Input
+            id="p-saida-nome"
+            className="h-11"
+            value={points.start.label}
+            onChange={(e) => setStart({ label: e.target.value })}
+            placeholder="Ex.: Escritório"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground break-words">
+          {hasUsableCoords(points.start.latitude, points.start.longitude)
+            ? `Coordenadas do aparelho: ${points.start.latitude?.toFixed(5)}, ${points.start.longitude?.toFixed(5)}`
+            : "Sem coordenadas: nesta etapa apenas o endereço é guardado. A conversão em coordenadas será definida na próxima fase."}
+        </p>
+      </div>
+
+      <div className="space-y-3 border-t pt-3">
+        <label className="flex items-start gap-3">
+          <Checkbox
+            checked={points.sameAsStart}
+            onCheckedChange={(v) => onChange({ ...points, sameAsStart: v === true })}
+            aria-label="Retornar ao mesmo ponto de saída"
+            className="mt-0.5"
+          />
+          <span className="text-sm">Retornar ao mesmo ponto de saída</span>
+        </label>
+
+        {points.sameAsStart ? null : (
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="p-retorno-end">Endereço de retorno</Label>
+              <Input
+                id="p-retorno-end"
+                className="h-11"
+                value={points.end.address}
+                onChange={(e) => setEnd({ address: e.target.value, source: "endereco" })}
+                placeholder="Endereço de retorno"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="p-retorno-nome">Identificação (opcional)</Label>
+              <Input
+                id="p-retorno-nome"
+                className="h-11"
+                value={points.end.label}
+                onChange={(e) => setEnd({ label: e.target.value })}
+                placeholder="Ex.: Casa"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+export function ReadinessSection({
+  searchCount,
+  consolidated,
+  selectedLeads,
+  points,
+}: {
+  searchCount: number;
+  consolidated: number;
+  selectedLeads: CandidateLead[];
+  points: PlanningPoints;
+}) {
+  const located = selectedLeads.filter(hasLocation).length;
+  const pending = selectedLeads.length - located;
+  const startOk = isPointDefined(points.start);
+  const endOk = points.sameAsStart ? startOk : isPointDefined(points.end);
+
+  return (
+    <section className="space-y-3 rounded-2xl border bg-card p-3 sm:p-4">
+      <h2 className="text-sm font-semibold">6. Resumo da preparação</h2>
+      <dl className="grid gap-1.5 text-sm">
+        <Row label="Pesquisas selecionadas" value={String(searchCount)} />
+        <Row label="Leads consolidados" value={String(consolidated)} />
+        <Row label="Leads selecionados" value={String(selectedLeads.length)} />
+        <Row label="Com localização" value={String(located)} />
+        <Row label="Sem localização" value={String(pending)} />
+        <Row label="Ponto de saída" value={startOk ? "Definido" : "Não definido"} />
+        <Row
+          label="Ponto de retorno"
+          value={
+            points.sameAsStart
+              ? startOk
+                ? "Mesmo da saída"
+                : "Não definido"
+              : endOk
+                ? "Endereço próprio"
+                : "Não definido"
+          }
+        />
+      </dl>
+      <p className="text-sm" aria-live="polite">
+        {located} Lead(s) aptos para a análise geográfica futura.
+        {pending > 0 ? ` ${pending} pendente(s) de localização.` : ""}
+      </p>
+      <p className="text-xs text-muted-foreground">
+        7. Calcular deslocamentos — etapa seguinte, ainda não disponível. Nenhuma rota foi calculada e nenhum
+        roteiro foi criado nesta preparação.
+      </p>
+      <Button type="button" className="h-11 w-full sm:w-auto" disabled>
+        7. Calcular deslocamentos (próxima fase)
+      </Button>
+    </section>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-wrap justify-between gap-2 border-b pb-1 last:border-b-0">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-medium break-words">{value}</dd>
+    </div>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: number; tone?: "success" | "warning" }) {
+  const toneClass =
+    tone === "success" ? "text-success" : tone === "warning" ? "text-warning" : "text-foreground";
+  return (
+    <div className="min-w-0 rounded-xl border p-3">
+      <p className="text-xs text-muted-foreground break-words">{label}</p>
+      <p className={`text-xl font-semibold ${toneClass}`}>{value}</p>
+    </div>
+  );
+}
