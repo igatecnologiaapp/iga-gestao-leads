@@ -32,6 +32,7 @@ import {
 import {
   GeoValidationSection,
   PointsSection,
+  ProximitySection,
   ReadinessSection,
 } from "@/components/visits/RoutePlanningSteps";
 
@@ -366,6 +367,7 @@ export function RoutePlanningPanel() {
         selectedLeads={selectedLeads}
         points={points}
       />
+      <ProximitySection selectedLeads={selectedLeads} points={points} />
     </div>
   );
 }
