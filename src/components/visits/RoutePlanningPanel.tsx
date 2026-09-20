@@ -32,6 +32,7 @@ import {
 import {
   GeoValidationSection,
   PointsSection,
+  ProximitySection,
   ReadinessSection,
 } from "@/components/visits/RoutePlanningSteps";
 
