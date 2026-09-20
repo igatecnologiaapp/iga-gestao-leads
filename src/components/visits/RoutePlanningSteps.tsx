@@ -245,12 +245,105 @@ export function ReadinessSection({
         {pending > 0 ? ` ${pending} pendente(s) de localização.` : ""}
       </p>
       <p className="text-xs text-muted-foreground">
-        7. Calcular deslocamentos — etapa seguinte, ainda não disponível. Nenhuma rota foi calculada e nenhum
-        roteiro foi criado nesta preparação.
+        Nenhuma rota foi calculada e nenhum roteiro foi criado nesta preparação.
       </p>
-      <Button type="button" className="h-11 w-full sm:w-auto" disabled>
-        7. Calcular deslocamentos (próxima fase)
+    </section>
+  );
+}
+
+/**
+ * Fase 3.3 — Análise de proximidade geográfica local.
+ * Calcula somente distância geográfica aproximada entre coordenadas. Não é
+ * distância pelas ruas, não é tempo de condução e não é sequência de roteiro.
+ */
+export function ProximitySection({
+  selectedLeads,
+  points,
+}: {
+  selectedLeads: CandidateLead[];
+  points: PlanningPoints;
+}) {
+  const [result, setResult] = useState<ProximityAnalysis | null>(null);
+  const apt = selectedLeads.filter(hasLocation).length;
+  const { start, end } = resolveEndpoints(points);
+  const canAnalyze = apt >= 2;
+
+  // A seleção mudou: o resultado anterior deixa de valer.
+  useEffect(() => {
+    setResult(null);
+  }, [selectedLeads, points]);
+
+  return (
+    <section className="space-y-3 rounded-2xl border bg-card p-3 sm:p-4">
+      <h2 className="text-sm font-semibold">7. Analisar proximidades</h2>
+      <p className="text-xs text-muted-foreground">
+        Compara a posição dos Leads aptos no mapa para entender quais estão próximos entre si. O resultado é
+        uma distância geográfica aproximada (em linha reta), não a distância percorrida pelas ruas.
+      </p>
+
+      <dl className="grid gap-1.5 text-sm">
+        <Row label="Leads aptos para análise" value={String(apt)} />
+        <Row
+          label="Ponto de saída"
+          value={start ? "Localização válida" : "Não disponível para cálculo"}
+        />
+        <Row
+          label="Ponto de retorno"
+          value={end ? "Localização válida" : "Não disponível para cálculo"}
+        />
+      </dl>
+
+      {start ? null : (
+        <p className="text-xs text-muted-foreground">
+          O endereço de saída foi guardado apenas como texto. Para participar do cálculo ele precisa de
+          coordenadas — hoje isso acontece quando você usa a localização atual do aparelho.
+        </p>
+      )}
+
+      <Button
+        type="button"
+        className="h-11 w-full sm:w-auto"
+        disabled={!canAnalyze}
+        onClick={() => setResult(analyzeProximity(selectedLeads, points))}
+      >
+        <Ruler className="h-4 w-4" /> Analisar proximidades
       </Button>
+      {canAnalyze ? null : (
+        <p className="text-xs text-muted-foreground">
+          Selecione ao menos dois Leads com localização para analisar as proximidades.
+        </p>
+      )}
+
+      {result ? (
+        <div className="space-y-2 border-t pt-3" aria-live="polite">
+          <dl className="grid gap-1.5 text-sm">
+            <Row label="Leads analisados" value={String(result.analyzed)} />
+            <Row label="Sem localização (fora da análise)" value={String(result.skipped)} />
+            <Row label="Método" value="Distância geográfica aproximada" />
+            <Row label="Pares comparados" value={String(result.matrix.pairCount)} />
+            <Row label="Menor distância entre dois Leads" value={formatGeoDistance(result.matrix.min)} />
+            <Row label="Maior distância entre dois Leads" value={formatGeoDistance(result.matrix.max)} />
+            <Row
+              label="Distância média até o Lead mais próximo"
+              value={formatGeoDistance(result.matrix.averageNearest)}
+            />
+            {result.startAvailable ? (
+              <>
+                <Row label="Da saída até o Lead mais próximo" value={formatGeoDistance(result.startNearest)} />
+                <Row
+                  label="Da saída até o Lead mais distante"
+                  value={formatGeoDistance(result.startFarthest)}
+                />
+              </>
+            ) : null}
+            <Row label="Tempo de cálculo" value={`${Math.max(1, Math.round(result.elapsedMs))} ms`} />
+          </dl>
+          <p className="text-xs text-muted-foreground">
+            Cálculo feito no próprio aparelho, sem serviço externo e sem gravar nada. Nenhuma sequência de
+            visitas foi gerada nesta etapa.
+          </p>
+        </div>
+      ) : null}
     </section>
   );
 }
