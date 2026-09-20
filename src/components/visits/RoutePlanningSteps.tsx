@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { LocateFixed, MapPinOff } from "lucide-react";
+import { LocateFixed, MapPinOff, Ruler } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
