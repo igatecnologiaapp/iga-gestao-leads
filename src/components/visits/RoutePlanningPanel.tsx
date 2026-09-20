@@ -367,6 +367,7 @@ export function RoutePlanningPanel() {
         selectedLeads={selectedLeads}
         points={points}
       />
+      <ProximitySection selectedLeads={selectedLeads} points={points} />
     </div>
   );
 }
