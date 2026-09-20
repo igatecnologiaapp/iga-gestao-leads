@@ -20,6 +20,12 @@ import {
   type PlanningPoint,
   type PlanningPoints,
 } from "@/lib/routePlanning";
+import {
+  analyzeProximity,
+  formatGeoDistance,
+  resolveEndpoints,
+  type ProximityAnalysis,
+} from "@/lib/routeGeo";
 
 const NAO_DISPONIVEL = "Não disponível";
 
