@@ -147,23 +147,30 @@ export function twoOpt(
   dist: Dist,
 ): { order: GeoPoint[]; swaps: number } {
   const result = order.slice();
+  const n = result.length;
   let swaps = 0;
-  if (result.length < 4) return { order: result, swaps };
-  let best = pathLength(result, start, end, dist);
+  if (n < 4) return { order: result, swaps };
   let improved = true;
   let passes = 0;
   while (improved && passes < MAX_TWO_OPT_PASSES) {
     improved = false;
     passes += 1;
-    for (let i = 0; i < result.length - 1; i += 1) {
-      for (let j = i + 1; j < result.length; j += 1) {
-        const candidate = result.slice();
-        const segment = candidate.slice(i, j + 1).reverse();
-        candidate.splice(i, segment.length, ...segment);
-        const km = pathLength(candidate, start, end, dist);
-        if (km < best - 1e-9) {
-          best = km;
-          result.splice(0, result.length, ...candidate);
+    for (let i = 0; i < n - 1; i += 1) {
+      const prev = i === 0 ? start : result[i - 1]!;
+      for (let j = i + 1; j < n; j += 1) {
+        const next = j === n - 1 ? end : result[j + 1]!;
+        const a = result[i]!;
+        const b = result[j]!;
+        // Avaliação incremental: só as duas ligações das pontas mudam.
+        let delta = 0;
+        if (prev) delta += dist(prev, b) - dist(prev, a);
+        if (next) delta += dist(a, next) - dist(b, next);
+        if (delta < -1e-9) {
+          for (let x = i, y = j; x < y; x += 1, y -= 1) {
+            const tmp = result[x]!;
+            result[x] = result[y]!;
+            result[y] = tmp;
+          }
           swaps += 1;
           improved = true;
         }
