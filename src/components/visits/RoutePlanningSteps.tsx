@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { LocateFixed, MapPinOff, Ruler } from "lucide-react";
+import { ListOrdered, LocateFixed, MapPin, MapPinOff, Ruler } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import {
   hasLocation,
   hasUsableCoords,
   isPointDefined,
+  leadAddress,
   leadFullAddress,
   type CandidateLead,
   type PlanningPoint,
@@ -26,6 +27,11 @@ import {
   resolveEndpoints,
   type ProximityAnalysis,
 } from "@/lib/routeGeo";
+import {
+  buildSuggestedSequence,
+  sequenceSignature,
+  type SuggestedSequence,
+} from "@/lib/routeSequence";
 
 const NAO_DISPONIVEL = "Não disponível";
 
@@ -348,6 +354,155 @@ export function ProximitySection({
           <p className="text-xs text-muted-foreground">
             Cálculo feito no próprio aparelho, sem serviço externo e sem gravar nada. Nenhuma sequência de
             visitas foi gerada nesta etapa.
+          </p>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+/**
+ * Fase 3.4 — Sequência geográfica sugerida (Vizinho Mais Próximo + 2-opt).
+ * Proposta temporária baseada apenas em distância geográfica aproximada.
+ * Não é rota pelas ruas, não cria roteiro oficial e nada é gravado.
+ */
+export function SequenceSection({
+  selectedLeads,
+  points,
+}: {
+  selectedLeads: CandidateLead[];
+  points: PlanningPoints;
+}) {
+  const [sequence, setSequence] = useState<SuggestedSequence | null>(null);
+  const currentSignature = sequenceSignature(selectedLeads, points);
+  const outdated = sequence != null && sequence.signature !== currentSignature;
+  const apt = selectedLeads.filter(hasLocation).length;
+  const canGenerate = apt >= 1;
+
+  // Mudou a seleção, os pontos ou as coordenadas: a sequência anterior deixa de valer.
+  useEffect(() => {
+    if (outdated) setSequence(null);
+  }, [outdated]);
+
+  return (
+    <section className="space-y-3 rounded-2xl border bg-card p-3 sm:p-4">
+      <h2 className="text-sm font-semibold">8. Sequência sugerida</h2>
+      <p className="text-xs text-muted-foreground">
+        Ordem proposta pela proximidade geográfica entre as coordenadas. Não é rota pelas ruas, distância de
+        condução nem tempo de viagem.
+      </p>
+
+      <Button
+        type="button"
+        className="h-11 w-full sm:w-auto"
+        disabled={!canGenerate}
+        onClick={() => setSequence(buildSuggestedSequence(selectedLeads, points))}
+      >
+        <ListOrdered className="h-4 w-4" /> Gerar sequência sugerida
+      </Button>
+      {canGenerate ? null : (
+        <p className="text-xs text-muted-foreground">
+          Selecione ao menos um Lead com localização para gerar a sequência.
+        </p>
+      )}
+
+      {sequence ? (
+        <div className="space-y-3 border-t pt-3" aria-live="polite">
+          <dl className="grid gap-1.5 text-sm">
+            <Row label="Leads selecionados" value={String(sequence.selectedCount)} />
+            <Row label="Incluídos na sequência" value={String(sequence.includedCount)} />
+            <Row
+              label="Fora da sequência por falta de localização"
+              value={String(sequence.skippedCount)}
+            />
+            <Row label="Método" value="Proximidade geográfica — Vizinho Mais Próximo + 2-opt" />
+            <Row
+              label="Distância geográfica aproximada total"
+              value={formatGeoDistance(sequence.totalKm)}
+            />
+            <Row
+              label="Ponto de saída"
+              value={sequence.startConsidered ? "Considerado" : "Não considerado"}
+            />
+            <Row
+              label="Ponto de retorno"
+              value={sequence.endConsidered ? "Considerado" : "Não considerado"}
+            />
+            {sequence.gainKm != null && sequence.gainKm > 0 ? (
+              <Row
+                label="Ganho obtido neste conjunto"
+                value={`${formatGeoDistance(sequence.gainKm)} (${sequence.gainPercent?.toFixed(1).replace(".", ",")}%)`}
+              />
+            ) : null}
+          </dl>
+
+          <p className="text-xs text-muted-foreground">
+            Esse valor não representa a quilometragem real de condução.
+          </p>
+
+          {sequence.startConsidered ? null : (
+            <p className="text-xs text-muted-foreground">
+              O ponto de saída não tem coordenadas, então não entrou no cálculo. A sequência mostra apenas a
+              proximidade entre os Leads, começando pelo Lead mais ao norte.
+            </p>
+          )}
+          {points.sameAsStart || sequence.endConsidered ? null : (
+            <p className="text-xs text-muted-foreground">
+              O ponto de retorno foi guardado apenas como endereço em texto e não entrou no cálculo.
+            </p>
+          )}
+
+          <ol className="space-y-2">
+            {sequence.startConsidered && sequence.startPoint ? (
+              <li className="rounded-xl border border-dashed p-3">
+                <p className="text-sm font-medium break-words">Saída · {sequence.startPoint.label}</p>
+                <p className="text-xs text-muted-foreground break-words">
+                  {points.start.address || "Localização atual do aparelho"}
+                </p>
+              </li>
+            ) : null}
+            {sequence.stops.map((stop) => (
+              <li key={stop.point.id} className="space-y-1">
+                {stop.fromPreviousKm != null ? (
+                  <p className="pl-1 text-xs text-muted-foreground">
+                    ↓ {formatGeoDistance(stop.fromPreviousKm)} (distância geográfica aproximada)
+                  </p>
+                ) : null}
+                <div className="rounded-xl border p-3">
+                  <p className="text-sm font-medium break-words">
+                    {stop.order}. {stop.lead.company_name}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground break-words">
+                    {leadAddress(stop.lead) || NAO_DISPONIVEL}
+                  </p>
+                  <Badge variant="outline" className="mt-1 gap-1 text-success">
+                    <MapPin className="h-3 w-3" /> Com localização
+                  </Badge>
+                </div>
+              </li>
+            ))}
+            {sequence.endConsidered && sequence.endPoint ? (
+              <li className="space-y-1">
+                {sequence.returnKm != null ? (
+                  <p className="pl-1 text-xs text-muted-foreground">
+                    ↓ {formatGeoDistance(sequence.returnKm)} (distância geográfica aproximada)
+                  </p>
+                ) : null}
+                <div className="rounded-xl border border-dashed p-3">
+                  <p className="text-sm font-medium break-words">Retorno · {sequence.endPoint.label}</p>
+                </div>
+              </li>
+            ) : null}
+          </ol>
+
+          {sequence.skippedCount > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              {sequence.skippedCount} Lead(s) sem localização continuam selecionados e inalterados, apenas fora
+              do cálculo.
+            </p>
+          ) : null}
+          <p className="text-xs text-muted-foreground">
+            Sugestão temporária: nenhum roteiro, parada ou visita foi criado.
           </p>
         </div>
       ) : null}

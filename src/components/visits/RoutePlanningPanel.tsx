@@ -34,6 +34,7 @@ import {
   PointsSection,
   ProximitySection,
   ReadinessSection,
+  SequenceSection,
 } from "@/components/visits/RoutePlanningSteps";
 
 const ALL = "todos";
@@ -368,6 +369,7 @@ export function RoutePlanningPanel() {
         points={points}
       />
       <ProximitySection selectedLeads={selectedLeads} points={points} />
+      <SequenceSection selectedLeads={selectedLeads} points={points} />
     </div>
   );
 }
