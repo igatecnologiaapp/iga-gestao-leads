@@ -105,6 +105,33 @@ function pathLength(
   return total;
 }
 
+/**
+ * Fase 3.5 — mede QUALQUER ordem (inclusive a definida manualmente pelo usuário)
+ * reutilizando o mesmo motor geográfico. Não reordena nada.
+ */
+export type SequenceMeasurement = {
+  /** Distância desde a parada anterior (ou da saída) para cada parada. */
+  legs: (number | null)[];
+  returnKm: number | null;
+  totalKm: number | null;
+};
+
+export function measureSequence(
+  order: GeoPoint[],
+  start: GeoPoint | null,
+  end: GeoPoint | null,
+): SequenceMeasurement {
+  if (order.length === 0) return { legs: [], returnKm: null, totalKm: null };
+  const dist = makeDist(order);
+  const legs = order.map((point, index) => {
+    const previous = index === 0 ? start : order[index - 1]!;
+    return previous ? dist(previous, point) : null;
+  });
+  const last = order[order.length - 1]!;
+  const returnKm = end ? dist(last, end) : null;
+  return { legs, returnKm, totalKm: pathLength(order, start, end, dist) };
+}
+
 /** Sequência inicial: a partir da origem, sempre o ponto ainda não visitado mais próximo. */
 export function nearestNeighbor(points: GeoPoint[], start: GeoPoint | null, dist: Dist): GeoPoint[] {
   if (points.length === 0) return [];
