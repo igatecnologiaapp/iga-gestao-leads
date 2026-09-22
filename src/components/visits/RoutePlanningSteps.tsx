@@ -363,6 +363,7 @@ export function ProximitySection({
 
 /**
  * Fase 3.4 — Sequência geográfica sugerida (Vizinho Mais Próximo + 2-opt).
+ * Fase 3.5 — Revisão e ajuste manual da sequência (ordem, remoção e reinclusão).
  * Proposta temporária baseada apenas em distância geográfica aproximada.
  * Não é rota pelas ruas, não cria roteiro oficial e nada é gravado.
  */
@@ -374,52 +375,179 @@ export function SequenceSection({
   points: PlanningPoints;
 }) {
   const [sequence, setSequence] = useState<SuggestedSequence | null>(null);
+  const [orderIds, setOrderIds] = useState<string[]>([]);
+  const [removedIds, setRemovedIds] = useState<string[]>([]);
+  const [manual, setManual] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+
   const currentSignature = sequenceSignature(selectedLeads, points);
   const outdated = sequence != null && sequence.signature !== currentSignature;
   const apt = selectedLeads.filter(hasLocation).length;
   const canGenerate = apt >= 1;
 
-  // Mudou a seleção, os pontos ou as coordenadas: a sequência anterior deixa de valer.
-  useEffect(() => {
-    if (outdated) setSequence(null);
-  }, [outdated]);
+  function generate() {
+    const next = buildSuggestedSequence(selectedLeads, points);
+    setSequence(next);
+    setOrderIds(next.stops.map((s) => s.point.id));
+    setRemovedIds([]);
+    setManual(false);
+  }
+
+  const stopById = new Map((sequence?.stops ?? []).map((s) => [s.point.id, s]));
+  const orderedStops = orderIds.map((id) => stopById.get(id)).filter((s) => s != null);
+  const removedStops = removedIds.map((id) => stopById.get(id)).filter((s) => s != null);
+  const startPoint = sequence?.startConsidered ? sequence.startPoint : null;
+  const endPoint = sequence?.endConsidered ? sequence.endPoint : null;
+  const measurement = measureSequence(
+    orderedStops.map((s) => s.point),
+    startPoint,
+    endPoint,
+  );
+  const difference =
+    sequence?.totalKm != null && measurement.totalKm != null
+      ? measurement.totalKm - sequence.totalKm
+      : null;
+
+  function move(id: string, delta: number) {
+    setOrderIds((prev) => {
+      const index = prev.indexOf(id);
+      const target = index + delta;
+      if (index < 0 || target < 0 || target >= prev.length) return prev;
+      const next = prev.slice();
+      const [item] = next.splice(index, 1);
+      next.splice(target, 0, item!);
+      return next;
+    });
+    setManual(true);
+  }
+
+  function dropOn(targetId: string) {
+    if (!dragId || dragId === targetId) return;
+    setOrderIds((prev) => {
+      const from = prev.indexOf(dragId);
+      const to = prev.indexOf(targetId);
+      if (from < 0 || to < 0) return prev;
+      const next = prev.slice();
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item!);
+      return next;
+    });
+    setManual(true);
+    setDragId(null);
+  }
+
+  function removeStop(id: string) {
+    setOrderIds((prev) => prev.filter((x) => x !== id));
+    setRemovedIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    setManual(true);
+  }
+
+  /** Regra simples e previsível: o Lead reincluído volta ao final da sequência. */
+  function reincludeStop(id: string) {
+    setRemovedIds((prev) => prev.filter((x) => x !== id));
+    setOrderIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
+    setManual(true);
+  }
+
+  function confirmDiscard(): boolean {
+    if (!manual) return true;
+    return typeof window === "undefined"
+      ? true
+      : window.confirm("Existem ajustes manuais nesta sequência. Deseja descartá-los?");
+  }
+
+  function restore() {
+    if (!sequence || !confirmDiscard()) return;
+    setOrderIds(sequence.stops.map((s) => s.point.id));
+    setRemovedIds([]);
+    setManual(false);
+  }
+
+  function recalculate() {
+    if (!confirmDiscard()) return;
+    generate();
+  }
 
   return (
     <section className="space-y-3 rounded-2xl border bg-card p-3 sm:p-4">
-      <h2 className="text-sm font-semibold">8. Sequência sugerida</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold">8. Sequência sugerida e ajuste manual</h2>
+        {sequence ? (
+          <Badge variant={manual ? "secondary" : "outline"}>
+            {manual ? "Ajustada manualmente" : "Sugestão automática"}
+          </Badge>
+        ) : null}
+      </div>
       <p className="text-xs text-muted-foreground">
         Ordem proposta pela proximidade geográfica entre as coordenadas. Não é rota pelas ruas, distância de
-        condução nem tempo de viagem.
+        condução nem tempo de viagem. A ordem final é sua: o sistema não refaz a otimização sozinho.
       </p>
 
-      <Button
-        type="button"
-        className="h-11 w-full sm:w-auto"
-        disabled={!canGenerate}
-        onClick={() => setSequence(buildSuggestedSequence(selectedLeads, points))}
-      >
-        <ListOrdered className="h-4 w-4" /> Gerar sequência sugerida
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" className="h-11 w-full sm:w-auto" disabled={!canGenerate} onClick={generate}>
+          <ListOrdered className="h-4 w-4" /> {sequence ? "Recalcular sugestão" : "Gerar sequência sugerida"}
+        </Button>
+        {sequence ? (
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full sm:w-auto"
+              onClick={restore}
+              disabled={!manual}
+            >
+              <RotateCcw className="h-4 w-4" /> Restaurar sequência sugerida
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 w-full sm:w-auto"
+              onClick={recalculate}
+              disabled={!canGenerate}
+            >
+              <RefreshCw className="h-4 w-4" /> Recalcular sugestão
+            </Button>
+          </>
+        ) : null}
+      </div>
       {canGenerate ? null : (
         <p className="text-xs text-muted-foreground">
           Selecione ao menos um Lead com localização para gerar a sequência.
         </p>
       )}
 
+      {outdated ? (
+        <p className="rounded-xl border border-warning/40 bg-warning/10 p-3 text-xs text-warning">
+          Os dados utilizados para esta sequência foram alterados. É necessário gerar uma nova sequência — seus
+          ajustes manuais continuam visíveis até você recalcular.
+        </p>
+      ) : null}
+
       {sequence ? (
         <div className="space-y-3 border-t pt-3" aria-live="polite">
           <dl className="grid gap-1.5 text-sm">
             <Row label="Leads selecionados" value={String(sequence.selectedCount)} />
-            <Row label="Incluídos na sequência" value={String(sequence.includedCount)} />
+            <Row label="Na sequência atual" value={String(orderedStops.length)} />
+            <Row label="Fora da sequência (retirados por você)" value={String(removedStops.length)} />
             <Row
               label="Fora da sequência por falta de localização"
               value={String(sequence.skippedCount)}
             />
             <Row label="Método" value="Proximidade geográfica — Vizinho Mais Próximo + 2-opt" />
             <Row
-              label="Distância geográfica aproximada total"
-              value={formatGeoDistance(sequence.totalKm)}
+              label="Sequência sugerida"
+              value={`${formatGeoDistance(sequence.totalKm)} geográficos aproximados`}
             />
+            <Row
+              label="Sequência atual"
+              value={`${formatGeoDistance(measurement.totalKm)} geográficos aproximados`}
+            />
+            {difference != null && Math.abs(difference) >= 0.01 ? (
+              <Row
+                label="Diferença"
+                value={`${difference > 0 ? "+" : "−"} ${formatGeoDistance(Math.abs(difference))}`}
+              />
+            ) : null}
             <Row
               label="Ponto de saída"
               value={sequence.startConsidered ? "Considerado" : "Não considerado"}
@@ -428,16 +556,11 @@ export function SequenceSection({
               label="Ponto de retorno"
               value={sequence.endConsidered ? "Considerado" : "Não considerado"}
             />
-            {sequence.gainKm != null && sequence.gainKm > 0 ? (
-              <Row
-                label="Ganho obtido neste conjunto"
-                value={`${formatGeoDistance(sequence.gainKm)} (${sequence.gainPercent?.toFixed(1).replace(".", ",")}%)`}
-              />
-            ) : null}
           </dl>
 
           <p className="text-xs text-muted-foreground">
-            Esse valor não representa a quilometragem real de condução.
+            Esse valor não representa a quilometragem real de condução. Uma ordem manual maior não é um erro —
+            você pode conhecer condições que o cálculo não enxerga.
           </p>
 
           {sequence.startConsidered ? null : (
@@ -453,57 +576,140 @@ export function SequenceSection({
           )}
 
           <ol className="space-y-2">
-            {sequence.startConsidered && sequence.startPoint ? (
+            {startPoint ? (
               <li className="rounded-xl border border-dashed p-3">
-                <p className="text-sm font-medium break-words">Saída · {sequence.startPoint.label}</p>
+                <p className="text-sm font-medium break-words">Saída · {startPoint.label}</p>
                 <p className="text-xs text-muted-foreground break-words">
                   {points.start.address || "Localização atual do aparelho"}
                 </p>
               </li>
             ) : null}
-            {sequence.stops.map((stop) => (
-              <li key={stop.point.id} className="space-y-1">
-                {stop.fromPreviousKm != null ? (
+            {orderedStops.map((stop, index) => (
+              <li
+                key={stop.point.id}
+                className="space-y-1"
+                draggable
+                onDragStart={() => setDragId(stop.point.id)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => dropOn(stop.point.id)}
+              >
+                {measurement.legs[index] != null ? (
                   <p className="pl-1 text-xs text-muted-foreground">
-                    ↓ {formatGeoDistance(stop.fromPreviousKm)} (distância geográfica aproximada)
+                    ↓ {formatGeoDistance(measurement.legs[index]!)} (distância geográfica aproximada)
                   </p>
                 ) : null}
                 <div className="rounded-xl border p-3">
-                  <p className="text-sm font-medium break-words">
-                    {stop.order}. {stop.lead.company_name}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground break-words">
-                    {leadAddress(stop.lead) || NAO_DISPONIVEL}
-                  </p>
-                  <Badge variant="outline" className="mt-1 gap-1 text-success">
-                    <MapPin className="h-3 w-3" /> Com localização
-                  </Badge>
+                  <div className="flex items-start gap-2">
+                    <GripVertical className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium break-words">
+                        {index + 1}. {stop.lead.company_name}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground break-words">
+                        {leadAddress(stop.lead) || NAO_DISPONIVEL}
+                      </p>
+                      <Badge variant="outline" className="mt-1 gap-1 text-success">
+                        <MapPin className="h-3 w-3" /> Com localização
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10"
+                      aria-label={`Subir ${stop.lead.company_name}`}
+                      disabled={index === 0}
+                      onClick={() => move(stop.point.id, -1)}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10"
+                      aria-label={`Descer ${stop.lead.company_name}`}
+                      disabled={index === orderedStops.length - 1}
+                      onClick={() => move(stop.point.id, 1)}
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-10"
+                      onClick={() => removeStop(stop.point.id)}
+                    >
+                      <X className="h-4 w-4" /> Remover da sequência
+                    </Button>
+                  </div>
                 </div>
               </li>
             ))}
-            {sequence.endConsidered && sequence.endPoint ? (
+            {endPoint ? (
               <li className="space-y-1">
-                {sequence.returnKm != null ? (
+                {measurement.returnKm != null ? (
                   <p className="pl-1 text-xs text-muted-foreground">
-                    ↓ {formatGeoDistance(sequence.returnKm)} (distância geográfica aproximada)
+                    ↓ {formatGeoDistance(measurement.returnKm)} (distância geográfica aproximada)
                   </p>
                 ) : null}
                 <div className="rounded-xl border border-dashed p-3">
-                  <p className="text-sm font-medium break-words">Retorno · {sequence.endPoint.label}</p>
+                  <p className="text-sm font-medium break-words">Retorno · {endPoint.label}</p>
                 </div>
               </li>
             ) : null}
           </ol>
 
+          {removedStops.length > 0 ? (
+            <div className="space-y-2 border-t pt-3">
+              <h3 className="text-sm font-semibold">Fora da sequência atual</h3>
+              <p className="text-xs text-muted-foreground">
+                Estes Leads foram apenas retirados deste planejamento. Nada foi excluído ou alterado no
+                cadastro.
+              </p>
+              <ul className="space-y-2">
+                {removedStops.map((stop) => (
+                  <li key={stop.point.id} className="rounded-xl border p-3">
+                    <p className="text-sm font-medium break-words">{stop.lead.company_name}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground break-words">
+                      {leadAddress(stop.lead) || NAO_DISPONIVEL}
+                    </p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 h-10"
+                      onClick={() => reincludeStop(stop.point.id)}
+                    >
+                      <Plus className="h-4 w-4" /> Reincluir no final
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
           {sequence.skippedCount > 0 ? (
             <p className="text-xs text-muted-foreground">
               {sequence.skippedCount} Lead(s) sem localização continuam selecionados e inalterados, apenas fora
-              do cálculo.
+              do cálculo — eles não podem entrar na sequência sem coordenadas.
             </p>
           ) : null}
-          <p className="text-xs text-muted-foreground">
-            Sugestão temporária: nenhum roteiro, parada ou visita foi criado.
-          </p>
+
+          <div className="space-y-2 border-t pt-3">
+            <p className="text-sm font-medium">
+              {manual ? "Sequência revisada — pronta para confirmação" : "Sugestão pronta para revisão"}
+            </p>
+            <Button type="button" className="h-11 w-full sm:w-auto" disabled>
+              9. Confirmar e criar roteiro (próxima fase)
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Planejamento temporário: nenhum roteiro, parada, visita ou compromisso foi criado.
+            </p>
+          </div>
         </div>
       ) : null}
     </section>
