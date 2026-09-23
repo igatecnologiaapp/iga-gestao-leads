@@ -1,6 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ListOrdered, LocateFixed, MapPin, MapPinOff, Ruler } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  GripVertical,
+  ListOrdered,
+  LocateFixed,
+  MapPin,
+  MapPinOff,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Ruler,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +42,7 @@ import {
 } from "@/lib/routeGeo";
 import {
   buildSuggestedSequence,
+  measureSequence,
   sequenceSignature,
   type SuggestedSequence,
 } from "@/lib/routeSequence";
@@ -484,9 +498,6 @@ export function SequenceSection({
       </p>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="button" className="h-11 w-full sm:w-auto" disabled={!canGenerate} onClick={generate}>
-          <ListOrdered className="h-4 w-4" /> {sequence ? "Recalcular sugestão" : "Gerar sequência sugerida"}
-        </Button>
         {sequence ? (
           <>
             <Button
@@ -500,7 +511,6 @@ export function SequenceSection({
             </Button>
             <Button
               type="button"
-              variant="outline"
               className="h-11 w-full sm:w-auto"
               onClick={recalculate}
               disabled={!canGenerate}
@@ -508,7 +518,11 @@ export function SequenceSection({
               <RefreshCw className="h-4 w-4" /> Recalcular sugestão
             </Button>
           </>
-        ) : null}
+        ) : (
+          <Button type="button" className="h-11 w-full sm:w-auto" disabled={!canGenerate} onClick={generate}>
+            <ListOrdered className="h-4 w-4" /> Gerar sequência sugerida
+          </Button>
+        )}
       </div>
       {canGenerate ? null : (
         <p className="text-xs text-muted-foreground">
