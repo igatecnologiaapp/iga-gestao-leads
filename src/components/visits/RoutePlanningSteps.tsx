@@ -1,6 +1,19 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ListOrdered, LocateFixed, MapPin, MapPinOff, Ruler } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  GripVertical,
+  ListOrdered,
+  LocateFixed,
+  MapPin,
+  MapPinOff,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Ruler,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +42,7 @@ import {
 } from "@/lib/routeGeo";
 import {
   buildSuggestedSequence,
+  measureSequence,
   sequenceSignature,
   type SuggestedSequence,
 } from "@/lib/routeSequence";
