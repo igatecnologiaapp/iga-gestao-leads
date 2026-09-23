@@ -498,9 +498,6 @@ export function SequenceSection({
       </p>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="button" className="h-11 w-full sm:w-auto" disabled={!canGenerate} onClick={generate}>
-          <ListOrdered className="h-4 w-4" /> {sequence ? "Recalcular sugestão" : "Gerar sequência sugerida"}
-        </Button>
         {sequence ? (
           <>
             <Button
@@ -514,7 +511,6 @@ export function SequenceSection({
             </Button>
             <Button
               type="button"
-              variant="outline"
               className="h-11 w-full sm:w-auto"
               onClick={recalculate}
               disabled={!canGenerate}
@@ -522,7 +518,11 @@ export function SequenceSection({
               <RefreshCw className="h-4 w-4" /> Recalcular sugestão
             </Button>
           </>
-        ) : null}
+        ) : (
+          <Button type="button" className="h-11 w-full sm:w-auto" disabled={!canGenerate} onClick={generate}>
+            <ListOrdered className="h-4 w-4" /> Gerar sequência sugerida
+          </Button>
+        )}
       </div>
       {canGenerate ? null : (
         <p className="text-xs text-muted-foreground">
