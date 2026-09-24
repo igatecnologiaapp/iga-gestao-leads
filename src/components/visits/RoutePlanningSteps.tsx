@@ -46,6 +46,7 @@ import {
   sequenceSignature,
   type SuggestedSequence,
 } from "@/lib/routeSequence";
+import { ConfirmRouteSection } from "@/components/visits/ConfirmRouteSection";
 
 const NAO_DISPONIVEL = "Não disponível";
 
@@ -713,17 +714,17 @@ export function SequenceSection({
             </p>
           ) : null}
 
-          <div className="space-y-2 border-t pt-3">
-            <p className="text-sm font-medium">
-              {manual ? "Sequência revisada — pronta para confirmação" : "Sugestão pronta para revisão"}
-            </p>
-            <Button type="button" className="h-11 w-full sm:w-auto" disabled>
-              9. Confirmar e criar roteiro (próxima fase)
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Planejamento temporário: nenhum roteiro, parada, visita ou compromisso foi criado.
-            </p>
-          </div>
+          <p className="border-t pt-3 text-sm font-medium">
+            {manual ? "Sequência revisada — pronta para confirmação" : "Sugestão pronta para revisão"}
+          </p>
+          <ConfirmRouteSection
+            orderedLeads={orderedStops
+              .map((s) => selectedLeads.find((l) => l.id === s.point.id))
+              .filter((l): l is CandidateLead => l != null)}
+            manual={manual}
+            outdated={outdated}
+            points={points}
+          />
         </div>
       ) : null}
     </section>
