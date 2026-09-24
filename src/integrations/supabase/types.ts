@@ -1531,6 +1531,31 @@ export type Database = {
       can_delete_documents: { Args: { _user_id: string }; Returns: boolean }
       can_edit_lead: { Args: { _lead_id: string }; Returns: boolean }
       can_view_all_leads: { Args: { _user_id: string }; Returns: boolean }
+      create_route_from_plan: {
+        Args: {
+          _available_minutes: number
+          _departure_time: string
+          _end_address: string
+          _end_label: string
+          _end_latitude: number
+          _end_longitude: number
+          _lead_ids: string[]
+          _notes: string
+          _owner_id: string
+          _request_key: string
+          _route_date: string
+          _start_address: string
+          _start_label: string
+          _start_latitude: number
+          _start_longitude: number
+          _title: string
+          _vehicle_id: string
+        }
+        Returns: {
+          already_existed: boolean
+          route_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
