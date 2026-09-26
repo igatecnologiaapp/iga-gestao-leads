@@ -1421,6 +1421,7 @@ export type Database = {
           owner_id: string
           planned_distance_km: number | null
           planned_duration_minutes: number | null
+          planning_request_key: string | null
           region: string | null
           route_date: string
           segment_id: string | null
@@ -1455,6 +1456,7 @@ export type Database = {
           owner_id?: string
           planned_distance_km?: number | null
           planned_duration_minutes?: number | null
+          planning_request_key?: string | null
           region?: string | null
           route_date: string
           segment_id?: string | null
@@ -1489,6 +1491,7 @@ export type Database = {
           owner_id?: string
           planned_distance_km?: number | null
           planned_duration_minutes?: number | null
+          planning_request_key?: string | null
           region?: string | null
           route_date?: string
           segment_id?: string | null
