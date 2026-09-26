@@ -336,7 +336,7 @@ function RoteiroPage() {
       </section>
 
       {canEdit ? (
-        <section className="grid gap-3 rounded-2xl border bg-card p-3 sm:grid-cols-2 sm:p-4">
+        <section className="grid min-w-0 grid-cols-1 gap-3 rounded-2xl border bg-card p-3 sm:grid-cols-2 sm:p-4 [&>*]:min-w-0">
           <div className="grid gap-1.5">
             <Label htmlFor="status">Status do roteiro</Label>
             <Combobox
@@ -365,7 +365,7 @@ function RoteiroPage() {
               value={draftNotes ?? route.notes ?? ""}
               onChange={(e) => setDraftNotes(e.target.value)}
             />
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 size="sm"
                 variant="outline"
