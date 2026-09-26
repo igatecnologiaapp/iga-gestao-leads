@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Confirmações do Planejar roteiro usam `visit_routes.planning_request_key` com índice único e RPC atômica; nunca guardar a chave nas Observações, pois estas são editáveis.

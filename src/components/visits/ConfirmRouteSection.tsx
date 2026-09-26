@@ -88,7 +88,7 @@ export function ConfirmRouteSection({
   }
 
   async function confirm() {
-    if (blocked || inFlight.current || !user) return;
+    if (blocked || inFlight.current || !user || !effectiveOwner) return;
     inFlight.current = true;
     setSaving(true);
     const origin = [
@@ -103,7 +103,7 @@ export function ConfirmRouteSection({
       _request_key: requestKey,
       _title: title.trim() || `Roteiro planejado — ${new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR")}`,
       _route_date: date,
-      _owner_id: effectiveOwner!,
+      _owner_id: effectiveOwner,
       _vehicle_id: vehicleId as string,
       _departure_time: (departure || null) as string,
       _available_minutes: (Number(available) || null) as number,
