@@ -1,0 +1,4 @@
+- [ ] Homologar pela interface o fluxo de Administrador: pesquisa, planejamento, roteiro, visita, agenda e histórico.
+- [ ] Homologar pela interface o fluxo de Colaborador e restrições, se houver acesso legítimo.
+- [ ] Validar ordem C/A/B, uma parada, sequência desatualizada, idempotência, manual, antigo e responsividade.
+- [ ] Revisar atomicidade e integridade sem alterações estruturais nem dados reais; entregar relatório completo.
