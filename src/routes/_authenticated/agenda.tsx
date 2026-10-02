@@ -43,6 +43,7 @@ import {
   APPOINTMENT_STATUSES,
   appointmentStatusClass,
   appointmentStatusLabel,
+  commercialToday,
   formatAppointment,
   formatAppointmentTime,
   fromLocalParts,
@@ -132,7 +133,7 @@ function addMonths(k: string, n: number) {
 }
 
 function AgendaPage() {
-  const today = key(new Date());
+  const today = commercialToday();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isAdmin, profile, user } = useAuth();
