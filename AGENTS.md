@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Confirmações do Planejar roteiro usam `visit_routes.planning_request_key` com índice único e RPC atômica; nunca guardar a chave nas Observações, pois estas são editáveis.
+- Horários comerciais usam `America/Sao_Paulo` explicitamente na entrada e exibição, com instantes persistidos em UTC; campos `DATE` permanecem datas puras.

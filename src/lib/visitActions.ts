@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { createAppointment } from "@/lib/appointmentActions";
-import { formatAppointment } from "@/lib/appointments";
+import { formatAppointment, toLocalParts } from "@/lib/appointments";
 import { visitResultLabel } from "@/lib/visits";
 
 /**
@@ -89,7 +89,7 @@ export async function finishVisit(input: {
     1,
     Math.round((new Date(finishedAt).getTime() - new Date(startedAt).getTime()) / 60000),
   );
-  const nextDate = input.nextAction ? input.nextAction.scheduledAt.slice(0, 10) : null;
+  const nextDate = input.nextAction ? toLocalParts(input.nextAction.scheduledAt).date : null;
 
   const { error } = await supabase
     .from("lead_visits")

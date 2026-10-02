@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Combobox } from "@/components/Combobox";
 import { AppointmentFields, emptyAppointment, type AppointmentDraft } from "@/components/AppointmentFields";
 import { useContactTypes } from "@/lib/queries";
+import { fromLocalParts } from "@/lib/appointments";
 import { STOP_STATUSES, VISIT_RESULTS } from "@/lib/visits";
 import { finishVisit, type LeadVisit } from "@/lib/visitActions";
 
@@ -59,6 +60,13 @@ export function VisitResultDialog({
       toast.error("Informe o horário da próxima ação.");
       return;
     }
+    const scheduledAt = appointment.date
+      ? fromLocalParts(appointment.date, appointment.time)
+      : null;
+    if (appointment.date && !scheduledAt) {
+      toast.error("Informe uma data e hora válidas para a próxima ação.");
+      return;
+    }
     setSaving(true);
     const typeLabel =
       contactTypes.find((c) => c.id === appointment.contactTypeId)?.name ?? "Contato";
@@ -69,9 +77,9 @@ export function VisitResultDialog({
       result,
       notes: notes.trim() || null,
       contactPerson: contactPerson.trim() || null,
-      nextAction: appointment.date
+      nextAction: scheduledAt
         ? {
-            scheduledAt: new Date(`${appointment.date}T${appointment.time}`).toISOString(),
+            scheduledAt,
             contactTypeId: appointment.contactTypeId,
             typeLabel,
           }

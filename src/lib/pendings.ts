@@ -1,4 +1,4 @@
-import { toLocalParts } from "@/lib/appointments";
+import { commercialToday, toLocalParts } from "@/lib/appointments";
 
 export type PendingTone = "atrasado" | "hoje" | "agendado" | "sem_acao";
 
@@ -24,7 +24,7 @@ export function pendingClass(tone: PendingTone): string {
 }
 
 function todayKey(): string {
-  return toLocalParts(new Date().toISOString()).date;
+  return commercialToday();
 }
 
 function br(dateKey: string): string {
