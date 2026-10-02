@@ -23,12 +23,12 @@ function commercialParts(date: Date) {
       .map((part) => [part.type, Number(part.value)]),
   );
   return {
-    year: values.year ?? 0,
-    month: values.month ?? 0,
-    day: values.day ?? 0,
-    hour: values.hour ?? 0,
-    minute: values.minute ?? 0,
-    second: values.second ?? 0,
+    year: values['year'] ?? 0,
+    month: values['month'] ?? 0,
+    day: values['day'] ?? 0,
+    hour: values['hour'] ?? 0,
+    minute: values['minute'] ?? 0,
+    second: values['second'] ?? 0,
   };
 }
 
