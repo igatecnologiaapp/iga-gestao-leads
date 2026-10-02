@@ -8,7 +8,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { APPOINTMENT_STATUSES } from "@/lib/appointments";
+import {
+  APPOINTMENT_STATUSES,
+  COMMERCIAL_TIME_ZONE_LABEL,
+} from "@/lib/appointments";
 import { useContactTypes } from "@/lib/queries";
 
 export type AppointmentDraft = {
@@ -54,7 +57,10 @@ export function AppointmentFields({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-time`}>Hora</Label>
+        <div className="flex flex-wrap items-baseline justify-between gap-1">
+          <Label htmlFor={`${idPrefix}-time`}>Hora</Label>
+          <span className="text-xs text-muted-foreground">{COMMERCIAL_TIME_ZONE_LABEL}</span>
+        </div>
         <Input
           id={`${idPrefix}-time`}
           type="time"

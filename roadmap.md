@@ -1,3 +1,4 @@
 - [x] Fase 3.7.2 homologada no escopo testado: fluxos, restrições, ordem, idempotência e responsividade documentados no relatório final.
 - [x] Encerramento formal da Fase 3: inventário, dependências, plano de limpeza e baseline técnico consolidados sem alterar o aplicativo nem os dados.
+- [x] Correção controlada do fuso comercial: compromissos em America/Sao_Paulo, banco em UTC e dados históricos preservados.
 - [ ] Aguardar decisão explícita do usuário sobre eventual limpeza dos registros de homologação; não excluir antes da autorização.
